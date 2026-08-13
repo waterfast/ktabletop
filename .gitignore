@@ -1,0 +1,14 @@
+build*
+.clang-format
+.DS_Store
+.kdev4/
+compile_commands.json
+.cache/
+.vscode/
+kate.project.ctags.*
+*.user
+.flatpak-builder/
+.idea/
+cmake-build-*
+src/res.generated.qrc
+.qmlls.ini
