@@ -2,4 +2,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 add_subdirectory(interfaces)
+add_subdirectory(server-core)
+
 add_subdirectory(app)
