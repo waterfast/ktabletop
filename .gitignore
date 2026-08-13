@@ -2,6 +2,7 @@ build*
 .clang-format
 .DS_Store
 .kdev4/
+*.kdev4
 compile_commands.json
 .cache/
 .vscode/
