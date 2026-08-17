@@ -25,10 +25,9 @@ public:
 
     LuaVM &vm();
 
-public
-    Q_SIGNAL :
-        // called by Lua, usually
-        void luaEvent(const QString &type, const QVariant &payload);
+Q_SIGNALS:
+    // called by Lua, usually
+    void luaEvent(const QString &type, const QVariant &payload);
 
 private:
     LuaVM *L;

@@ -27,6 +27,13 @@ add_executable(ktabletop-app
     c-wrapper.cpp
     lua-binding.cpp
 
+    client-socket.cpp
+    server-socket.cpp
+    user-connection.cpp
+
+    client.cpp
+    server.cpp
+
     main.cpp
 )
 target_link_libraries(ktabletop-app PUBLIC
