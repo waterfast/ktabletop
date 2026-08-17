@@ -12,9 +12,9 @@ do return end
 -- Plugin itself is a regular table
 ---@class Plugin
 ---@field name string Name looks like a DBus object: /org/example/myplugin
----@field deps string[] interfaces depended by the plugin
----@field optionalDeps string[]
----@field ifaces string[] interfaces the plugin implements and exports
+---@field deps? string[] interfaces depended by the plugin
+---@field optionalDeps? string[]
+---@field ifaces? string[] interfaces the plugin implements and exports
 local M = {}
 
 ---@param ctx Context

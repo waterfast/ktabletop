@@ -10,6 +10,9 @@
 json = require "3rdparty.json"
 class = require "3rdparty.middleclass"
 
+-- These will be used very frequently too, making it global should make sense
+tablib = require "ktabletop.global.tablib"
+
 -- I think that're all preparations to do?
 do return end
 
@@ -54,5 +57,3 @@ function Object:isInstanceOf(cls) end
 function Object:isSubclassOf(cls) end
 
 function Object:include(e) end
-
-
