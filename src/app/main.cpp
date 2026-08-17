@@ -18,6 +18,10 @@
 #include <KLocalizedString>
 #include <KirigamiAppDefaults>
 
+#include <QDir>
+
+#include "c-wrapper.h"
+
 using namespace Qt::Literals::StringLiterals;
 
 #ifdef Q_OS_ANDROID
@@ -25,7 +29,14 @@ Q_DECL_EXPORT
 #endif
 int main(int argc, char *argv[])
 {
-    return 1;
+    LuaVM L;
+    L.eval(u"print 'Hello world from main.cpp'"_s);
+    // basic lua scripts should be bundled in .qrc but for now just loadfile directly
+    QDir::setCurrent(u"scripts"_s);
+    L.dofile(u"ktabletop/ktabletop.lua"_s);
+    L.dofile(u"ktabletop/client-entry.lua"_s);
+    L.eval(u"print(MainContext)"_s);
+    return 0;
 #ifdef Q_OS_ANDROID
     QGuiApplication app(argc, argv);
 #else

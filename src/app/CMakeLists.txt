@@ -1,7 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 # SPDX-License-Identifier: BSD-2-Clause
 
-add_executable(ktabletop-app main.cpp)
+add_executable(ktabletop-app
+    c-wrapper.cpp
+
+    main.cpp
+)
 target_link_libraries(ktabletop-app PUBLIC
     Qt6::Quick
     KF6::I18n
@@ -10,4 +14,6 @@ target_link_libraries(ktabletop-app PUBLIC
     Qt::Widgets
     KF6::I18nQml
     KirigamiApp
+
+    ${LUA_LIBRARIES}
 )
