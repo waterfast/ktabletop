@@ -7,6 +7,7 @@
 #include <QTcpSocket>
 #include <QTimer>
 
+// Cbor array based protocol
 class ClientSocket : public QObject
 {
     Q_OBJECT
