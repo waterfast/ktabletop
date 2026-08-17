@@ -25,6 +25,7 @@ target_include_directories(ktabletop_qml PUBLIC ${CMAKE_BINARY_DIR})
 
 add_executable(ktabletop-app
     c-wrapper.cpp
+    lua-binding.cpp
 
     main.cpp
 )

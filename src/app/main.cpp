@@ -20,7 +20,7 @@
 
 #include <QDir>
 
-#include "c-wrapper.h"
+#include "lua-binding.h"
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -65,13 +65,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    LuaVM L;
-    L.eval(u"print 'Hello world from main.cpp'"_s);
-    // basic lua scripts should be bundled in .qrc but for now just loadfile directly
-    QDir::setCurrent(u"scripts"_s);
-    L.dofile(u"ktabletop/ktabletop.lua"_s);
-    L.dofile(u"ktabletop/client-entry.lua"_s);
-    L.eval(u"print(MainContext)"_s);
+    LuaBinding L(LuaBinding::Client);
 
     return app.exec();
 }
