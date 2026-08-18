@@ -28,4 +28,8 @@ Kirigami.ApplicationWindow {
             onClicked: Qt.exit(0)
         }
     }
+
+    Component.onCompleted: {
+        console.log(Backend);
+    }
 }

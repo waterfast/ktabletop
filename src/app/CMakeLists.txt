@@ -33,6 +33,7 @@ add_executable(ktabletop-app
 
     client.cpp
     server.cpp
+    qml-backend.cpp
 
     main.cpp
 )
