@@ -34,6 +34,7 @@ void LuaBinding::emit(const QString &type, const QVariant &payload)
     // TODO: something like MainContext:emit(type, payload)
     // I maybe pass payload to Lua using JSON, but not very smart
     // Or declare a global function in Lua (like Emit) so I can use L->call
+    L->call(u"Emit"_s, {type, payload});
 }
 
 LuaVM &LuaBinding::vm()

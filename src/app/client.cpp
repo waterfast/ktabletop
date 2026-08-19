@@ -6,6 +6,11 @@
 #include "lua-binding.h"
 #include "user-connection.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
+
+using namespace Qt::Literals::StringLiterals;
+
 static Client *clientInstance = nullptr;
 
 Client *Client::instance()
@@ -22,8 +27,13 @@ Client::Client(QObject *parent)
     L = new LuaBinding(this, LuaBinding::Client);
     connection = new UserConnection(this, new ClientSocket);
 
-    connect(connection, &UserConnection::notificationGot, [](const QByteArray &command, const QByteArray &jsonData) {
-        qDebug() << "RX: command=" << command.constData() << ", data=" << jsonData.constData();
+    connect(connection, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
+        L->emit(u"KTableTopCpp::Socket::NotificationGot"_s,
+                QJsonObject{
+                    {u"connId"_s, connection->connId()},
+                    {u"command"_s, QString::fromUtf8(command)},
+                    {u"data"_s, QJsonValue::fromJson(jsonData)},
+                });
     });
 }
 

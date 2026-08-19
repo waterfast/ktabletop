@@ -15,6 +15,10 @@ ctx:loadPlugin {
   end,
 }
 
+ctx:on("KTableTopCpp::Socket::NotificationGot", function (param)
+  print(inspect(param))
+end)
+
 ctx:start()
 
 MainContext = ctx

@@ -181,6 +181,7 @@ void LuaVM::pushValue(lua_State *L, QVariant v)
         break;
     }
     case QMetaType::QVariantList:
+    case QMetaType::QJsonArray:
         lua_newtable(L);
         list = v.toList();
         for (int i = 1; i <= list.length(); i++) {
@@ -190,6 +191,7 @@ void LuaVM::pushValue(lua_State *L, QVariant v)
         }
         break;
     case QMetaType::QVariantMap:
+    case QMetaType::QJsonObject:
         lua_newtable(L);
         map = v.toMap();
         for (auto i = map.cbegin(), end = map.cend(); i != end; i++) {
