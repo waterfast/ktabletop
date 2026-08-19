@@ -66,7 +66,7 @@ void UserConnection::setReplyReadySemaphore(QSemaphore *semaphore)
     extraReplyReadySemaphore = semaphore;
 }
 
-void UserConnection::request(int type, const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp)
+void UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp)
 {
     // In case a request is called without a following waitForReply call
     if (replyReadySemaphore.available() > 0)
@@ -85,6 +85,7 @@ void UserConnection::request(int type, const QByteArray &command, const QByteArr
     replyMutex.unlock();
 
     auto data = jsonData;
+    int type = TypeRequest;
     if (jsonData.size() > COMPRESSION_THRESHOLD) {
         data = qCompress(jsonData);
         type |= DataCompressed;
@@ -95,9 +96,10 @@ void UserConnection::request(int type, const QByteArray &command, const QByteArr
     sendMessage(body.toCborValue().toCbor());
 }
 
-void UserConnection::reply(int type, const QByteArray &command, const QByteArray &jsonData)
+void UserConnection::reply(const QByteArray &command, const QByteArray &jsonData)
 {
     auto data = jsonData;
+    int type = TypeReply;
     if (jsonData.size() > COMPRESSION_THRESHOLD) {
         data = qCompress(jsonData);
         type |= DataCompressed;
@@ -113,9 +115,10 @@ void UserConnection::reply(int type, const QByteArray &command, const QByteArray
     sendMessage(body.toCborValue().toCbor());
 }
 
-void UserConnection::notify(int type, const QByteArray &command, const QByteArray &jsonData)
+void UserConnection::notify(const QByteArray &command, const QByteArray &jsonData)
 {
     auto data = jsonData;
+    int type = TypeNotification;
     if (jsonData.size() > COMPRESSION_THRESHOLD) {
         data = qCompress(jsonData);
         type |= DataCompressed;

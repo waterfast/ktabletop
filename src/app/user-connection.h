@@ -21,8 +21,6 @@ public:
         TypeRequest = 0x100,
         TypeReply = 0x200,
         TypeNotification = 0x400,
-        DestClient = 0x001,
-        DestServer = 0x002,
     };
 
     UserConnection(QObject *parent, ClientSocket *socket = nullptr);
@@ -36,9 +34,9 @@ public:
 
     void setReplyReadySemaphore(QSemaphore *semaphore);
 
-    void request(int type, const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp = -1);
-    void reply(int type, const QByteArray &command, const QByteArray &jsonData);
-    void notify(int type, const QByteArray &command, const QByteArray &jsonData);
+    void request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp = -1);
+    void reply(const QByteArray &command, const QByteArray &jsonData);
+    void notify(const QByteArray &command, const QByteArray &jsonData);
 
     int requestTimeout() const;
 

@@ -54,4 +54,6 @@ void Server::processNewConnection(ClientSocket *client)
     connect(conn, &QObject::destroyed, [this, connId] {
         connections.remove(connId);
     });
+
+    conn->notify("EnterLobby", "null");
 }

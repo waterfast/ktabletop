@@ -21,6 +21,10 @@ Client::Client(QObject *parent)
 {
     L = new LuaBinding(this, LuaBinding::Client);
     connection = new UserConnection(this, new ClientSocket);
+
+    connect(connection, &UserConnection::notificationGot, [](const QByteArray &command, const QByteArray &jsonData) {
+        qDebug() << "RX: command=" << command.constData() << ", data=" << jsonData.constData();
+    });
 }
 
 Client::~Client()
