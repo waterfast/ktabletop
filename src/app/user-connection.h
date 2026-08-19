@@ -25,7 +25,7 @@ public:
         DestServer = 0x002,
     };
 
-    UserConnection(QObject *parent, ClientSocket *socket);
+    UserConnection(QObject *parent, ClientSocket *socket = nullptr);
     ~UserConnection();
 
     int connId() const;
@@ -60,7 +60,7 @@ protected:
     void handlePacket(const QCborArray &packet);
 
 private:
-    ClientSocket *socket_;
+    ClientSocket *socket_ = nullptr;
     int connId_;
 
     // For client side

@@ -24,6 +24,7 @@ Kirigami.ApplicationWindow {
                     busyDialog.open()
                     console.log("Single Player clicked")
                     Backend.startServer(17943);
+                    Backend.joinServer("127.0.0.1");
                 }
             }
 

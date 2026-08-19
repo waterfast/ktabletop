@@ -9,15 +9,14 @@
 #include <QStringLiteral>
 using namespace Qt::Literals::StringLiterals;
 
-ClientSocket::ClientSocket()
-    : socket_(new QTcpSocket(this))
+ClientSocket::ClientSocket(QObject *parent, QTcpSocket *socket)
+    : QObject(parent)
 {
-    init();
-}
-
-ClientSocket::ClientSocket(QTcpSocket *socket)
-{
-    socket->setParent(this);
+    if (!socket) {
+        socket = new QTcpSocket(this);
+    } else {
+        socket->setParent(this);
+    }
     this->socket_ = socket;
     // timerSignup.setSingleShot(true);
     // connect(&timerSignup, &QTimer::timeout, this,

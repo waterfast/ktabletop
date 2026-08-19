@@ -13,8 +13,7 @@ class ClientSocket : public QObject
     Q_OBJECT
 
 public:
-    ClientSocket();
-    ClientSocket(QTcpSocket *socket);
+    ClientSocket(QObject *parent = nullptr, QTcpSocket *socket = nullptr);
     ~ClientSocket();
 
     QTcpSocket *socket() const;

@@ -5,7 +5,22 @@
 
 #include <QObject>
 
+class LuaBinding;
+class UserConnection;
+
 class Client : public QObject
 {
     Q_OBJECT
+
+public:
+    static Client *instance();
+    ~Client();
+
+    void connectToHost(const QString &server, ushort port = 17943);
+
+private:
+    explicit Client(QObject *parent = nullptr);
+
+    LuaBinding *L;
+    UserConnection *connection;
 };

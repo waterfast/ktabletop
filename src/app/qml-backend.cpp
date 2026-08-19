@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "qml-backend.h"
+#include "client.h"
 #include "server.h"
 
 bool QmlBackend::startServer(ushort port)
@@ -13,4 +14,10 @@ bool QmlBackend::startServer(ushort port)
         return false;
     }
     return true;
+}
+
+void QmlBackend::joinServer(QString address, ushort port)
+{
+    auto client = Client::instance();
+    client->connectToHost(address, port);
 }

@@ -7,6 +7,8 @@
 #include "server-socket.h"
 #include "user-connection.h"
 
+using namespace Qt::Literals::StringLiterals;
+
 static Server *serverInstance = nullptr;
 
 Server *Server::instance()
@@ -42,7 +44,8 @@ bool Server::listen(const QHostAddress &address, ushort port)
 
 void Server::processNewConnection(ClientSocket *client)
 {
-    auto addr = client->socket()->peerAddress();
+    auto socket = client->socket();
+    auto addr = QString(u"[%1]:%2"_s).arg(socket->peerAddress().toString()).arg(socket->peerPort());
     qInfo() << addr << "connected";
 
     auto conn = new UserConnection(this, client);

@@ -11,4 +11,5 @@ class QmlBackend : public QObject
 
 public:
     Q_INVOKABLE bool startServer(ushort port);
+    Q_INVOKABLE void joinServer(QString address, ushort port = 17943);
 };

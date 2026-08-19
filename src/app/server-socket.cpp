@@ -19,6 +19,6 @@ bool ServerSocket::listen(const QHostAddress &address, ushort port)
 void ServerSocket::processNewConnection()
 {
     QTcpSocket *socket = server->nextPendingConnection();
-    ClientSocket *connection = new ClientSocket(socket);
+    ClientSocket *connection = new ClientSocket(nullptr, socket);
     newConnection(connection);
 }
