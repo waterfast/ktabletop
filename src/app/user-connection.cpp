@@ -10,43 +10,55 @@
 UserConnection::UserConnection(QObject *parent, ClientSocket *socket)
     : QObject(parent)
 {
-    this->socket = nullptr;
     setSocket(socket);
     expectedReplyIds.clear();
     replyTimeout = 0;
     extraReplyReadySemaphore = nullptr;
+
+    static int nextConnId = 1000;
+    connId_ = nextConnId++;
+    if (nextConnId >= 0xFFFFFF)
+        nextConnId = 1000;
 }
 
 UserConnection::~UserConnection()
 {
 }
 
-ClientSocket *UserConnection::getSocket() const
+int UserConnection::connId() const
 {
-    return socket;
+    return connId_;
+}
+
+ClientSocket *UserConnection::socket() const
+{
+    return socket_;
 }
 
 void UserConnection::setSocket(ClientSocket *socket)
 {
-    if (this->socket != nullptr) {
-        this->socket->disconnect(this);
-        disconnect(this->socket);
-        this->socket->deleteLater();
+    if (socket_ != nullptr) {
+        socket_->disconnect(this);
+        disconnect(socket_);
+        socket_->deleteLater();
     }
 
-    this->socket = nullptr;
+    socket_ = nullptr;
     if (socket != nullptr) {
         connect(this, &UserConnection::messageReady, socket, &ClientSocket::send);
         connect(socket, &ClientSocket::messageGot, this, &UserConnection::handlePacket);
         socket->setParent(this);
-        this->socket = socket;
+        socket_ = socket;
     }
 }
 
-void UserConnection::removeSocket()
+ClientSocket *UserConnection::moveSocket()
 {
+    auto socket = socket_;
+    socket_ = nullptr;
     socket->disconnect(this);
-    socket = nullptr;
+    socket->setParent(nullptr);
+    return socket;
 }
 
 void UserConnection::setReplyReadySemaphore(QSemaphore *semaphore)
@@ -92,7 +104,7 @@ void UserConnection::reply(int type, const QByteArray &command, const QByteArray
     }
 
     QCborArray body{
-        this->requestId,
+        requestId_,
         type,
         command,
         data,
@@ -119,9 +131,9 @@ void UserConnection::notify(int type, const QByteArray &command, const QByteArra
     sendMessage(body.toCborValue().toCbor());
 }
 
-int UserConnection::getTimeout() const
+int UserConnection::requestTimeout() const
 {
-    return requestTimeout;
+    return requestTimeout_;
 }
 
 // cancel last request from the sender
@@ -161,11 +173,11 @@ void UserConnection::handlePacket(const QCborArray &packet)
     if (type & TypeNotification) {
         notificationGot(command, jsonData);
     } else if (type & TypeRequest) {
-        this->requestId = requestId;
-        this->requestTimeout = packet[4].toInteger();
-        this->requestTimestamp = packet[5].toInteger();
+        requestId_ = requestId;
+        requestTimeout_ = packet[4].toInteger();
+        requestTimestamp_ = packet[5].toInteger();
 
-        request_got(command, jsonData);
+        requestGot(command, jsonData);
     } else if (type & TypeReply) {
         QMutexLocker locker(&replyMutex);
 

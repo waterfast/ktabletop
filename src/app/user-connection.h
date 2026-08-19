@@ -28,9 +28,11 @@ public:
     UserConnection(QObject *parent, ClientSocket *socket);
     ~UserConnection();
 
-    ClientSocket *getSocket() const;
+    int connId() const;
+
+    ClientSocket *socket() const;
     void setSocket(ClientSocket *socket);
-    void removeSocket();
+    ClientSocket *moveSocket();
 
     void setReplyReadySemaphore(QSemaphore *semaphore);
 
@@ -38,38 +40,33 @@ public:
     void reply(int type, const QByteArray &command, const QByteArray &jsonData);
     void notify(int type, const QByteArray &command, const QByteArray &jsonData);
 
-    int getTimeout() const;
+    int requestTimeout() const;
 
     void cancelRequest();
 
     QByteArray waitForReply(int timeout);
 
-    int getRequestId() const
-    {
-        return requestId;
-    }
-    qint64 getRequestTimestamp()
-    {
-        return requestTimestamp;
-    }
+    int requestId() const;
+    qint64 requestTimestamp() const;
 
 Q_SIGNALS:
     void messageReady(const QByteArray &msg);
     void replyReady();
 
     void notificationGot(const QByteArray &command, const QByteArray &jsonData);
-    void request_got(const QByteArray &command, const QByteArray &jsonData);
+    void requestGot(const QByteArray &command, const QByteArray &jsonData);
 
 protected:
     void handlePacket(const QCborArray &packet);
 
 private:
-    ClientSocket *socket;
+    ClientSocket *socket_;
+    int connId_;
 
     // For client side
-    int requestId;
-    int requestTimeout;
-    qint64 requestTimestamp;
+    int requestId_;
+    int requestTimeout_;
+    qint64 requestTimestamp_;
 
     // For server side
     QDateTime requestStartTime;

@@ -23,6 +23,7 @@ Kirigami.ApplicationWindow {
                 onClicked: {
                     busyDialog.open()
                     console.log("Single Player clicked")
+                    Backend.startServer(17943);
                 }
             }
 

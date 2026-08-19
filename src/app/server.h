@@ -3,12 +3,14 @@
 
 #pragma once
 
+#include <QHash>
 #include <QHostAddress>
 #include <QObject>
 
 class LuaBinding;
 class ClientSocket;
 class ServerSocket;
+class UserConnection;
 
 class Server : public QObject
 {
@@ -25,6 +27,7 @@ private:
 
     LuaBinding *L;
     ServerSocket *server;
+    QHash<int, UserConnection *> connections;
 
     void processNewConnection(ClientSocket *client);
 };

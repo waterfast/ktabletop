@@ -10,4 +10,5 @@ class QmlBackend : public QObject
     Q_OBJECT
 
 public:
+    Q_INVOKABLE bool startServer(ushort port);
 };

@@ -5,6 +5,7 @@
 #include "client-socket.h"
 #include "lua-binding.h"
 #include "server-socket.h"
+#include "user-connection.h"
 
 static Server *serverInstance = nullptr;
 
@@ -27,6 +28,7 @@ Server::Server(QObject *parent)
 
 Server::~Server()
 {
+    serverInstance = nullptr;
 }
 
 bool Server::listen(const QHostAddress &address, ushort port)
@@ -42,4 +44,11 @@ void Server::processNewConnection(ClientSocket *client)
 {
     auto addr = client->socket()->peerAddress();
     qInfo() << addr << "connected";
+
+    auto conn = new UserConnection(this, client);
+    auto connId = conn->connId();
+    connections[connId] = conn;
+    connect(conn, &QObject::destroyed, [this, connId] {
+        connections.remove(connId);
+    });
 }
