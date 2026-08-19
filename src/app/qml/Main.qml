@@ -15,17 +15,34 @@ Kirigami.ApplicationWindow {
         QQC2.Button {
             Layout.fillWidth: true
             text: "Single Player"
+            onClicked: {
+                busyDialog.open()
+                console.log("Single Player clicked")
+            }
         }
 
         QQC2.Button {
             Layout.fillWidth: true
             text: "Multiple Players"
+            onClicked: {
+            }
         }
 
         QQC2.Button {
             Layout.fillWidth: true
             text: "Quit"
             onClicked: Qt.exit(0)
+        }
+    }
+
+    Kirigami.Dialog {
+        id: busyDialog
+        title: "Please wait..."
+        closePolicy: QQC2.Popup.NoAutoClose
+        showCloseButton: false
+
+        QQC2.BusyIndicator {
+            anchors.centerIn: parent
         }
     }
 
