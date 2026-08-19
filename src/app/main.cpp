@@ -23,6 +23,7 @@
 
 #include "lua-binding.h"
 #include "qml-backend.h"
+#include "server.h"
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -63,6 +64,7 @@ int main(int argc, char *argv[])
     }
 
     QmlBackend backend;
+    Server::instance();
 
     // FIXME: should use a singleton here
     // but I don't have time mess with QT I need make it run first
@@ -72,8 +74,6 @@ int main(int argc, char *argv[])
     if (engine.rootObjects().isEmpty()) {
         return EXIT_FAILURE;
     }
-
-    LuaBinding L(LuaBinding::Client);
 
     return app.exec();
 }

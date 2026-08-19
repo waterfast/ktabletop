@@ -18,7 +18,7 @@ public:
     };
     Q_ENUM(Role);
 
-    explicit LuaBinding(Role role);
+    explicit LuaBinding(QObject *parent = nullptr, Role role = Server);
     ~LuaBinding() override;
 
     void emit(const QString &type, const QVariant &payload);

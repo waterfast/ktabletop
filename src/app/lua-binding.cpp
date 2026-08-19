@@ -10,7 +10,8 @@
 #include <QStringLiteral>
 using namespace Qt::Literals::StringLiterals;
 
-LuaBinding::LuaBinding(Role role)
+LuaBinding::LuaBinding(QObject *parent, Role role)
+    : QObject(parent)
 {
     L = new LuaVM;
 

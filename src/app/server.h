@@ -3,9 +3,28 @@
 
 #pragma once
 
+#include <QHostAddress>
 #include <QObject>
+
+class LuaBinding;
+class ClientSocket;
+class ServerSocket;
 
 class Server : public QObject
 {
     Q_OBJECT
+
+public:
+    static Server *instance();
+    ~Server();
+
+    bool listen(const QHostAddress &address = QHostAddress::Any, ushort port = 9527u);
+
+private:
+    explicit Server(QObject *parent = nullptr);
+
+    LuaBinding *L;
+    ServerSocket *server;
+
+    void processNewConnection(ClientSocket *client);
 };
