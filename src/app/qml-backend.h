@@ -8,4 +8,6 @@
 class QmlBackend : public QObject
 {
     Q_OBJECT
+
+public:
 };

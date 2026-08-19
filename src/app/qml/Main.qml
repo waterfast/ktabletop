@@ -6,32 +6,38 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
+import org.kde.kirigami.layouts as KL
 
 Kirigami.ApplicationWindow {
     width: 240
     height: 400
-    ColumnLayout {
-        anchors.centerIn: parent
-        QQC2.Button {
-            Layout.fillWidth: true
-            text: "Single Player"
-            onClicked: {
-                busyDialog.open()
-                console.log("Single Player clicked")
-            }
-        }
 
-        QQC2.Button {
-            Layout.fillWidth: true
-            text: "Multiple Players"
-            onClicked: {
+    pageStack.columnView.columnResizeMode: KL.ColumnView.SingleColumn
+    pageStack.initialPage: Kirigami.Page {
+        title: "KTableTop"
+        ColumnLayout {
+            anchors.centerIn: parent
+            QQC2.Button {
+                Layout.fillWidth: true
+                text: "Single Player"
+                onClicked: {
+                    busyDialog.open()
+                    console.log("Single Player clicked")
+                }
             }
-        }
 
-        QQC2.Button {
-            Layout.fillWidth: true
-            text: "Quit"
-            onClicked: Qt.exit(0)
+            QQC2.Button {
+                Layout.fillWidth: true
+                text: "Multiple Players"
+                onClicked: {
+                }
+            }
+
+            QQC2.Button {
+                Layout.fillWidth: true
+                text: "Quit"
+                onClicked: Qt.exit(0)
+            }
         }
     }
 
@@ -45,6 +51,7 @@ Kirigami.ApplicationWindow {
             anchors.centerIn: parent
         }
     }
+
 
     Component.onCompleted: {
         console.log(Backend);
