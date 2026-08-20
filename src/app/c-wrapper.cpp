@@ -21,6 +21,11 @@ LuaVM::~LuaVM()
     lua_close(L);
 }
 
+lua_State *LuaVM::state() const
+{
+    return L;
+}
+
 bool LuaVM::needLock()
 {
     auto thr = QThread::currentThread();
@@ -103,6 +108,7 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
     lua_getglobal(L, "debug");
     lua_getfield(L, -1, "traceback");
     lua_replace(L, -2);
+    // stack: debug.traceback
 
     auto nargs = params.length();
     lua_getglobal(L, func_name.toLatin1().data());
@@ -110,9 +116,11 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
     for (auto v : params) {
         pushValue(L, v);
     }
+    // stack: args(-nargs), func(-nargs-1), debug.traceback(-nargs-2)
 
-    // handler位于function位置的前一个
     int err = lua_pcall(L, nargs, 1, -nargs - 2);
+    // lua_pcall always removes args and func, so the stack is: result/error, debug.traceback
+    // so call lua_pop(L, 2) to clear the stack
     if (err) {
         qCritical() << lua_tostring(L, -1);
         lua_pop(L, 2);
@@ -202,21 +210,15 @@ void LuaVM::pushValue(lua_State *L, QVariant v)
         }
         break;
     case QMetaType::Nullptr:
-    case QMetaType::UnknownType: // 应该是 undefined，感觉很危险
         lua_pushnil(L);
         break;
     default:
-        // 继续判自定义MetaType，这些不能在case语句判
-        // if (typeId == QMetaType::fromType<Client *>().id()) {
-        //   SWIG_NewPointerObj(L, v.value<Client *>(), SWIGTYPE_p_Client, 0);
-        // } else if (typeId == QMetaType::fromType<RoomThread *>().id()) {
-        //   SWIG_NewPointerObj(L, v.value<RoomThread *>(), SWIGTYPE_p_RoomThread, 0);
-        // } else if (typeId == QMetaType::fromType<Server *>().id()) {
-        //   SWIG_NewPointerObj(L, v.value<Server *>(), SWIGTYPE_p_Server, 0);
-        // } else {
-        qCritical() << "cannot handle QVariant type" << v.typeId();
-        lua_pushnil(L);
-        // }
+        if (typeId == QMetaType::fromType<lua_CFunction>().id()) {
+            lua_pushcfunction(L, v.value<lua_CFunction>());
+        } else {
+            qCritical() << "cannot handle QVariant type" << v.typeName() << "(id:" << v.typeId() << "): pushing nil";
+            lua_pushnil(L);
+        }
         break;
     }
 }

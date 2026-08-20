@@ -19,6 +19,8 @@ public:
     LuaVM(LuaVM &&) = delete;
     ~LuaVM();
 
+    lua_State *state() const;
+
     bool dofile(const QString &path);
     void dumpStack();
 
@@ -26,13 +28,15 @@ public:
     QVariant eval(const QString &lua);
     void setGlobal(const QString &name, const QString &jsonValue);
 
+    static void pushValue(lua_State *L, QVariant v);
+    static QVariant readValue(lua_State *L, int index = 0, QHash<const void *, bool> stack = QHash<const void *, bool>());
+
 private:
     lua_State *L;
     QMutex interpreter_lock;
     QThread *current_thread = nullptr;
 
     bool needLock();
-
-    static void pushValue(lua_State *L, QVariant v);
-    static QVariant readValue(lua_State *L, int index = 0, QHash<const void *, bool> stack = QHash<const void *, bool>());
 };
+
+Q_DECLARE_METATYPE(lua_CFunction)
