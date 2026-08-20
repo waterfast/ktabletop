@@ -4,6 +4,25 @@ A boardgame platform based on Qt/QML and KDE libs, using Lua for scripting.
 
 Still at very very beginning. Join our matrix room: #ktabletop:tchncs.de
 
+## Build and Run
+
+Install deps, then
+
+```sh
+$ cmake -S . -B build/ -G Ninja
+$ cmake --build build/ -j
+```
+
+Currently `$PWD` for the app must be project source dir, because of Lua scripts.
+I will recommend creating soft link
+
+```sh
+$ ln -s build/bin/ktabletop-app
+$ ./ktabletop-app
+```
+
+OK, here we go
+
 ## Code Convention
 
 Just follow KDE policy, exceptions:
