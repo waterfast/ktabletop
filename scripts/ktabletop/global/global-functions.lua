@@ -4,3 +4,7 @@
 Emit = function(sig, param)
   MainContext:emit(sig, param)
 end
+
+LoadPlugin = function(plugin)
+  MainContext:loadPlugin(plugin)
+end

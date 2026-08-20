@@ -96,7 +96,7 @@ void UserConnection::request(const QByteArray &command, const QByteArray &jsonDa
     sendMessage(body.toCborValue().toCbor());
 }
 
-void UserConnection::reply(const QByteArray &command, const QByteArray &jsonData)
+void UserConnection::reply(const QByteArray &jsonData)
 {
     auto data = jsonData;
     int type = TypeReply;
@@ -108,7 +108,7 @@ void UserConnection::reply(const QByteArray &command, const QByteArray &jsonData
     QCborArray body{
         requestId_,
         type,
-        command,
+        QByteArray(),
         data,
     };
 

@@ -29,10 +29,10 @@ Client::Client(QObject *parent)
 
     connect(connection, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
         L->emit(u"KTableTopCpp::Socket::NotificationGot"_s,
-                QJsonObject{
+                {
                     {u"connId"_s, connection->connId()},
                     {u"command"_s, QString::fromUtf8(command)},
-                    {u"data"_s, QJsonValue::fromJson(jsonData)},
+                    {u"data"_s, QJsonValue::fromJson(jsonData).toVariant()},
                 });
     });
 }

@@ -42,6 +42,11 @@ bool Server::listen(const QHostAddress &address, ushort port)
     return ret;
 }
 
+UserConnection *Server::findConnection(int connId) const
+{
+    return connections.value(connId);
+}
+
 void Server::processNewConnection(ClientSocket *client)
 {
     auto socket = client->socket();
@@ -55,5 +60,5 @@ void Server::processNewConnection(ClientSocket *client)
         connections.remove(connId);
     });
 
-    conn->notify("EnterLobby", "null");
+    L->emit(u"KTableTop::Socket::NewConnection"_s, {{u"connId"_s, connId}});
 }

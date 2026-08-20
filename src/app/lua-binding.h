@@ -21,7 +21,8 @@ public:
     explicit LuaBinding(QObject *parent = nullptr, Role role = Server);
     ~LuaBinding() override;
 
-    void emit(const QString &type, const QVariant &payload);
+    void emit(const QString &type, const QVariantMap &payload);
+    void loadPlugin(const QVariantMap &plugin);
 
     LuaVM &vm();
 

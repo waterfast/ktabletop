@@ -77,6 +77,9 @@ end
 function Context:unloadPlugin(pluginName)
   local plugin = self._plugins[pluginName]
   assert(plugin, "Plugin not loaded: " .. pluginName)
+  if plugin.teardown then
+    plugin.teardown(self)
+  end
   for _, iface in ipairs(plugin.ifaces or {}) do
     self._ifaces[iface] = nil
   end

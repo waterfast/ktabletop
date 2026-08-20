@@ -189,6 +189,7 @@ void LuaVM::pushValue(lua_State *L, QVariant v)
         break;
     }
     case QMetaType::QVariantList:
+    case QMetaType::QStringList:
     case QMetaType::QJsonArray:
         lua_newtable(L);
         list = v.toList();

@@ -22,6 +22,8 @@ public:
 
     bool listen(const QHostAddress &address = QHostAddress::Any, ushort port = 9527u);
 
+    UserConnection *findConnection(int connId) const;
+
 private:
     explicit Server(QObject *parent = nullptr);
 
