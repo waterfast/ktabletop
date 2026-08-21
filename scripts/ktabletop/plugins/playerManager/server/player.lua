@@ -1,20 +1,19 @@
----@class Player: Object
----@field ctx Context
----@field connId integer
-local Player = class("Player")
+local Player = require("ktabletop.plugins.playerManager.common.player")
+
+---@class ServerPlayer: Player
+local ServerPlayer = class("ServerPlayer", Player)
 
 ---@param ctx Context
 ---@param connId integer
-function Player:initialize(ctx, connId)
-  self.ctx = ctx
-  self.connId = connId
+function ServerPlayer:initialize(ctx, connId)
+  Player.initialize(self, ctx, connId)
   self._cpp = ctx:get("__cpp.server")
 end
 
 ---@param command string
 ---@param data any
 ---@param isJson? boolean if true, should not json.encode here
-function Player:notify(command, data, isJson)
+function ServerPlayer:notify(command, data, isJson)
   self._cpp.notifySocket(self.connId, command, isJson and data or json.encode(data))
 end
 
@@ -23,8 +22,8 @@ end
 ---@param timeout? integer
 ---@param timestamp? integer
 ---@param isJson? boolean if true, should not json.encode here
-function Player:request(command, data, timeout, timestamp, isJson)
+function ServerPlayer:request(command, data, timeout, timestamp, isJson)
   self._cpp.requestSocket(self.connId, command, isJson and data or json.encode(data), timeout or 0, timestamp or -1)
 end
 
-return Player
+return ServerPlayer
