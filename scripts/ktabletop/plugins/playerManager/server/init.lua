@@ -1,5 +1,5 @@
-local Player = require("ktabletop.plugins.playerManager.player")
-local PlayerManager = require("ktabletop.plugins.playerManager.player-manager")
+local Player = require("ktabletop.plugins.playerManager.server.player")
+local PlayerManager = require("ktabletop.plugins.playerManager.server.player-manager")
 
 ---@type Plugin
 local M = {

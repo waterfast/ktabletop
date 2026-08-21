@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-local RoomManager = require("ktabletop.plugins.roomManager.room-manager")
+local RoomManager = require("ktabletop.plugins.roomManager.server.room-manager")
 
 ---@type Plugin
 local M = {
