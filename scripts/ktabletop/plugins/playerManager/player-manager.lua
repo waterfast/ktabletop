@@ -1,9 +1,10 @@
 ---@class PlayerManager: Object
+---@field ctx Context
 ---@field private players table<integer, Player>
-
 local PlayerManager = class("PlayerManager")
 
-function PlayerManager:initialize()
+function PlayerManager:initialize(ctx)
+  self.ctx = ctx
   self.players = {}
 end
 
