@@ -1,3 +1,6 @@
+local Player = require("ktabletop.plugins.playerManager.player")
+local PlayerManager = require("ktabletop.plugins.playerManager.player-manager")
+
 ---@type Plugin
 local M = {
   name = "/ktabletop/server/playerManager",
@@ -5,13 +8,17 @@ local M = {
 }
 
 function M.setup(ctx, config)
+  local playerManager = PlayerManager:new()
+  ctx:serve("playerManager", playerManager)
+  
   ctx:on("KTableTop::Socket::NewConnection", function(param)
     local connId = param.connId
     local cpp = ctx:get("__cpp.server")
 
-    -- TODO: create player for this connId
-    -- there should be some table like `players` in ctx
-    cpp.notifySocket(connId, "EnterLobby", json.encode(nil))
+    local player = Player:new(connId, cpp)
+    playerManager:addPlayer(player)
+    
+    player:notify("EnterLobby", nil)
   end)
 end
 
