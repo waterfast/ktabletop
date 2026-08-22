@@ -16,6 +16,8 @@ public:
     static Client *instance();
     ~Client();
 
+    LuaBinding *luaBinding() const;
+
     void connectToHost(const QString &server, ushort port = 17943);
 
 private:

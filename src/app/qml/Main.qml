@@ -54,6 +54,13 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // TODO: move this to other QML file
+    Connections {
+        target: Backend
+        function onLuaEvent(tp, payload) {
+            console.log(tp, JSON.stringify(payload));
+        }
+    }
 
     Component.onCompleted: {
         console.log(Backend);

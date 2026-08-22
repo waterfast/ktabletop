@@ -58,9 +58,7 @@ local M = {
 }
 
 function M.setup(ctx, config)
-  ctx:set("current", ClientLobby:new(ctx))
-  
-  ctx:on("KTableTop::Client::RoomStore::Changed", function (param)
+  ctx:on("KTableTopCpp::Socket::NotificationGot", function (param)
     local handlers = handlers[param.command]
 
     if handlers then

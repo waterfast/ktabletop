@@ -21,13 +21,15 @@ public:
     explicit LuaBinding(QObject *parent = nullptr, Role role = Server);
     ~LuaBinding() override;
 
+    // called by Lua
+    void triggerLuaEvent(const QString &type, const QVariant &payload);
+
     void emit(const QString &type, const QVariantMap &payload);
     void loadPlugin(const QVariantMap &plugin);
 
     LuaVM &vm();
 
 Q_SIGNALS:
-    // called by Lua, usually
     void luaEvent(const QString &type, const QVariant &payload);
 
 private:

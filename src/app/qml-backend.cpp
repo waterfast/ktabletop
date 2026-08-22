@@ -3,6 +3,7 @@
 
 #include "qml-backend.h"
 #include "client.h"
+#include "lua-binding.h"
 #include "server.h"
 
 bool QmlBackend::startServer(ushort port)
@@ -19,5 +20,6 @@ bool QmlBackend::startServer(ushort port)
 void QmlBackend::joinServer(QString address, ushort port)
 {
     auto client = Client::instance();
+    connect(client->luaBinding(), &LuaBinding::luaEvent, this, &QmlBackend::luaEvent, Qt::UniqueConnection);
     client->connectToHost(address, port);
 }
