@@ -9,6 +9,12 @@ local ctx = Context:new()
 ctx:loadPlugin(require "ktabletop.plugins.playerManager.client")
 ctx:loadPlugin(require "ktabletop.plugins.roomManager.client")
 
+-- test
+ctx:on("KTableTopCpp::ObservingObject::ValueChanged", function(param)
+  -- TODO: should find the object and directly set its value to new one
+  print(inspect(param))
+end)
+
 ctx:start()
 
 MainContext = ctx

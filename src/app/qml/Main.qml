@@ -59,6 +59,18 @@ Kirigami.ApplicationWindow {
         target: Backend
         function onLuaEvent(tp, payload) {
             console.log(tp, JSON.stringify(payload));
+            if (tp === "KTableTop::Observable::NewObject") {
+                const objName = payload._stringId;
+                delete payload._stringId;
+                const obj = Backend.createPropertyMap(objName, payload);
+                // test ValueChanged
+                obj.playerCount = 123;
+                // obj.destroy(); // this cause SegFault
+            }
+
+            if (tp === "KTableTop::Observable::ValueChanged") {
+                // TODO
+            }
         }
     }
 
