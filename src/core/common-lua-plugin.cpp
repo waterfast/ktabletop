@@ -15,7 +15,7 @@ static int luaEvent(lua_State *L)
         return luaL_error(L, "expected 2 arguments, got %d", nargs);
     }
 
-    auto binding = bindingInstances.value(L);
+    auto binding = LuaBinding::forState(L);
     if (!binding) {
         return luaL_error(L, "No LuaBinding found for this Lua VM");
     }
