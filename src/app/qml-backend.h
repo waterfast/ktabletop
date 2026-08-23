@@ -16,6 +16,13 @@ public:
 
     Q_INVOKABLE QQmlPropertyMap *createPropertyMap(const QString &objectName, const QVariantMap &dict);
 
+    // Called once the corresponding Lua-side object is garbage collected
+    // (future __gc metamethod hook); drops C++'s ownership of the map.
+    Q_INVOKABLE void destroyPropertyMap(const QString &objectName);
+
 Q_SIGNALS:
     void luaEvent(const QString &type, const QVariant &payload);
+
+private:
+    QMap<QString, QQmlPropertyMap *> m_propertyMaps;
 };

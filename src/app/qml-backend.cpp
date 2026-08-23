@@ -28,12 +28,18 @@ void QmlBackend::joinServer(QString address, ushort port)
 
 QQmlPropertyMap *QmlBackend::createPropertyMap(const QString &objectName, const QVariantMap &dict)
 {
-    QQmlPropertyMap *ret = new QQmlPropertyMap;
+    if (auto existing = m_propertyMaps.take(objectName)) {
+        existing->deleteLater();
+    }
+
+    auto ret = QQmlPropertyMap::create(this);
     ret->setObjectName(objectName);
+
     for (auto i = dict.cbegin(), end = dict.cend(); i != end; ++i) {
         ret->insert(i.key(), i.value());
     }
-    connect(ret, &QQmlPropertyMap::valueChanged, [objectName](const QString &key, const QVariant &value) {
+
+    connect(ret, &QQmlPropertyMap::valueChanged, this, [objectName](const QString &key, const QVariant &value) {
         Client::instance()->luaBinding()->emit(u"KTableTopCpp::ObservingObject::ValueChanged"_s,
                                                {
                                                    {u"_stringId"_s, objectName},
@@ -41,6 +47,14 @@ QQmlPropertyMap *QmlBackend::createPropertyMap(const QString &objectName, const 
                                                    {u"value"_s, value},
                                                });
     });
-    // FIXME: this leaks memory!
+
+    m_propertyMaps.insert(objectName, ret);
     return ret;
+}
+
+void QmlBackend::destroyPropertyMap(const QString &objectName)
+{
+    if (auto existing = m_propertyMaps.take(objectName)) {
+        existing->deleteLater();
+    }
 }
