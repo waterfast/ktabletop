@@ -7,6 +7,8 @@ ecm_add_qml_module(ktabletop_qml
     GENERATE_PLUGIN_SOURCE
     QML_FILES
         qml/Main.qml
+        qml/LobbyPage.qml
+        qml/CreateRoomDialog.qml
     DEPENDENCIES
         org.kde.kirigamiaddons.formcard
         org.kde.kirigamiaddons.statefulapp

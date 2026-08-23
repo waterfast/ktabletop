@@ -21,10 +21,10 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
                 text: "Single Player"
                 onClicked: {
-                    busyDialog.open()
                     console.log("Single Player clicked")
                     Backend.startServer(17943);
                     Backend.joinServer("127.0.0.1");
+                    pageStack.push(lobbyPageComponent);
                 }
             }
 
@@ -43,15 +43,9 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    Kirigami.Dialog {
-        id: busyDialog
-        title: "Please wait..."
-        closePolicy: QQC2.Popup.NoAutoClose
-        showCloseButton: false
-
-        QQC2.BusyIndicator {
-            anchors.centerIn: parent
-        }
+    Component {
+        id: lobbyPageComponent
+        LobbyPage {}
     }
 
     // TODO: move this to other QML file
