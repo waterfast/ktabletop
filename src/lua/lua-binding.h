@@ -6,6 +6,7 @@
 #include <QObject>
 
 class LuaVM;
+struct lua_State;
 
 class LuaBinding : public QObject
 {
@@ -28,6 +29,8 @@ public:
     void loadPlugin(const QVariantMap &plugin);
 
     LuaVM &vm();
+
+    static LuaBinding *forState(lua_State *state);
 
 Q_SIGNALS:
     void luaEvent(const QString &type, const QVariant &payload);

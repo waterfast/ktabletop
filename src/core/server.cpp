@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "server.h"
+#include "common-lua-plugin.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
 #include "network/server-socket.h"
@@ -24,6 +25,7 @@ Server::Server(QObject *parent)
     : QObject(parent)
 {
     L = new LuaBinding(this, LuaBinding::Server);
+    L->loadPlugin(CommonLuaPlugin::create());
     L->loadPlugin(ServerLuaPlugin::create());
 
     server = new ServerSocket(this);

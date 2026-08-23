@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "client.h"
+#include "common-lua-plugin.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
 #include "network/user-connection.h"
@@ -25,6 +26,8 @@ Client::Client(QObject *parent)
     : QObject(parent)
 {
     L = new LuaBinding(this, LuaBinding::Client);
+    L->loadPlugin(CommonLuaPlugin::create());
+
     connection = new UserConnection(this, new ClientSocket);
 
     connect(connection, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
