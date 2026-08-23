@@ -11,14 +11,14 @@ function M.setup(ctx, config)
   local playerManager = PlayerManager:new(ctx)
   ctx:set("playerManager", playerManager)
 
-  ctx:on("KTableTop::Socket::NewConnection", function(param)
+  ctx:on("KTabletop::Socket::NewConnection", function(param)
     local connId = param.connId
     local cpp = ctx:get("__cpp.server")
 
     local player = Player:new(ctx, connId)
     playerManager:addPlayer(player)
 
-    ctx:emit("KTableTop::PlayerManager::NewConnection", {
+    ctx:emit("KTabletop::PlayerManager::NewConnection", {
       player = player,
     })
   end)

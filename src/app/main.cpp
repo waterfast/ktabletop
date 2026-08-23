@@ -37,10 +37,10 @@ int main(int argc, char *argv[])
 #endif
     KirigamiAppDefaults::apply(&app);
 
-    KLocalizedString::setApplicationDomain("KTableTop");
+    KLocalizedString::setApplicationDomain("KTabletop");
 
     KAboutData aboutData(u"ktabletop"_s,
-                         i18nc("@title", "KTableTop"),
+                         i18nc("@title", "KTabletop"),
                          QStringLiteral("0.0.1"),
                          i18n("Application Description"),
                          KAboutLicense::GPL,

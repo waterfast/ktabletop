@@ -60,5 +60,5 @@ void Server::processNewConnection(ClientSocket *client)
         connections.remove(connId);
     });
 
-    L->emit(u"KTableTop::Socket::NewConnection"_s, {{u"connId"_s, connId}});
+    L->emit(u"KTabletop::Socket::NewConnection"_s, {{u"connId"_s, connId}});
 }

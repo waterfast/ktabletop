@@ -14,7 +14,7 @@ Kirigami.ApplicationWindow {
 
     pageStack.columnView.columnResizeMode: KL.ColumnView.SingleColumn
     pageStack.initialPage: Kirigami.Page {
-        title: "KTableTop"
+        title: "KTabletop"
         ColumnLayout {
             anchors.centerIn: parent
             QQC2.Button {
@@ -59,7 +59,7 @@ Kirigami.ApplicationWindow {
         target: Backend
         function onLuaEvent(tp, payload) {
             console.log(tp, JSON.stringify(payload));
-            if (tp === "KTableTop::Observable::NewObject") {
+            if (tp === "KTabletop::Observable::NewObject") {
                 const objName = payload._stringId;
                 delete payload._stringId;
                 const obj = Backend.createPropertyMap(objName, payload);
@@ -68,7 +68,7 @@ Kirigami.ApplicationWindow {
                 // obj.destroy(); // this cause SegFault
             }
 
-            if (tp === "KTableTop::Observable::ValueChanged") {
+            if (tp === "KTabletop::Observable::ValueChanged") {
                 // TODO
             }
         }

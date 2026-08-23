@@ -3,7 +3,7 @@ local ClientRoom = require("ktabletop.plugins.roomManager.client.room")
 local Commands = require("ktabletop.plugins.playerManager.common.network-commands")
 
 local function notifyChanged(ctx)
-  ctx:emit("KTableTop::Client::RoomStore::Changed", ctx:get("current"))
+  ctx:emit("KTabletop::Client::RoomStore::Changed", ctx:get("current"))
 end
 
 local function onEnterLobby(ctx, data)
@@ -58,7 +58,7 @@ local M = {
 }
 
 function M.setup(ctx, config)
-  ctx:on("KTableTopCpp::Socket::NotificationGot", function (param)
+  ctx:on("KTabletopCpp::Socket::NotificationGot", function (param)
     local handlers = handlers[param.command]
 
     if handlers then

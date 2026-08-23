@@ -13,7 +13,7 @@ function M.setup(ctx, config)
   local roomManager = RoomManager:new(ctx)
   ctx:serve("roomManager", roomManager)
 
-  ctx:on("KTableTop::PlayerManager::NewConnection", function(param)
+  ctx:on("KTabletop::PlayerManager::NewConnection", function(param)
     roomManager.lobby:addPlayer(param.player)
   end)
 end

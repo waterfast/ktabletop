@@ -28,7 +28,7 @@ Client::Client(QObject *parent)
     connection = new UserConnection(this, new ClientSocket);
 
     connect(connection, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
-        L->emit(u"KTableTopCpp::Socket::NotificationGot"_s,
+        L->emit(u"KTabletopCpp::Socket::NotificationGot"_s,
                 {
                     {u"connId"_s, connection->connId()},
                     {u"command"_s, QString::fromUtf8(command)},
