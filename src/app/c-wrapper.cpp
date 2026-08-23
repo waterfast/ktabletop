@@ -237,8 +237,7 @@ QVariant LuaVM::readValue(lua_State *L, int index, QHash<const void *, bool> sta
     case LUA_TNUMBER:
         return QVariant(lua_tonumber(L, index));
     case LUA_TSTRING: {
-        size_t len = lua_rawlen(L, index);
-        return QVariant::fromValue<const char *>(lua_tolstring(L, index, &len));
+        return QString::fromUtf8(lua_tostring(L, index));
     }
     case LUA_TTABLE: {
         auto p = lua_topointer(L, index);

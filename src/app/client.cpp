@@ -42,6 +42,11 @@ Client::~Client()
     clientInstance = nullptr;
 }
 
+LuaBinding *Client::luaBinding() const
+{
+    return L;
+}
+
 void Client::connectToHost(const QString &server, ushort port)
 {
     connection->socket()->socket()->connectToHost(server, port);

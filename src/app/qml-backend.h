@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QObject>
+#include <QQmlPropertyMap>
 
 class QmlBackend : public QObject
 {
@@ -12,4 +13,9 @@ class QmlBackend : public QObject
 public:
     Q_INVOKABLE bool startServer(ushort port);
     Q_INVOKABLE void joinServer(QString address, ushort port = 17943);
+
+    Q_INVOKABLE QQmlPropertyMap *createPropertyMap(const QString &objectName, const QVariantMap &dict);
+
+Q_SIGNALS:
+    void luaEvent(const QString &type, const QVariant &payload);
 };
