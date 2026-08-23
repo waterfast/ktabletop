@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "qml-backend.h"
-#include "client.h"
-#include "lua-binding.h"
-#include "server.h"
+#include "core/client.h"
+#include "core/server.h"
+#include "lua/lua-binding.h"
 
 using namespace Qt::Literals::StringLiterals;
 

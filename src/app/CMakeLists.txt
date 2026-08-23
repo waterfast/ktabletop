@@ -15,6 +15,7 @@ ecm_add_qml_module(ktabletop_qml
         org.kde.kirigami
         org.kde.kapp4mymulti.settings
 )
+
 target_link_libraries(ktabletop_qml PUBLIC
     Qt6::Quick
     KF6::I18n
@@ -26,19 +27,10 @@ target_link_libraries(ktabletop_qml PUBLIC
 target_include_directories(ktabletop_qml PUBLIC ${CMAKE_BINARY_DIR})
 
 add_executable(ktabletop-app
-    c-wrapper.cpp
-    lua-binding.cpp
-
-    client-socket.cpp
-    server-socket.cpp
-    user-connection.cpp
-
-    client.cpp
-    server.cpp
     qml-backend.cpp
-
     main.cpp
 )
+
 target_link_libraries(ktabletop-app PUBLIC
     Qt6::Quick
     KF6::I18n
@@ -50,6 +42,5 @@ target_link_libraries(ktabletop-app PUBLIC
 
     ktabletop_qml
     ktabletop_qmlplugin
-
-    ${LUA_LIBRARIES}
+    ktabletop_core
 )

@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "server.h"
-#include "client-socket.h"
-#include "lua-binding.h"
-#include "server-socket.h"
-#include "user-connection.h"
+#include "lua/lua-binding.h"
+#include "network/client-socket.h"
+#include "network/server-socket.h"
+#include "network/user-connection.h"
+#include "server-lua-plugin.h"
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -23,6 +24,7 @@ Server::Server(QObject *parent)
     : QObject(parent)
 {
     L = new LuaBinding(this, LuaBinding::Server);
+    L->loadPlugin(ServerLuaPlugin::create());
 
     server = new ServerSocket(this);
     connect(server, &ServerSocket::newConnection, this, &Server::processNewConnection);

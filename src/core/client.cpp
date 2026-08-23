@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "client.h"
-#include "client-socket.h"
-#include "lua-binding.h"
-#include "user-connection.h"
+#include "lua/lua-binding.h"
+#include "network/client-socket.h"
+#include "network/user-connection.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>
