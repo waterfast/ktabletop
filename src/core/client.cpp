@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "client.h"
+#include "client-lua-plugin.h"
 #include "common-lua-plugin.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
@@ -27,6 +28,7 @@ Client::Client(QObject *parent)
 {
     L = new LuaBinding(this, LuaBinding::Client);
     L->loadPlugin(CommonLuaPlugin::create());
+    L->loadPlugin(ClientLuaPlugin::create());
 
     connection_ = new UserConnection(this, new ClientSocket);
 
@@ -57,5 +59,5 @@ UserConnection *Client::connection() const
 
 void Client::connectToHost(const QString &server, ushort port)
 {
-    connection_->socket()->socket()->connectToHost(server, port);
+    L->emit(u"KTabletop::Client::ConnectToHost"_s, {{u"host"_s, server}, {u"port"_s, port}});
 }
