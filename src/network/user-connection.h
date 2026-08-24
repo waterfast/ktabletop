@@ -4,11 +4,14 @@
 #pragma once
 
 #include <QDateTime>
-#include <QMutex>
+#include <QHash>
 #include <QObject>
-#include <QSemaphore>
+
+#include <functional>
+#include <system_error>
 
 class ClientSocket;
+class PendingRequest;
 
 class UserConnection : public QObject
 {
@@ -23,6 +26,16 @@ public:
         TypeNotification = 0x400,
     };
 
+    struct ReceivedRequest {
+        int requestId = 0;
+        QByteArray command;
+        QByteArray jsonData;
+        int timeout = 0;
+        qint64 timestamp = 0;
+    };
+
+    using ReplyCallback = std::function<void(QByteArray reply, std::error_code err)>;
+
     UserConnection(QObject *parent, ClientSocket *socket = nullptr);
     ~UserConnection();
 
@@ -32,48 +45,34 @@ public:
     void setSocket(ClientSocket *socket);
     ClientSocket *moveSocket();
 
-    void setReplyReadySemaphore(QSemaphore *semaphore);
-
-    void request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp = -1);
-    void reply(const QByteArray &jsonData);
+    void request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp = -1, ReplyCallback callback = {});
+    void reply(int requestId, const QByteArray &jsonData);
     void notify(const QByteArray &command, const QByteArray &jsonData);
 
-    int requestTimeout() const;
+    ReceivedRequest receivedRequest(int requestId) const;
 
     void cancelRequest();
 
-    QByteArray waitForReply(int timeout);
-
-    int requestId() const;
-    qint64 requestTimestamp() const;
-
 Q_SIGNALS:
     void messageReady(const QByteArray &msg);
-    void replyReady();
 
     void notificationGot(const QByteArray &command, const QByteArray &jsonData);
-    void requestGot(const QByteArray &command, const QByteArray &jsonData);
+    void requestGot(int requestId);
 
 protected:
     void handlePacket(const QCborArray &packet);
 
 private:
+    // Sending side
+    friend class PendingRequest;
+    QHash<int, PendingRequest *> pendingRequests_;
+    int lastPendingId_ = 0;
+
+    // Receiving side
+    QHash<int, ReceivedRequest> receivedRequests_;
+
     ClientSocket *socket_ = nullptr;
     int connId_;
-
-    // For client side
-    int requestId_;
-    int requestTimeout_;
-    qint64 requestTimestamp_;
-
-    // For server side
-    QDateTime requestStartTime;
-    QMutex replyMutex;
-    std::vector<int> expectedReplyIds;
-    int replyTimeout;
-    QByteArray m_reply; // should be json string
-    QSemaphore replyReadySemaphore;
-    QSemaphore *extraReplyReadySemaphore;
 
     enum {
         COMPRESSION_THRESHOLD = 2048

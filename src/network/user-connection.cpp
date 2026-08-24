@@ -6,14 +6,73 @@
 
 #include <QCborArray>
 #include <QCborValue>
+#include <QTimer>
+
+class PendingRequest : public QObject
+{
+public:
+    PendingRequest(UserConnection *conn, int id, UserConnection::ReplyCallback callback, int timeout)
+        : QObject(conn)
+        , conn_(conn)
+        , id_(id)
+        , callback_(std::move(callback))
+        , timeout_(timeout)
+    {
+        if (callback_ && timeout > 0) {
+            timer_ = new QTimer(this);
+            timer_->setSingleShot(true);
+            connect(timer_, &QTimer::timeout, this, [this]() {
+                finish(QByteArray{}, std::make_error_code(std::errc::timed_out));
+            });
+            timer_->start(timeout * 1000);
+        }
+    }
+
+    void send(const QByteArray &command, const QByteArray &jsonData, qint64 timestamp)
+    {
+        auto data = jsonData;
+        int type = UserConnection::TypeRequest;
+        if (jsonData.size() > UserConnection::COMPRESSION_THRESHOLD) {
+            data = qCompress(jsonData);
+            type |= UserConnection::DataCompressed;
+        }
+
+        QCborArray body{
+            id_,
+            type,
+            command,
+            data,
+            timeout_,
+            (timestamp <= 0 ? QDateTime::currentDateTime().toMSecsSinceEpoch() : timestamp),
+        };
+
+        conn_->sendMessage(body.toCborValue().toCbor());
+    }
+
+    void finish(const QByteArray &reply, std::error_code err)
+    {
+        conn_->pendingRequests_.remove(id_);
+        if (timer_)
+            timer_->stop();
+        if (callback_) {
+            auto cb = std::move(callback_);
+            cb(reply, err);
+        }
+        deleteLater();
+    }
+
+private:
+    UserConnection *conn_;
+    int id_;
+    UserConnection::ReplyCallback callback_;
+    int timeout_;
+    QTimer *timer_ = nullptr;
+};
 
 UserConnection::UserConnection(QObject *parent, ClientSocket *socket)
     : QObject(parent)
 {
     setSocket(socket);
-    expectedReplyIds.clear();
-    replyTimeout = 0;
-    extraReplyReadySemaphore = nullptr;
 
     static int nextConnId = 1000;
     connId_ = nextConnId++;
@@ -61,42 +120,25 @@ ClientSocket *UserConnection::moveSocket()
     return socket;
 }
 
-void UserConnection::setReplyReadySemaphore(QSemaphore *semaphore)
+void UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
 {
-    extraReplyReadySemaphore = semaphore;
-}
-
-void UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp)
-{
-    // In case a request is called without a following waitForReply call
-    if (replyReadySemaphore.available() > 0)
-        replyReadySemaphore.acquire(replyReadySemaphore.available());
-
     static int requestId = 0;
     requestId++;
     if (requestId > 10000000)
         requestId = 1;
 
-    replyMutex.lock();
-    expectedReplyIds.push_back(requestId);
-    replyTimeout = timeout;
-    requestStartTime = QDateTime::currentDateTime();
-    m_reply = QByteArrayLiteral("__notready");
-    replyMutex.unlock();
-
-    auto data = jsonData;
-    int type = TypeRequest;
-    if (jsonData.size() > COMPRESSION_THRESHOLD) {
-        data = qCompress(jsonData);
-        type |= DataCompressed;
+    const bool tracked = static_cast<bool>(callback);
+    auto req = new PendingRequest(this, requestId, std::move(callback), timeout);
+    if (tracked) {
+        pendingRequests_.insert(requestId, req);
+        lastPendingId_ = requestId;
     }
-
-    QCborArray body{requestId, type, command, data, timeout, (timestamp <= 0 ? requestStartTime.toMSecsSinceEpoch() : timestamp)};
-
-    sendMessage(body.toCborValue().toCbor());
+    req->send(command, jsonData, timestamp);
+    if (!tracked)
+        req->deleteLater();
 }
 
-void UserConnection::reply(const QByteArray &jsonData)
+void UserConnection::reply(int requestId, const QByteArray &jsonData)
 {
     auto data = jsonData;
     int type = TypeReply;
@@ -106,13 +148,14 @@ void UserConnection::reply(const QByteArray &jsonData)
     }
 
     QCborArray body{
-        requestId_,
+        requestId,
         type,
         QByteArray(),
         data,
     };
 
     sendMessage(body.toCborValue().toCbor());
+    receivedRequests_.remove(requestId);
 }
 
 void UserConnection::notify(const QByteArray &command, const QByteArray &jsonData)
@@ -134,32 +177,18 @@ void UserConnection::notify(const QByteArray &command, const QByteArray &jsonDat
     sendMessage(body.toCborValue().toCbor());
 }
 
-int UserConnection::requestTimeout() const
+UserConnection::ReceivedRequest UserConnection::receivedRequest(int requestId) const
 {
-    return requestTimeout_;
+    return receivedRequests_.value(requestId);
 }
 
 // cancel last request from the sender
 void UserConnection::cancelRequest()
 {
-    replyMutex.lock();
-    expectedReplyIds.pop_back();
-    replyTimeout = 0;
-    extraReplyReadySemaphore = nullptr;
-    replyMutex.unlock();
-
-    if (replyReadySemaphore.available() > 0)
-        replyReadySemaphore.acquire(replyReadySemaphore.available());
-}
-
-QByteArray UserConnection::waitForReply(int timeout)
-{
-    QByteArray ret;
-    replyReadySemaphore.tryAcquire(1, timeout * 1000);
-    replyMutex.lock();
-    ret = m_reply;
-    replyMutex.unlock();
-    return ret;
+    auto req = pendingRequests_.value(lastPendingId_, nullptr);
+    if (!req)
+        return;
+    req->finish(QByteArray{}, std::make_error_code(std::errc::timed_out));
 }
 
 void UserConnection::handlePacket(const QCborArray &packet)
@@ -176,33 +205,21 @@ void UserConnection::handlePacket(const QCborArray &packet)
     if (type & TypeNotification) {
         notificationGot(command, jsonData);
     } else if (type & TypeRequest) {
-        requestId_ = requestId;
-        requestTimeout_ = packet[4].toInteger();
-        requestTimestamp_ = packet[5].toInteger();
-
-        requestGot(command, jsonData);
+        ReceivedRequest rr{
+            requestId,
+            command,
+            jsonData,
+            int(packet[4].toInteger()),
+            packet[5].toInteger(),
+        };
+        receivedRequests_.insert(requestId, rr);
+        requestGot(requestId);
     } else if (type & TypeReply) {
-        QMutexLocker locker(&replyMutex);
-
-        auto it = std::find(expectedReplyIds.begin(), expectedReplyIds.end(), requestId);
-        if (it == expectedReplyIds.end())
+        auto req = pendingRequests_.value(requestId, nullptr);
+        if (!req)
             return;
 
-        expectedReplyIds.erase(it);
-
-        if (replyTimeout >= 0 && replyTimeout < requestStartTime.secsTo(QDateTime::currentDateTime()))
-            return;
-
-        m_reply = jsonData;
-
-        replyReadySemaphore.release();
-        if (extraReplyReadySemaphore) {
-            extraReplyReadySemaphore->release();
-            extraReplyReadySemaphore = nullptr;
-        }
-
-        locker.unlock();
-        replyReady();
+        req->finish(jsonData, {});
     }
 }
 
