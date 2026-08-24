@@ -13,7 +13,7 @@ function M.setup(ctx, config)
 
   ctx:on("KTabletop::Socket::NewConnection", function(param)
     local connId = param.connId
-    local cpp = ctx:get("__cpp.server")
+    local cpp = ctx:get("__cpp.common")
 
     local player = Player:new(ctx, connId)
     playerManager:addPlayer(player)

@@ -28,12 +28,12 @@ Client::Client(QObject *parent)
     L = new LuaBinding(this, LuaBinding::Client);
     L->loadPlugin(CommonLuaPlugin::create());
 
-    connection = new UserConnection(this, new ClientSocket);
+    connection_ = new UserConnection(this, new ClientSocket);
 
-    connect(connection, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
+    connect(connection_, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
         L->emit(u"KTabletopCpp::Socket::NotificationGot"_s,
                 {
-                    {u"connId"_s, connection->connId()},
+                    {u"connId"_s, connection_->connId()},
                     {u"command"_s, QString::fromUtf8(command)},
                     {u"data"_s, QJsonValue::fromJson(jsonData).toVariant()},
                 });
@@ -50,7 +50,12 @@ LuaBinding *Client::luaBinding() const
     return L;
 }
 
+UserConnection *Client::connection() const
+{
+    return connection_;
+}
+
 void Client::connectToHost(const QString &server, ushort port)
 {
-    connection->socket()->socket()->connectToHost(server, port);
+    connection_->socket()->socket()->connectToHost(server, port);
 }

@@ -16,6 +16,7 @@ static QHash<lua_State *, LuaBinding *> bindingInstances;
 
 LuaBinding::LuaBinding(QObject *parent, Role role)
     : QObject(parent)
+    , role_(role)
 {
     L = new LuaVM;
     bindingInstances.insert(L->state(), this);
@@ -33,6 +34,11 @@ LuaBinding::~LuaBinding()
 {
     bindingInstances.remove(L->state());
     delete L;
+}
+
+LuaBinding::Role LuaBinding::role() const
+{
+    return role_;
 }
 
 void LuaBinding::triggerLuaEvent(const QString &type, const QVariant &payload)

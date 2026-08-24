@@ -7,7 +7,7 @@ local ServerPlayer = class("ServerPlayer", Player)
 ---@param connId integer
 function ServerPlayer:initialize(ctx, connId)
   Player.initialize(self, ctx, connId)
-  self._cpp = ctx:get("__cpp.server")
+  self._cpp = ctx:get("__cpp.common")
 end
 
 ---@param command string

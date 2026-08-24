@@ -17,6 +17,7 @@ public:
     ~Client();
 
     LuaBinding *luaBinding() const;
+    UserConnection *connection() const;
 
     void connectToHost(const QString &server, ushort port = 17943);
 
@@ -24,5 +25,5 @@ private:
     explicit Client(QObject *parent = nullptr);
 
     LuaBinding *L;
-    UserConnection *connection;
+    UserConnection *connection_;
 };

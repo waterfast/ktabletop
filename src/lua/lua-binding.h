@@ -22,6 +22,8 @@ public:
     explicit LuaBinding(QObject *parent = nullptr, Role role = Server);
     ~LuaBinding() override;
 
+    Role role() const;
+
     // called by Lua
     void triggerLuaEvent(const QString &type, const QVariant &payload);
 
@@ -36,5 +38,6 @@ Q_SIGNALS:
     void luaEvent(const QString &type, const QVariant &payload);
 
 private:
+    Role role_;
     LuaVM *L;
 };
