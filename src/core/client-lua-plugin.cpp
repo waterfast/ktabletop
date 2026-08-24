@@ -7,6 +7,7 @@
 #include <QAbstractSocket>
 #include <QTimer>
 #include <QVariantMap>
+#include <memory>
 using namespace Qt::Literals::StringLiterals;
 
 #include <lua.hpp>
@@ -80,8 +81,15 @@ static int connectToHost(lua_State *L)
     return 0;
 }
 
+static int getConnId(lua_State *L)
+{
+    lua_pushinteger(L, Client::instance()->connection()->connId());
+    return 1;
+}
+
 static luaL_Reg clientFuncTable[] = {
     {"connectToHost", connectToHost},
+    {"getConnId", getConnId},
     {NULL, NULL},
 };
 

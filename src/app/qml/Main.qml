@@ -26,7 +26,7 @@ Kirigami.ApplicationWindow {
                     console.log("Single Player clicked")
                     Backend.startServer(17943);
                     Backend.joinServer("127.0.0.1");
-                    pageStack.push(lobbyPageComponent);
+                    // lobby push now via KTabletop::Client::PushLobby from server EnterLobby
                 }
             }
 
@@ -59,13 +59,13 @@ Kirigami.ApplicationWindow {
                 const objName = payload._stringId;
                 delete payload._stringId;
                 const obj = Backend.createPropertyMap(objName, payload);
-                // test ValueChanged
-                obj.playerCount = 123;
-                // obj.destroy(); // this cause SegFault
+                obj.playerCount = 123; // test
             }
-
             if (tp === "KTabletop::Observable::ValueChanged") {
                 // TODO
+            }
+            if (tp === "KTabletop::Client::PushLobby") {
+                pageStack.push(lobbyPageComponent); // from server EnterLobby
             }
         }
     }

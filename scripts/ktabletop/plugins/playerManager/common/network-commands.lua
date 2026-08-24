@@ -4,6 +4,7 @@
 return {
   -- generic / cross-plugin
   ErrorMsg = "ErrorMsg",
+  SetupPlayer = "SetupPlayer",
 
   -- room manager
   EnterLobby = "EnterLobby",

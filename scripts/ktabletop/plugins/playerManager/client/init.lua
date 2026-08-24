@@ -1,23 +1,32 @@
 local ClientPlayer = require("ktabletop.plugins.playerManager.client.player")
+local Commands = require("ktabletop.plugins.playerManager.common.network-commands")
 
 ---@type Plugin
 local M = {
   name = "/ktabletop/client/playerManager",
-  deps = { },
+  deps = { "ktabletop.cpp.client" },
 }
 
 function M.setup(ctx, config)
-  -- The local player's connId arrives later, once the connection handshake
-  -- tells us who we are (see roomManager / socket plugin for when this
-  -- becomes available). Until then `me` is nil.
-  ctx:set("me", nil)
+  ctx:set("me", nil) -- nil until SetupPlayer
 
   ---@param connId integer
   local function setLocalPlayer(connId)
     ctx:set("me", ClientPlayer:new(ctx, connId))
   end
-
   ctx.setLocalPlayer = setLocalPlayer
+
+  ctx:on("KTabletopCpp::Socket::NotificationGot", function(param)
+    if param.command ~= Commands.SetupPlayer then
+      return
+    end
+    local d = param.data
+    local p = ClientPlayer:new(ctx, d.connId)
+    p.id = d.id
+    p.username = d.username
+    ctx:set("me", p)
+    ctx:emit("KTabletop::Client::PlayerReady", p)
+  end)
 end
 
 return M
