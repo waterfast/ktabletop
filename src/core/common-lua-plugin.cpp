@@ -6,6 +6,7 @@
 #include "server.h"
 
 #include <QStringLiteral>
+#include <QTimer>
 using namespace Qt::Literals::StringLiterals;
 
 #include <lua.hpp>
@@ -53,30 +54,70 @@ static int notifySocket(lua_State *L)
     return 0;
 }
 
-// args: int connId, string command, string jsonData, int time, int64 timestamp
+// args: int connId, string command, string jsonData, int time, int64 timestamp,
+//       callback: fun(result: string?, err: string?)
 static int requestSocket(lua_State *L)
 {
     int nargs = lua_gettop(L);
-    if (nargs != 5) {
-        return luaL_error(L, "expected 5 arguments, got %d", nargs);
+    if (nargs != 6) {
+        return luaL_error(L, "expected 6 arguments, got %d", nargs);
     }
     int connId = luaL_checkinteger(L, 1);
     const char *command = luaL_checkstring(L, 2);
     const char *jsonData = luaL_checkstring(L, 3);
     int time = luaL_checkinteger(L, 4);
     qint64 timestamp = luaL_checkinteger(L, 5);
+    luaL_checktype(L, 6, LUA_TFUNCTION);
 
     auto conn = findConnectionById(L, connId);
     if (!conn) {
         return luaL_error(L, "cannot find socket of connId %d", connId);
     }
 
-    conn->request(command, jsonData, time, timestamp);
+    lua_pushvalue(L, 6);
+    int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+    auto cb = [L, fnRef](QByteArray reply, std::error_code err) {
+        auto binding = LuaBinding::forState(L);
+        if (!binding) {
+            // L might be freed here, so return
+            return;
+        }
+
+        // I love debug.traceback
+        lua_getglobal(L, "debug");
+        lua_getfield(L, -1, "traceback");
+        lua_replace(L, -2);
+
+        // push Registry[fnRef] to stack
+        lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
+
+        if (!err) {
+            lua_pushstring(L, reply.constData());
+            lua_pushnil(L);
+        } else {
+            lua_pushnil(L);
+            lua_pushstring(L, err.message().c_str());
+        }
+
+        if (lua_pcall(L, 2, 0, -2) != LUA_OK) {
+            qCritical() << lua_tostring(L, -1);
+            // pop err msg
+            lua_pop(L, 1);
+        }
+        // pop debug.traceback
+        lua_pop(L, 1);
+
+        // free that closure
+        luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
+    };
+
+    conn->request(command, jsonData, time, timestamp, cb);
 
     return 0;
 }
 
-// args: int connId, int requestId, string jsonData
+// args: int connId, int requestId, string jsonData, callback: fun(result, err)
 static int replySocket(lua_State *L)
 {
     int nargs = lua_gettop(L);
@@ -93,6 +134,64 @@ static int replySocket(lua_State *L)
     }
 
     conn->reply(requestId, jsonData);
+
+    return 0;
+}
+
+// void delay(ms, callback: fun())
+static int delay(lua_State *L)
+{
+    auto binding = LuaBinding::forState(L);
+    if (!binding) {
+        return luaL_error(L, "No LuaBinding found for this Lua VM");
+    }
+
+    int nargs = lua_gettop(L);
+    if (nargs != 2) {
+        return luaL_error(L, "expected 2 arguments (ms, callback), got %d", nargs);
+    }
+
+    int ms = luaL_checkinteger(L, 1);
+    if (ms < 0) {
+        return luaL_error(L, "delay time must be non-negative, got %d", ms);
+    }
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+
+    // Registry[fnRef] = fn; lua_pop(fn) -- fn is at top of stack
+    lua_pushvalue(L, 2);
+    int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+    auto timer = new QTimer(binding);
+    timer->setSingleShot(true);
+    timer->connect(timer, &QTimer::timeout, [timer, L, fnRef] {
+        timer->deleteLater();
+
+        auto binding = LuaBinding::forState(L);
+        if (!binding) {
+            // L might be freed here, so return
+            return;
+        }
+
+        // I love debug.traceback
+        lua_getglobal(L, "debug");
+        lua_getfield(L, -1, "traceback");
+        lua_replace(L, -2);
+
+        // push Registry[fnRef] to stack
+        lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
+
+        if (lua_pcall(L, 0, 0, -2) != LUA_OK) {
+            qCritical() << lua_tostring(L, -1);
+            // pop err msg
+            lua_pop(L, 1);
+        }
+        // pop debug.traceback
+        lua_pop(L, 1);
+
+        // free that closure
+        luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
+    });
+    timer->start(ms);
 
     return 0;
 }
@@ -122,6 +221,7 @@ static luaL_Reg commonFuncTable[] = {
     {"requestSocket", requestSocket},
     {"replySocket", replySocket},
 
+    {"delay", delay},
     {"luaEvent", luaEvent},
 
     {NULL, NULL},
