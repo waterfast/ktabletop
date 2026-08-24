@@ -6,6 +6,7 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
+import org.kde.kirigami.controls as KControls
 import org.kde.kirigami.layouts as KL
 
 Kirigami.ApplicationWindow {
@@ -13,6 +14,7 @@ Kirigami.ApplicationWindow {
     height: 400
 
     pageStack.columnView.columnResizeMode: KL.ColumnView.SingleColumn
+    pageStack.globalToolBar.showNavigationButtons: pageStack.currentIndex === 0 ? KControls.ApplicationHeaderStyle.ShowForwardButton : KControls.ApplicationHeaderStyle.ShowBackButton | KControls.ApplicationHeaderStyle.ShowForwardButton
     pageStack.initialPage: Kirigami.Page {
         title: "KTabletop"
         ColumnLayout {
