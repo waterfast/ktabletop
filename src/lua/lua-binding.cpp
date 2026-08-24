@@ -41,6 +41,16 @@ LuaBinding::Role LuaBinding::role() const
     return role_;
 }
 
+int LuaBinding::gameThreadId() const
+{
+    return gameThreadId_;
+}
+
+void LuaBinding::setGameThreadId(int id)
+{
+    gameThreadId_ = id;
+}
+
 void LuaBinding::triggerLuaEvent(const QString &type, const QVariant &payload)
 {
     luaEvent(type, payload);

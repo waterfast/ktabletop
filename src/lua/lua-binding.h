@@ -15,6 +15,7 @@ class LuaBinding : public QObject
 public:
     enum Role {
         Server,
+        GameThread,
         Client,
     };
     Q_ENUM(Role);
@@ -23,6 +24,9 @@ public:
     ~LuaBinding() override;
 
     Role role() const;
+    // for GameThread role only
+    int gameThreadId() const;
+    void setGameThreadId(int id);
 
     // called by Lua
     void triggerLuaEvent(const QString &type, const QVariant &payload);
@@ -39,5 +43,6 @@ Q_SIGNALS:
 
 private:
     Role role_;
+    int gameThreadId_ = 0;
     LuaVM *L;
 };
