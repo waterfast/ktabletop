@@ -16,13 +16,12 @@ ctx:on("KTabletop::Client::ConnectToHost", async.async(function(param)
   local connect = async.wrap(ctx:get("__cpp.client").connectToHost)
   local err = async.await(connect(param.host, param.port))
   local cpp = ctx:get("__cpp.common")
+    print(err)
   if err then
     cpp.luaEvent("KTabletop::Client::ConnectError", { error = err })
   else
     cpp.luaEvent("KTabletop::Client::Connected", {})
   end
-
-  assert(nil)
 end))
 
 -- test

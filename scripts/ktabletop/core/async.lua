@@ -11,8 +11,8 @@ local co = coroutine
 local unpack = table.unpack or unpack
 
 -- private markers
-local ASYNC = {}
-local AWAIT = {}
+local ASYNC = { "ASYNC" }
+local AWAIT = { "AWAIT" }
 
 -- AsyncScheduler handles results yielded from an async function.
 -- async functions should be started from main coroutine.
@@ -35,6 +35,8 @@ end
 ---@param fn AsyncFunction
 function scheduler:resume(fn, ...)
   local coro = fn.coro
+  print("resume", tostring(coro), co.status(coro), co.running(), debug.traceback())
+  -- print(inspect({tostring(coro), co.status(coro), self.coroutineMap, co.running()}))
 
   -- 1. yield a new AsyncFunction
   -- 2. yield AWAIT; co.yield myself and wait the callback wakeup me
@@ -44,6 +46,7 @@ function scheduler:resume(fn, ...)
   local status = co.status(coro)
   local ok = pack[1]
   local ret = pack[2]
+  print(ok, inspect(ret), status)
 
   if status == "dead" then
     if not ok then
@@ -56,7 +59,7 @@ function scheduler:resume(fn, ...)
     return self:finish(fn)
   end
 
-  assert(ret[ASYNC] or ret == AWAIT)
+  assert(ret[ASYNC] or ret == AWAIT, "unexpected yield result " .. tostring(ret))
   if ret[ASYNC] then
     return self:start(ret)
   end
@@ -68,26 +71,31 @@ function scheduler:resume(fn, ...)
 end
 
 -- await on an AsyncFunction or Awaitable
+-- return true and callback results, or false plus error message
+---@return boolean, ...
 function scheduler:await(fn)
   local current = co.running()
   local f = self.coroutineMap[current]
   assert(f, "cannot await outside async function")
   assert(type(fn) == "table" and (fn[ASYNC] or fn[AWAIT]), "must be AsyncFunction or awaitable")
 
+  print("yield from", tostring(current))
   if fn[ASYNC] then
-    co.yield(fn)
+    return co.yield(fn)
   else
+    -- C++ note: callback must be called from main coroutine
     fn(function(...)
-      print(inspect(...))
+      print("in callback", inspect(...))
       self:resume(f, ...)
     end)
-    co.yield(AWAIT)
+    return co.yield(AWAIT)
   end
 end
 
 ---@param fn AsyncFunction
 function scheduler:finish(fn)
   self.coroutineMap[fn.coro] = nil
+  print("finishing", tostring(fn.coro))
   local a = fn.caller
   if not a then
     if fn.state == "done" then
@@ -98,7 +106,7 @@ function scheduler:finish(fn)
   end
   fn.caller = nil
   if fn.state == "done" then
-    self:resume(a, unpack(fn.results, 1, fn.results.n))
+    self:resume(a, true, unpack(fn.results, 1, fn.results.n))
   else
     self:resume(a, false, fn.errmsg)
   end
@@ -134,7 +142,7 @@ function AsyncFunction:__call()
 end
 
 ---@class AsyncFunctionFactory
----field fn fun(...): any
+---@field fn fun(...): any
 local AsyncFunctionFactory = {}
 AsyncFunctionFactory.__index = AsyncFunctionFactory
 
@@ -148,6 +156,7 @@ function AsyncFunctionFactory:__call(...args)
   local f = AsyncFunction.new(self.fn, args)
   local current = co.running()
   local fn = scheduler.coroutineMap[current]
+  -- When calling a async function in sync code, running immediately until return or await.
   if not fn then
     return f()
   end
@@ -157,7 +166,9 @@ end
 -- usage: async(function() ... end)
 -- creates an asyncFunctionFactory.
 ---@param fn fun(...): any
+---@return fun(...): any
 local async = function(fn)
+  ---@diagnostic disable-next-line
   return AsyncFunctionFactory.new(fn)
 end
 

@@ -33,23 +33,25 @@ static int connectToHost(lua_State *L)
 
     auto *timer = new QTimer(binding);
     timer->setSingleShot(true);
-    auto done = std::make_shared<bool>(false);
 
-    std::function<void(const char *)> invoke = [L, ref, timer, done](const char *err) {
-        if (*done)
-            return;
-        *done = true;
+    auto ctx = new QObject;
+
+    std::function<void(const char *)> invoke = [ctx, L = binding->vm().state(), ref, timer](const char *err) {
+        ctx->deleteLater();
         timer->stop();
         timer->deleteLater();
+
         lua_getglobal(L, "debug");
         lua_getfield(L, -1, "traceback");
         lua_replace(L, -2);
         lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-        if (err)
+        if (err) {
             lua_pushstring(L, err);
-        else
+        } else {
             lua_pushnil(L);
-        if (lua_pcall(L, 1, 0, -2) != LUA_OK) {
+        }
+
+        if (lua_pcall(L, 1, 0, -3) != LUA_OK) {
             qCritical() << lua_tostring(L, -1);
             lua_pop(L, 1);
         }
@@ -57,26 +59,26 @@ static int connectToHost(lua_State *L)
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
     };
 
-    QObject::connect(
+    sock->connect(
         sock,
         &QAbstractSocket::connected,
-        Client::instance(),
+        ctx,
         [invoke] {
             invoke(nullptr);
         },
         Qt::SingleShotConnection);
-    QObject::connect(
+    sock->connect(
         sock,
         &QAbstractSocket::errorOccurred,
-        Client::instance(),
+        ctx,
         [invoke, sock](QAbstractSocket::SocketError) {
             invoke(sock->errorString().toUtf8().constData());
         },
         Qt::SingleShotConnection);
-    QObject::connect(
+    timer->connect(
         timer,
         &QTimer::timeout,
-        Client::instance(),
+        ctx,
         [invoke] {
             invoke("timeout");
         },

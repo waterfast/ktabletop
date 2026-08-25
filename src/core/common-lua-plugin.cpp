@@ -77,7 +77,7 @@ static int requestSocket(lua_State *L)
     lua_pushvalue(L, 6);
     int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
-    auto cb = [L, fnRef](QByteArray reply, std::error_code err) {
+    auto cb = [L = LuaBinding::forState(L)->vm().state(), fnRef](QByteArray reply, std::error_code err) {
         auto binding = LuaBinding::forState(L);
         if (!binding) {
             // L might be freed here, so return
@@ -93,14 +93,14 @@ static int requestSocket(lua_State *L)
         lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
 
         if (!err) {
+            lua_pushnil(L);
             lua_pushstring(L, reply.constData());
-            lua_pushnil(L);
         } else {
-            lua_pushnil(L);
             lua_pushstring(L, err.message().c_str());
+            lua_pushnil(L);
         }
 
-        if (lua_pcall(L, 2, 0, -2) != LUA_OK) {
+        if (lua_pcall(L, 2, 0, -4) != LUA_OK) {
             qCritical() << lua_tostring(L, -1);
             // pop err msg
             lua_pop(L, 1);
@@ -163,7 +163,7 @@ static int delay(lua_State *L)
 
     auto timer = new QTimer(binding);
     timer->setSingleShot(true);
-    timer->connect(timer, &QTimer::timeout, [timer, L, fnRef] {
+    timer->connect(timer, &QTimer::timeout, [L = binding->vm().state(), timer, fnRef] {
         timer->deleteLater();
 
         auto binding = LuaBinding::forState(L);
