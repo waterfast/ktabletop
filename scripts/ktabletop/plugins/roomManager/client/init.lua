@@ -8,6 +8,7 @@ end
 
 local function onEnterLobby(ctx, data)
   ctx:set("current", ClientLobby:new(ctx))
+  print('onEnterLobby')
   notifyChanged(ctx)
   ctx:get("__cpp.common").luaEvent("KTabletop::Client::PushLobby", {})
 end
