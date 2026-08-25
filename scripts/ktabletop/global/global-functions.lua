@@ -3,7 +3,6 @@
 
 Emit = function(sig, param)
   MainContext:emit(sig, param)
-  print("Emit finished", coroutine.running())
 end
 
 LoadPlugin = function(plugin)

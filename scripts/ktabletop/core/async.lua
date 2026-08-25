@@ -35,8 +35,6 @@ end
 ---@param fn AsyncFunction
 function scheduler:resume(fn, ...)
   local coro = fn.coro
-  print("resume", tostring(coro), co.status(coro), co.running(), debug.traceback())
-  -- print(inspect({tostring(coro), co.status(coro), self.coroutineMap, co.running()}))
 
   -- 1. yield a new AsyncFunction
   -- 2. yield AWAIT; co.yield myself and wait the callback wakeup me
@@ -46,7 +44,6 @@ function scheduler:resume(fn, ...)
   local status = co.status(coro)
   local ok = pack[1]
   local ret = pack[2]
-  print(ok, inspect(ret), status)
 
   if status == "dead" then
     if not ok then
@@ -79,15 +76,26 @@ function scheduler:await(fn)
   assert(f, "cannot await outside async function")
   assert(type(fn) == "table" and (fn[ASYNC] or fn[AWAIT]), "must be AsyncFunction or awaitable")
 
-  print("yield from", tostring(current))
   if fn[ASYNC] then
     return co.yield(fn)
   else
-    -- C++ note: callback must be called from main coroutine
+    -- C++ note: callback must be called from main coroutine. But it can also
+    -- be invoked synchronously (re-entrantly, e.g. a Qt signal emitted inside
+    -- a `co.resume`); in that case the work is already done, so just return
+    -- its results instead of yielding.
+    local yielded = false
+    local syncResults
     fn(function(...)
-      print("in callback", inspect(...))
-      self:resume(f, ...)
+      if yielded then
+        self:resume(f, ...)
+      else
+        syncResults = table.pack(...)
+      end
     end)
+    if syncResults ~= nil then
+      return unpack(syncResults, 1, syncResults.n)
+    end
+    yielded = true
     return co.yield(AWAIT)
   end
 end
@@ -95,7 +103,6 @@ end
 ---@param fn AsyncFunction
 function scheduler:finish(fn)
   self.coroutineMap[fn.coro] = nil
-  print("finishing", tostring(fn.coro))
   local a = fn.caller
   if not a then
     if fn.state == "done" then
@@ -175,7 +182,7 @@ end
 --- await for another async func, or wrapped awaitable func.
 ---@param fn AsyncFunction
 local await = function(fn)
-  scheduler:await(fn)
+  return scheduler:await(fn)
 end
 
 -- use with function that with callback as last param
