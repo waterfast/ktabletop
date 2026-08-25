@@ -73,5 +73,9 @@ LuaVM &LuaBinding::vm()
 
 LuaBinding *LuaBinding::forState(lua_State *state)
 {
-    return bindingInstances.value(state);
+    // find its main coroutine first. Or we cannot find that LuaBinding
+    lua_rawgeti(state, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+    auto mainState = lua_tothread(state, -1);
+    lua_pop(state, 1);
+    return bindingInstances.value(mainState);
 }

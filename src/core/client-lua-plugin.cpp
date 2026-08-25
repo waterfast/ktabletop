@@ -1,6 +1,7 @@
 #include "client-lua-plugin.h"
 #include "client.h"
 #include "lua/c-wrapper.h"
+#include "lua/lua-binding.h"
 #include "network/client-socket.h"
 #include "network/user-connection.h"
 
@@ -14,6 +15,11 @@ using namespace Qt::Literals::StringLiterals;
 
 static int connectToHost(lua_State *L)
 {
+    auto binding = LuaBinding::forState(L);
+    if (!binding) {
+        return luaL_error(L, "No LuaBinding found for this Lua VM");
+    }
+
     if (lua_gettop(L) != 3)
         return luaL_error(L, "expected 3 arguments");
     const char *host = luaL_checkstring(L, 1);
@@ -25,7 +31,7 @@ static int connectToHost(lua_State *L)
 
     auto *sock = Client::instance()->connection()->socket()->socket();
 
-    auto *timer = new QTimer(Client::instance());
+    auto *timer = new QTimer(binding);
     timer->setSingleShot(true);
     auto done = std::make_shared<bool>(false);
 
