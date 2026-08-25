@@ -13,6 +13,7 @@ inspect = require "3rdparty.inspect"
 
 -- These will be used very frequently too, making it global should make sense
 tablib = require "ktabletop.global.tablib"
+strlib = require "ktabletop.global.strlib"
 
 -- for c++ (Lua::call needs global function)
 require "ktabletop.global.global-functions"
