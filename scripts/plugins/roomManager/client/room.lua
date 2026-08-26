@@ -1,11 +1,11 @@
-local RoomBase = require("plugins.roomManager.common.room-base")
-local ClientPlayer = require("plugins.playerManager.client.player")
+local RoomBase = require "plugins.roomManager.common.room-base"
+local ClientPlayer = require "plugins.playerManager.client.player"
 
 ---@class ClientRoom: RoomBase
 ---@field name string?
 ---@field capacity integer?
 ---@field ownerConnId integer?
-local ClientRoom = class("ClientRoom", RoomBase)
+local ClientRoom = RoomBase:subclass("ClientRoom")
 
 ---@param ctx Context
 ---@param id integer

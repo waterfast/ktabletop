@@ -1,7 +1,7 @@
-local ClientLobby = require("plugins.roomManager.client.lobby")
-local Commands = require("plugins.playerManager.common.network-commands")
+local ClientLobby = require "plugins.roomManager.client.lobby"
+local Commands = require "plugins.playerManager.common.network-commands"
 
-local async = require("core.async")
+local async = require "core.async"
 
 ---@type Plugin
 local M = {

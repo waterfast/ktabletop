@@ -1,14 +1,14 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-local RoomBase = require("plugins.roomManager.server.roombase")
-local Commands = require("plugins.playerManager.common.network-commands")
+local RoomBase = require "plugins.roomManager.server.roombase"
+local Commands = require "plugins.playerManager.common.network-commands"
 
 ---@class Room: ServerRoomBase
 ---@field owner Player?
 ---@field name string
 ---@field capacity integer
-local Room = class("Room", RoomBase)
+local Room = RoomBase:subclass("Room")
 
 local nextRoomId = 1
 

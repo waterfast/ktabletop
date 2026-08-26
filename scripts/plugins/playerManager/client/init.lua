@@ -1,5 +1,5 @@
-local ClientPlayer = require("plugins.playerManager.client.player")
-local Commands = require("plugins.playerManager.common.network-commands")
+local ClientPlayer = require "plugins.playerManager.client.player"
+local Commands = require "plugins.playerManager.common.network-commands"
 
 ---@type Plugin
 local M = {

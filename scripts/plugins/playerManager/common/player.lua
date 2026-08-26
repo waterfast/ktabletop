@@ -1,4 +1,4 @@
-local async = require("core.async")
+local async = require "core.async"
 
 --- Common player representation
 --- Only holds data both sides need; socket I/O lives in the subclasses.
