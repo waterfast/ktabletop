@@ -1,15 +1,13 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-local RoomManager = require("ktabletop.plugins.roomManager.server.room-manager")
+local RoomManager = require("plugins.roomManager.server.room-manager")
 
 ---@type Plugin
 local M = {
   name = "/ktabletop/server/roomManager",
   deps = { "/ktabletop/server/playerManager", "ktabletop.socketHelper" },
 }
-
-local async = require "ktabletop.core.async"
 
 function M.setup(ctx, config)
   local roomManager = RoomManager:new(ctx)

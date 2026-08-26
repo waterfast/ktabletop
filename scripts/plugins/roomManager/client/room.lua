@@ -1,5 +1,5 @@
-local RoomBase = require("ktabletop.plugins.roomManager.common.room-base")
-local ClientPlayer = require("ktabletop.plugins.playerManager.client.player")
+local RoomBase = require("plugins.roomManager.common.room-base")
+local ClientPlayer = require("plugins.playerManager.client.player")
 
 ---@class ClientRoom: RoomBase
 ---@field name string?

@@ -1,4 +1,4 @@
-local async = require("ktabletop.core.async")
+local async = require("core.async")
 
 local M = {
   name = "/ktabletop/socketHelper",

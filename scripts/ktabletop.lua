@@ -12,11 +12,11 @@ class = require "3rdparty.middleclass"
 inspect = require "3rdparty.inspect"
 
 -- These will be used very frequently too, making it global should make sense
-tablib = require "ktabletop.global.tablib"
-strlib = require "ktabletop.global.strlib"
+tablib = require "global.tablib"
+strlib = require "global.strlib"
 
 -- for c++ (Lua::call needs global function)
-require "ktabletop.global.global-functions"
+require "global.global-functions"
 
 -- I think that're all preparations to do?
 do return end

@@ -1,5 +1,5 @@
-local RoomBase = require("ktabletop.plugins.roomManager.common.room-base")
-local Observable = require("ktabletop.core.observable")
+local RoomBase = require("plugins.roomManager.common.room-base")
+local Observable = require("core.observable")
 
 --- Client-side lobby. Only the local player is tracked here (via
 --- playerManager); `playerCount` reflects the server-broadcast total.
