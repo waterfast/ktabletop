@@ -56,7 +56,7 @@ public:
             timer_->stop();
         if (callback_) {
             auto cb = std::move(callback_);
-            cb(reply, err);
+            cb(err, reply);
         }
         deleteLater();
     }
@@ -138,13 +138,19 @@ void UserConnection::request(const QByteArray &command, const QByteArray &jsonDa
         req->deleteLater();
 }
 
-void UserConnection::reply(int requestId, const QByteArray &jsonData)
+void UserConnection::reply(int requestId, bool ok, const QByteArray &jsonData)
 {
     auto data = jsonData;
     int type = TypeReply;
     if (jsonData.size() > COMPRESSION_THRESHOLD) {
         data = qCompress(jsonData);
         type |= DataCompressed;
+    }
+
+    if (ok) {
+        type |= ReplyOk;
+    } else {
+        type |= ReplyError;
     }
 
     QCborArray body{
@@ -219,7 +225,13 @@ void UserConnection::handlePacket(const QCborArray &packet)
         if (!req)
             return;
 
-        req->finish(jsonData, {});
+        bool ok = type & ReplyOk;
+        std::error_code error{};
+        if (!ok) {
+            error = std::make_error_code(std::errc::bad_message);
+        }
+
+        req->finish(jsonData, error);
     }
 }
 

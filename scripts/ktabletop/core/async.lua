@@ -69,11 +69,14 @@ end
 -- await on an AsyncFunction or Awaitable
 -- return true and callback results, or false plus error message
 ---@return boolean, ...
-function scheduler:await(fn)
+function scheduler:await(fn, ...)
   local current = co.running()
   local f = self.coroutineMap[current]
   assert(f, "cannot await outside async function")
-  assert(type(fn) == "table" and (fn[ASYNC] or fn[AWAIT]), "must be AsyncFunction or awaitable")
+  if not (type(fn) == "table" and (fn[ASYNC] or fn[AWAIT])) then
+    -- accidentally await on normal functions; return
+    return true, fn, ...
+  end
 
   if fn[ASYNC] then
     return co.yield(fn)
@@ -84,11 +87,12 @@ function scheduler:await(fn)
     -- its results instead of yielding.
     local yielded = false
     local syncResults
-    fn(function(...)
+    fn(function(err, ...)
+      local ok = not err
       if yielded then
-        self:resume(f, ...)
+        self:resume(f, ok, err, ...)
       else
-        syncResults = table.pack(...)
+        syncResults = table.pack(ok, err, ...)
       end
     end)
     if syncResults ~= nil then

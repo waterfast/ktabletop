@@ -10,10 +10,8 @@ ecm_add_qml_module(ktabletop_qml
         qml/LobbyPage.qml
         qml/CreateRoomDialog.qml
     DEPENDENCIES
-        org.kde.kirigamiaddons.formcard
-        org.kde.kirigamiaddons.statefulapp
+        # org.kde.kirigamiaddons.formcard
         org.kde.kirigami
-        org.kde.kapp4mymulti.settings
 )
 
 target_link_libraries(ktabletop_qml PUBLIC

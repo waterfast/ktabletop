@@ -4,10 +4,10 @@
 local RoomBase = require("ktabletop.plugins.roomManager.server.roombase")
 local Commands = require("ktabletop.plugins.playerManager.common.network-commands")
 
----@class Lobby: RoomBase
+---@class Lobby: ServerRoomBase
 local Lobby = class("Lobby", RoomBase)
 
----@param player Player
+---@param player ServerPlayer
 function Lobby:addPlayer(player)
   RoomBase.addPlayer(self, player)
   -- TODO: should write some client-side Lua and GUI code here!
@@ -16,7 +16,7 @@ function Lobby:addPlayer(player)
   self:updateOnlineInfo()
 end
 
----@param player Player
+---@param player ServerPlayer
 function Lobby:removePlayer(player)
   RoomBase.removePlayer(self, player)
   self:updateOnlineInfo()

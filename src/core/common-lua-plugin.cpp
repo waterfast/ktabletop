@@ -77,7 +77,7 @@ static int requestSocket(lua_State *L)
     lua_pushvalue(L, 6);
     int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
-    auto cb = [L = LuaBinding::forState(L)->vm().state(), fnRef](QByteArray reply, std::error_code err) {
+    auto cb = [L = LuaBinding::forState(L)->vm().state(), fnRef](std::error_code err, QByteArray reply) {
         auto binding = LuaBinding::forState(L);
         if (!binding) {
             // L might be freed here, so return
@@ -94,11 +94,10 @@ static int requestSocket(lua_State *L)
 
         if (!err) {
             lua_pushnil(L);
-            lua_pushstring(L, reply.constData());
         } else {
             lua_pushstring(L, err.message().c_str());
-            lua_pushnil(L);
         }
+        lua_pushstring(L, reply.constData());
 
         if (lua_pcall(L, 2, 0, -4) != LUA_OK) {
             qCritical() << lua_tostring(L, -1);
@@ -121,19 +120,21 @@ static int requestSocket(lua_State *L)
 static int replySocket(lua_State *L)
 {
     int nargs = lua_gettop(L);
-    if (nargs != 3) {
-        return luaL_error(L, "expected 3 arguments, got %d", nargs);
+    if (nargs != 4) {
+        return luaL_error(L, "expected 4 arguments, got %d", nargs);
     }
     int connId = luaL_checkinteger(L, 1);
     int requestId = luaL_checkinteger(L, 2);
-    const char *jsonData = luaL_checkstring(L, 3);
+    luaL_checktype(L, 3, LUA_TBOOLEAN);
+    bool ok = lua_toboolean(L, 3);
+    const char *jsonData = luaL_checkstring(L, 4);
 
     auto conn = findConnectionById(L, connId);
     if (!conn) {
         return luaL_error(L, "cannot find socket of connId %d", connId);
     }
 
-    conn->reply(requestId, jsonData);
+    conn->reply(requestId, ok, jsonData);
 
     return 0;
 }

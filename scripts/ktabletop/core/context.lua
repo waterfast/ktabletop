@@ -125,11 +125,11 @@ end
 --------------------
 
 function Context:start()
-  self:emit("KTabletop::Context::Start")
+  self:emit("Context::Start")
 end
 
 function Context:stop()
-  self:emit("KTabletop::Context::Stop")
+  self:emit("Context::Stop")
 end
 
 return Context

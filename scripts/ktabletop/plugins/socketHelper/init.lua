@@ -17,7 +17,7 @@ function M.setup(ctx)
 
   local function onRequestGot(cmd, cb)
     assert(req[cmd] == nil)
-    req[cmd] = cb
+    req[cmd] = async.async(cb)
   end
 
   ctx:set("socketHelper", {
@@ -25,7 +25,7 @@ function M.setup(ctx)
     onRequestGot = onRequestGot,
   })
 
-  ctx:on("KTabletopCpp::Socket::NotificationGot", function(param)
+  ctx:on("Core::Socket::NotificationGot", function(param)
     local list = notif[param.command]
     if not list then return end
     for _, fn in ipairs(list) do
@@ -33,26 +33,30 @@ function M.setup(ctx)
     end
   end)
 
-  ctx:on("KTabletopCpp::Socket::RequestGot", function(param)
+  ctx:on("Core::Socket::RequestGot", async.async(function(param)
     local fn = req[param.command]
     if not fn then return end
-    async.async(function()
-      local a, b = fn(param.data)
-      local reply, err
-      if type(a) == "table" and getmetatable(a) ~= nil then
-        local ok, r1, r2 = async.await(a)
-        if not ok then err = r1 else reply, err = r1, r2 end
-      else
-        reply, err = a, b
-      end
-      local cpp = ctx:get("__cpp.common")
-      if err then
-        cpp.notifySocket(param.connId, "ErrorMsg", json.encode(err))
-      else
-        cpp.replySocket(param.connId, param.requestId, json.encode(reply or {}))
-      end
-    end)()
-  end)
+
+    local reqId = param.requestId
+    local connId = param.connId
+
+    local player = ctx:get("myself") --[[ @as Player? ]]
+    if not player then
+      local pm = ctx:get("playerManager") --[[ @as PlayerManager ]]
+      player = pm:findPlayer(connId)
+    end
+
+    assert(player, ("cannot find player of connId %d in request #%d"):format(connId, reqId))
+
+    local ok, reply, err = async.await(fn(player, param.data))
+    if not ok then
+      player:reply(false, reqId, reply)
+    elseif err then
+      player:reply(false, reqId, err)
+    else
+      player:reply(true, reqId, reply)
+    end
+  end))
 end
 
 return M

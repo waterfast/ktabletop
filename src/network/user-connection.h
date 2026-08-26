@@ -24,6 +24,9 @@ public:
         TypeRequest = 0x100,
         TypeReply = 0x200,
         TypeNotification = 0x400,
+
+        ReplyOk = 0x10,
+        ReplyError = 0x20,
     };
 
     struct ReceivedRequest {
@@ -34,7 +37,7 @@ public:
         qint64 timestamp = 0;
     };
 
-    using ReplyCallback = std::function<void(QByteArray reply, std::error_code err)>;
+    using ReplyCallback = std::function<void(std::error_code error, QByteArray reply)>;
 
     UserConnection(QObject *parent, ClientSocket *socket = nullptr);
     ~UserConnection();
@@ -46,7 +49,7 @@ public:
     ClientSocket *moveSocket();
 
     void request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp = -1, ReplyCallback callback = {});
-    void reply(int requestId, const QByteArray &jsonData);
+    void reply(int requestId, bool ok, const QByteArray &jsonData);
     void notify(const QByteArray &command, const QByteArray &jsonData);
 
     ReceivedRequest receivedRequest(int requestId) const;

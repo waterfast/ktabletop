@@ -16,8 +16,6 @@ function ClientLobby:initialize(ctx)
   self.playerCount = 0
 
   self:createObserveObject()
-  -- test
-  self:setProperty("playerCount", 7888)
 end
 
 return ClientLobby

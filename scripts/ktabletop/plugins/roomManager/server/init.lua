@@ -9,16 +9,18 @@ local M = {
   deps = { "/ktabletop/server/playerManager", "ktabletop.socketHelper" },
 }
 
+local async = require "ktabletop.core.async"
+
 function M.setup(ctx, config)
   local roomManager = RoomManager:new(ctx)
   ctx:serve("roomManager", roomManager)
 
-  ctx:on("KTabletop::PlayerManager::NewConnection", function(param)
+  ctx:on("PlayerManager::NewConnection", function(param)
     roomManager.lobby:addPlayer(param.player)
   end)
 
   local onRequestGot = ctx:get("socketHelper").onRequestGot
-  onRequestGot("FetchRoomList", function(data)
+  onRequestGot("FetchRoomList", function(player, data)
     return {}, nil
   end)
 end

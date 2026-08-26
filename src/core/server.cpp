@@ -9,6 +9,9 @@
 #include "network/user-connection.h"
 #include "server-lua-plugin.h"
 
+#include <QJsonDocument>
+#include <QJsonValue>
+
 using namespace Qt::Literals::StringLiterals;
 
 static Server *serverInstance = nullptr;
@@ -64,5 +67,16 @@ void Server::processNewConnection(ClientSocket *client)
         connections.remove(connId);
     });
 
-    L->emit(u"KTabletop::Socket::NewConnection"_s, {{u"connId"_s, connId}});
+    connect(conn, &UserConnection::requestGot, [this, conn](int requestId) {
+        const auto &req = conn->receivedRequest(requestId);
+        L->emit(u"Core::Socket::RequestGot"_s,
+                {
+                    {u"connId"_s, conn->connId()},
+                    {u"requestId"_s, requestId},
+                    {u"command"_s, QString::fromUtf8(req.command)},
+                    {u"data"_s, QJsonValue::fromJson(req.jsonData).toVariant()},
+                });
+    });
+
+    L->emit(u"Socket::NewConnection"_s, {{u"connId"_s, connId}});
 }

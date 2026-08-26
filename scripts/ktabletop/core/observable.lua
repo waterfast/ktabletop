@@ -13,7 +13,7 @@ function Observable:setProperty(key, value)
   if type(value) == "table" or oldValue ~= value then
     -- TODO: need more discussion here
     -- as we can see, this assumes base class has `_stringId` and `ctx` field
-    self.ctx:get("__cpp.common").luaEvent("KTabletop::Observable::ValueChanged", {
+    self.ctx:get("__cpp.common").luaEvent("Observable::ValueChanged", {
       _stringId = self._stringId,
       key = key,
       value = value,
@@ -33,13 +33,18 @@ end
 
 function Observable:createObserveObject()
   local cpp = self.ctx:get("__cpp.common")
-  cpp.luaEvent("KTabletop::Observable::NewObject", self:getPropertyMap())
+  cpp.luaEvent("Observable::NewObject", self:getPropertyMap())
 end
 
 ---@param key string
 function Observable.static:registerProperty(key)
   local t = self.static.__observableProperties
   t[#t + 1] = key
+end
+
+---@param key string
+function Observable:registerProperty(key)
+  error("This is a static method, please call with <Class>:registerProperty")
 end
 
 function Observable:included(klass)

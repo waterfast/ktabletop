@@ -33,11 +33,22 @@ Client::Client(QObject *parent)
     connection_ = new UserConnection(this, new ClientSocket);
 
     connect(connection_, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
-        L->emit(u"KTabletopCpp::Socket::NotificationGot"_s,
+        L->emit(u"Core::Socket::NotificationGot"_s,
                 {
                     {u"connId"_s, connection_->connId()},
                     {u"command"_s, QString::fromUtf8(command)},
                     {u"data"_s, QJsonValue::fromJson(jsonData).toVariant()},
+                });
+    });
+
+    connect(connection_, &UserConnection::requestGot, [this, conn = connection_](int requestId) {
+        const auto &req = conn->receivedRequest(requestId);
+        L->emit(u"Core::Socket::RequestGot"_s,
+                {
+                    {u"connId"_s, conn->connId()},
+                    {u"requestId"_s, requestId},
+                    {u"command"_s, QString::fromUtf8(req.command)},
+                    {u"data"_s, QJsonValue::fromJson(req.jsonData).toVariant()},
                 });
     });
 }
@@ -59,5 +70,5 @@ UserConnection *Client::connection() const
 
 void Client::connectToHost(const QString &server, ushort port)
 {
-    L->emit(u"KTabletop::Client::ConnectToHost"_s, {{u"host"_s, server}, {u"port"_s, port}});
+    L->emit(u"Client::ConnectToHost"_s, {{u"host"_s, server}, {u"port"_s, port}});
 }

@@ -10,8 +10,6 @@ local Room = require("ktabletop.plugins.roomManager.server.room")
 ---@field lobby Lobby
 local RoomManager = class("RoomManager")
 
-RoomManager.sigRoomCreated = "KTabletop::RoomManager::RoomCreated"
-
 ---@param ctx Context
 function RoomManager:initialize(ctx)
   self.ctx = ctx

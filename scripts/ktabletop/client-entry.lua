@@ -13,22 +13,16 @@ ctx:loadPlugin(require "ktabletop.plugins.roomManager.client")
 local async = require("ktabletop.core.async")
 
 -- dispatcher wrapped with async.sync, wrapped cb-last-param fn can be waited
-ctx:on("KTabletop::Client::ConnectToHost", async.async(function(param)
+ctx:on("Client::ConnectToHost", async.async(function(param)
   local connect = async.wrap(ctx:get("__cpp.client").connectToHost)
   local err = async.await(connect(param.host, param.port))
   local cpp = ctx:get("__cpp.common")
   if err then
-    cpp.luaEvent("KTabletop::Client::ConnectError", { error = err })
+    cpp.luaEvent("Client::ConnectError", { error = err })
   else
-    cpp.luaEvent("KTabletop::Client::Connected", {})
+    cpp.luaEvent("Client::Connected", {})
   end
 end))
-
--- test
-ctx:on("KTabletopCpp::ObservingObject::ValueChanged", function(param)
-  -- TODO: should find the object and directly set its value to new one
-  print(inspect(param))
-end)
 
 ctx:start()
 

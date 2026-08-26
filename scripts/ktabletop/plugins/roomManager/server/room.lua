@@ -4,7 +4,7 @@
 local RoomBase = require("ktabletop.plugins.roomManager.server.roombase")
 local Commands = require("ktabletop.plugins.playerManager.common.network-commands")
 
----@class Room: RoomBase
+---@class Room: ServerRoomBase
 ---@field owner Player?
 ---@field name string
 ---@field capacity integer

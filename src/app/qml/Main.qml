@@ -26,7 +26,7 @@ Kirigami.ApplicationWindow {
                     console.log("Single Player clicked")
                     Backend.startServer(17943);
                     Backend.joinServer("127.0.0.1");
-                    // lobby push now via KTabletop::Client::PushLobby from server EnterLobby
+                    // lobby push now via Client::PushLobby from server EnterLobby
                 }
             }
 
@@ -55,16 +55,16 @@ Kirigami.ApplicationWindow {
         target: Backend
         function onLuaEvent(tp, payload) {
             console.log(tp, JSON.stringify(payload));
-            if (tp === "KTabletop::Observable::NewObject") {
+            if (tp === "Observable::NewObject") {
                 const objName = payload._stringId;
                 delete payload._stringId;
                 const obj = Backend.createPropertyMap(objName, payload);
                 obj.playerCount = 123; // test
             }
-            if (tp === "KTabletop::Observable::ValueChanged") {
+            if (tp === "Observable::ValueChanged") {
                 // TODO
             }
-            if (tp === "KTabletop::Client::PushLobby") {
+            if (tp === "Client::PushLobby") {
                 pageStack.push(lobbyPageComponent); // from server EnterLobby
             }
         }

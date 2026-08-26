@@ -174,8 +174,8 @@ describe("Context", function()
     it("emits start and stop signals", function()
       local started = false
       local stopped = false
-      ctx:on("KTabletop::Context::Start", function() started = true end)
-      ctx:on("KTabletop::Context::Stop", function() stopped = true end)
+      ctx:on("Context::Start", function() started = true end)
+      ctx:on("Context::Stop", function() stopped = true end)
       ctx:start()
       ctx:stop()
       assert.is_true(started)

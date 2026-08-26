@@ -40,7 +40,7 @@ QQmlPropertyMap *QmlBackend::createPropertyMap(const QString &objectName, const 
     }
 
     connect(ret, &QQmlPropertyMap::valueChanged, this, [objectName](const QString &key, const QVariant &value) {
-        Client::instance()->luaBinding()->emit(u"KTabletopCpp::ObservingObject::ValueChanged"_s,
+        Client::instance()->luaBinding()->emit(u"Core::ObservingObject::ValueChanged"_s,
                                                {
                                                    {u"_stringId"_s, objectName},
                                                    {u"key"_s, key},
