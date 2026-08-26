@@ -40,7 +40,7 @@ function scheduler:resume(fn, ...)
   -- 2. yield AWAIT; co.yield myself and wait the callback wakeup me
   -- 3. coro is dead: yield return values of fn
   -- 4. pack[1] == false; killed by error
-  local pack = { co.resume(coro, ...) }
+  local pack = table.pack(co.resume(coro, ...))
   local status = co.status(coro)
   local ok = pack[1]
   local ret = pack[2]
@@ -50,8 +50,7 @@ function scheduler:resume(fn, ...)
       fn.state, fn.errmsg = "error", pack[2]
     else
       fn.state = "done"
-      table.remove(pack, 1)
-      fn.results = pack
+      fn.results = table.pack(table.unpack(pack, 2, pack.n))
     end
     return self:finish(fn)
   end

@@ -7,6 +7,7 @@ return {
   SetupPlayer = "SetupPlayer",
 
   -- room manager
+  FetchRoomList = "FetchRoomList",
   EnterLobby = "EnterLobby",
   UpdateLobby = "UpdateLobby",
   UpdatePlayerNum = "UpdatePlayerNum",

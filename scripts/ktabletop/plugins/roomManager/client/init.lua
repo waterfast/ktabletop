@@ -1,71 +1,47 @@
 local ClientLobby = require("ktabletop.plugins.roomManager.client.lobby")
-local ClientRoom = require("ktabletop.plugins.roomManager.client.room")
 local Commands = require("ktabletop.plugins.playerManager.common.network-commands")
-
-local function notifyChanged(ctx)
-  ctx:emit("KTabletop::Client::RoomStore::Changed", ctx:get("current"))
-end
-
-local function onEnterLobby(ctx, data)
-  ctx:set("current", ClientLobby:new(ctx))
-  print('onEnterLobby')
-  notifyChanged(ctx)
-  ctx:get("__cpp.common").luaEvent("KTabletop::Client::PushLobby", {})
-end
-
-local function onUpdatePlayerNum(ctx, data)
-  ctx:get("current").playerCount = data[1]
-  notifyChanged(ctx)
-end
-
-local function onEnterRoom(ctx, data)
-  ctx:set("current", ClientRoom:new(ctx, data.id, data.name, data.capacity))
-  notifyChanged(ctx)
-end
-
-local function onAddPlayer(ctx, data)
-  local current = ctx:get("current")
-  if current:isInstanceOf(ClientRoom) then
-    current:addMember(data[1])
-    notifyChanged(ctx)
-  end
-end
-
-local function onRemovePlayer(ctx, data)
-  local current = ctx:get("current")
-  if current:isInstanceOf(ClientRoom) then
-    current:removeMember(data[1])
-    notifyChanged(ctx)
-  end
-end
-
-local function onRoomOwner(ctx, data)
-  ctx:get("current").ownerConnId = data[1]
-  notifyChanged(ctx)
-end
-
-local handlers = {
-  [Commands.EnterLobby] = onEnterLobby,
-  [Commands.UpdatePlayerNum] = onUpdatePlayerNum,
-  [Commands.EnterRoom] = onEnterRoom,
-  [Commands.AddPlayer] = onAddPlayer,
-  [Commands.RemovePlayer] = onRemovePlayer,
-  [Commands.RoomOwner] = onRoomOwner,
-}
 
 ---@type Plugin
 local M = {
   name = "/ktabletop/client/roomManager",
-  deps = { "/ktabletop/client/playerManager" },
+  deps = { "ktabletop.socketHelper", "/ktabletop/client/playerManager" },
 }
 
 function M.setup(ctx, config)
-  ctx:on("KTabletopCpp::Socket::NotificationGot", function (param)
-    local handlers = handlers[param.command]
+  local async = require("ktabletop.core.async")
 
-    if handlers then
-      handlers(ctx, param.data)
-    end
+  local function notifyChanged(ctx)
+    ctx:emit("KTabletop::Client::RoomStore::Changed", ctx:get("current"))
+  end
+
+  local function onEnterLobby(ctx, data)
+    ctx:set("current", ClientLobby:new(ctx))
+    notifyChanged(ctx)
+    ctx:get("__cpp.common").luaEvent("KTabletop::Client::PushLobby", {})
+    async.async(function()
+      local cpp = ctx:get("__cpp.common")
+      local cid = ctx:get("__cpp.client").getConnId()
+      local doRequest = async.wrap(function(cmd, js, cb)
+        cpp.requestSocket(cid, cmd, js, 5, -1, function(reply, err)
+          cb(err, reply)
+        end)
+      end)
+      local ok, reply = async.await(doRequest(Commands.FetchRoomList, json.encode({})))
+      print("FetchRoomList reply", reply)
+    end)()
+  end
+
+  local function onUpdatePlayerNum(ctx, data)
+    ctx:get("current").playerCount = data[1]
+    notifyChanged(ctx)
+  end
+
+  local onNotificationGot = ctx:get("socketHelper").onNotificationGot
+  onNotificationGot(Commands.EnterLobby, function(data)
+    onEnterLobby(ctx, data)
+  end)
+  onNotificationGot(Commands.UpdatePlayerNum, function(data)
+    onUpdatePlayerNum(ctx, data)
   end)
 end
 

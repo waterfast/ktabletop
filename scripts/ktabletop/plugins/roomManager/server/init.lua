@@ -6,7 +6,7 @@ local RoomManager = require("ktabletop.plugins.roomManager.server.room-manager")
 ---@type Plugin
 local M = {
   name = "/ktabletop/server/roomManager",
-  deps = { "/ktabletop/server/playerManager" },
+  deps = { "/ktabletop/server/playerManager", "ktabletop.socketHelper" },
 }
 
 function M.setup(ctx, config)
@@ -15,6 +15,11 @@ function M.setup(ctx, config)
 
   ctx:on("KTabletop::PlayerManager::NewConnection", function(param)
     roomManager.lobby:addPlayer(param.player)
+  end)
+
+  local onRequestGot = ctx:get("socketHelper").onRequestGot
+  onRequestGot("FetchRoomList", function(data)
+    return {}, nil
   end)
 end
 

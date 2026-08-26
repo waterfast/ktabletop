@@ -6,6 +6,7 @@ local Context = require "ktabletop.core.context"
 
 local ctx = Context:new()
 
+ctx:loadPlugin(require "ktabletop.plugins.socketHelper")
 ctx:loadPlugin(require "ktabletop.plugins.playerManager.client")
 ctx:loadPlugin(require "ktabletop.plugins.roomManager.client")
 
