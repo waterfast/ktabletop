@@ -28,7 +28,9 @@ Kirigami.Page {
         id: createRoomDialog
     }
 
-    onBackRequested: {
+    onBackRequested: event => {
+        event.accepted = true;
+        Kirigami.PageStack.pop();
         console.log("Quitting lobby!")
     }
 }
