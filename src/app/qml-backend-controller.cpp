@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "qml-backend-controller.h"
+#include "qml/lua-event-listener.h"
 #include "qml/qml-backend.h"
 
 #include "core/client.h"
@@ -38,6 +39,7 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
 {
     auto client = Client::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, m_backend, &QmlBackend::emitLuaEvent, Qt::UniqueConnection);
+    connect(client->luaBinding(), &LuaBinding::luaEvent, LuaEventListenerManager::instance(), &LuaEventListenerManager::dispatch, Qt::UniqueConnection);
     client->connectToHost(address, port);
 }
 

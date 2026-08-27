@@ -11,6 +11,7 @@ ecm_add_qml_module(ktabletop_qml
         CreateRoomDialog.qml
     SOURCES
         qml-backend.cpp
+        lua-event-listener.cpp
     DEPENDENCIES
         # org.kde.kirigamiaddons.formcard
         org.kde.kirigami

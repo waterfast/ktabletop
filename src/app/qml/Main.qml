@@ -12,6 +12,7 @@ import org.kde.kirigami.layouts as KL
 import org.kde.ktabletop
 
 Kirigami.ApplicationWindow {
+    id: root
     width: 240
     height: 400
 
@@ -35,7 +36,6 @@ Kirigami.ApplicationWindow {
                     console.log("Single Player clicked")
                     Backend.startServer(17943);
                     Backend.joinServer("127.0.0.1");
-                    // lobby push now via Client::PushLobby from server EnterLobby
                 }
             }
 
@@ -59,23 +59,34 @@ Kirigami.ApplicationWindow {
         LobbyPage {}
     }
 
-    // TODO: move this to other QML file
+    LuaEventListener {
+        eventName: "Client::PushLobby"
+        onTriggered: data => {
+            root.pageStack.push(lobbyPageComponent);
+        }
+    }
+
+    LuaEventListener {
+        eventName: "Observable::NewObject"
+        onTriggered: data => {
+            const objName = data._stringId;
+            delete data._stringId;
+            const obj = Backend.createPropertyMap(objName, data);
+            obj.playerCount = 123;
+        }
+    }
+
+    LuaEventListener {
+        eventName: "Observable::ValueChanged"
+        onTriggered: data => {
+            // TODO
+        }
+    }
+
     Connections {
         target: Backend
         function onLuaEvent(tp, payload) {
             console.log(tp, JSON.stringify(payload));
-            if (tp === "Observable::NewObject") {
-                const objName = payload._stringId;
-                delete payload._stringId;
-                const obj = Backend.createPropertyMap(objName, payload);
-                obj.playerCount = 123; // test
-            }
-            if (tp === "Observable::ValueChanged") {
-                // TODO
-            }
-            if (tp === "Client::PushLobby") {
-                pageStack.push(lobbyPageComponent); // from server EnterLobby
-            }
         }
     }
 
