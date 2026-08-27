@@ -27,4 +27,8 @@ Kirigami.Page {
     CreateRoomDialog {
         id: createRoomDialog
     }
+
+    onBackRequested: {
+        console.log("Quitting lobby!")
+    }
 }

@@ -15,8 +15,15 @@ Kirigami.ApplicationWindow {
     width: 240
     height: 400
 
-    pageStack.columnView.columnResizeMode: KL.ColumnView.SingleColumn
-    pageStack.globalToolBar.showNavigationButtons: pageStack.currentIndex === 0 ? KControls.ApplicationHeaderStyle.ShowForwardButton : KControls.ApplicationHeaderStyle.ShowBackButton | KControls.ApplicationHeaderStyle.ShowForwardButton
+
+    pageStack {
+        columnView.columnResizeMode: KL.ColumnView.SingleColumn
+        globalToolBar {
+            style: Kirigami.ApplicationHeaderStyle.ToolBar
+            showNavigationButtons: pageStack.currentIndex > 0 || pageStack.layers.depth > 1 ? Kirigami.ApplicationHeaderStyle.ShowBackButton : 0
+        }
+    }
+
     pageStack.initialPage: Kirigami.Page {
         title: "KTabletop"
         ColumnLayout {

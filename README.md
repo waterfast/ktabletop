@@ -23,7 +23,8 @@ $ ./ktabletop-app
 
 OK, here we go
 
-Run qmlls with `qmlls6 -b build` running in project root dir.
+- Run qmlls with `qmlls6 -b build` running in project root dir.
+- Use `qml6 -I $(pwd)/bin/build <qml_file>` for previewing.
 
 ## Code Convention
 

@@ -9,13 +9,11 @@ ecm_add_qml_module(ktabletop_qml
         Main.qml
         LobbyPage.qml
         CreateRoomDialog.qml
+    SOURCES
+        qml-backend.cpp
     DEPENDENCIES
         # org.kde.kirigamiaddons.formcard
         org.kde.kirigami
-)
-
-target_sources(ktabletop_qml PRIVATE
-    qml-backend.cpp
 )
 
 target_link_libraries(ktabletop_qml PUBLIC
