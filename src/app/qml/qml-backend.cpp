@@ -30,6 +30,11 @@ QQmlPropertyMap *QmlBackend::getObservable(const QString &objectName) const
     return ObservableManager::instance()->get(objectName);
 }
 
+void QmlBackend::emit(const QString &type, const QVariantMap &payload)
+{
+    Q_EMIT emitRequested(type, payload);
+}
+
 void QmlBackend::emitLuaEvent(const QString &type, const QVariant &payload)
 {
     Q_EMIT luaEvent(type, payload);
