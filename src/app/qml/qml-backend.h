@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <QMap>
 #include <QObject>
 #include <QQmlPropertyMap>
 
@@ -22,18 +21,13 @@ public:
 
     void emitLuaEvent(const QString &type, const QVariant &payload);
 
-    Q_INVOKABLE QQmlPropertyMap *createPropertyMap(const QString &objectName, const QVariantMap &dict);
-    Q_INVOKABLE void destroyPropertyMap(const QString &objectName);
+    Q_INVOKABLE QQmlPropertyMap *getObservable(const QString &objectName) const;
 
 Q_SIGNALS:
     // emitted from QML
     void startServerRequested(ushort port);
     void joinServerRequested(const QString &address, ushort port);
-    void propertyMapValueChanged(const QString &objectName, const QString &key, const QVariant &value);
 
     // emitted from C++, by calling emitLuaEvent
     void luaEvent(const QString &type, const QVariant &payload);
-
-private:
-    QMap<QString, QQmlPropertyMap *> m_propertyMaps;
 };

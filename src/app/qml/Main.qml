@@ -66,23 +66,6 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    LuaEventListener {
-        eventName: "Observable::NewObject"
-        onTriggered: data => {
-            const objName = data._stringId;
-            delete data._stringId;
-            const obj = Backend.createPropertyMap(objName, data);
-            obj.playerCount = 123;
-        }
-    }
-
-    LuaEventListener {
-        eventName: "Observable::ValueChanged"
-        onTriggered: data => {
-            // TODO
-        }
-    }
-
     Connections {
         target: Backend
         function onLuaEvent(tp, payload) {

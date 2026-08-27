@@ -3,6 +3,7 @@
 
 #include "qml-backend-controller.h"
 #include "qml/lua-event-listener.h"
+#include "qml/observable-manager.h"
 #include "qml/qml-backend.h"
 
 #include "core/client.h"
@@ -19,7 +20,7 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
 {
     connect(m_backend, &QmlBackend::startServerRequested, this, &QmlBackendController::onStartServerRequested);
     connect(m_backend, &QmlBackend::joinServerRequested, this, &QmlBackendController::onJoinServerRequested);
-    connect(m_backend, &QmlBackend::propertyMapValueChanged, this, &QmlBackendController::onPropertyMapValueChanged);
+    connect(ObservableManager::instance(), &ObservableManager::valueChanged, this, &QmlBackendController::onPropertyMapValueChanged);
 }
 
 QmlBackendController::~QmlBackendController()

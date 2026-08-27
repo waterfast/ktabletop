@@ -21,7 +21,7 @@ Kirigami.Page {
 
     QQC2.Label {
         anchors.centerIn: parent
-        text: "No rooms yet"
+        text: "No rooms yet, players = " + Backend.getObservable("lobby").playerCount
     }
 
     CreateRoomDialog {
