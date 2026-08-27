@@ -9,6 +9,8 @@ import org.kde.kirigami as Kirigami
 import org.kde.kirigami.controls as KControls
 import org.kde.kirigami.layouts as KL
 
+import org.kde.ktabletop
+
 Kirigami.ApplicationWindow {
     width: 240
     height: 400
@@ -71,6 +73,5 @@ Kirigami.ApplicationWindow {
     }
 
     Component.onCompleted: {
-        console.log(Backend);
     }
 }

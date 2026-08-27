@@ -23,6 +23,8 @@ $ ./ktabletop-app
 
 OK, here we go
 
+Run qmlls with `qmlls6 -b build` running in project root dir.
+
 ## Code Convention
 
 Just follow KDE policy, exceptions:
@@ -38,6 +40,5 @@ Additions:
 I want to make everything working ASAP, so actual code different from my design.
 
 - Too many raw pointers
-- No directory structure
 - Variable naming violates KDE policy
 - and more...

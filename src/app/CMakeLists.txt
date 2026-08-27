@@ -1,34 +1,16 @@
 # SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 # SPDX-License-Identifier: BSD-2-Clause
 
-qt_add_library(ktabletop_qml STATIC)
-ecm_add_qml_module(ktabletop_qml
-    URI org.kde.ktabletop
-    GENERATE_PLUGIN_SOURCE
-    QML_FILES
-        qml/Main.qml
-        qml/LobbyPage.qml
-        qml/CreateRoomDialog.qml
-    DEPENDENCIES
-        # org.kde.kirigamiaddons.formcard
-        org.kde.kirigami
-)
-
-target_link_libraries(ktabletop_qml PUBLIC
-    Qt6::Quick
-    KF6::I18n
-    KF6::CoreAddons
-    KF6::ConfigGui
-    KirigamiAddonsStatefulApp
-)
-
-target_include_directories(ktabletop_qml PUBLIC ${CMAKE_BINARY_DIR})
+add_subdirectory(qml)
 
 add_executable(ktabletop-app
-    qml-backend.cpp
+    qml-backend-controller.cpp
     main.cpp
 )
 
+target_link_libraries(ktabletop-app PRIVATE
+    ktabletop_qmlplugin
+)
 target_link_libraries(ktabletop-app PUBLIC
     Qt6::Quick
     KF6::I18n
@@ -39,6 +21,5 @@ target_link_libraries(ktabletop-app PUBLIC
     KirigamiApp
 
     ktabletop_qml
-    ktabletop_qmlplugin
     ktabletop_core
 )

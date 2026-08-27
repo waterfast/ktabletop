@@ -19,9 +19,9 @@
 #include <KirigamiAppDefaults>
 
 #include <QDir>
-#include <QQmlContext>
 
-#include "qml-backend.h"
+#include "qml-backend-controller.h"
+#include "qml/qml-backend.h"
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -61,16 +61,12 @@ int main(int argc, char *argv[])
         aboutData.processCommandLine(&parser);
     }
 
-    QmlBackend backend;
-
-    // FIXME: should use a singleton here
-    // but I don't have time mess with QT I need make it run first
-    engine.rootContext()->setContextProperty(u"Backend"_s, &backend);
-
     engine.loadFromModule("org.kde.ktabletop", u"Main"_s);
     if (engine.rootObjects().isEmpty()) {
         return EXIT_FAILURE;
     }
+
+    QmlBackendController controller(engine.singletonInstance<QmlBackend *>("org.kde.ktabletop", "Backend"));
 
     return app.exec();
 }
