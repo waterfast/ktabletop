@@ -17,7 +17,7 @@ function M.setup(ctx, config)
     cpp.luaEvent("Client::PushLobby", {})
 
     local myself = ctx:get("myself") --[[ @as ClientPlayer ]]
-    local reply = myself:request(Commands.FetchRoomList)
+    local reply = myself:request(Commands.FetchRoomList, nil, nil, nil, nil, { cancellable = true })
     print("FetchRoomList reply", inspect(reply))
   end))
 

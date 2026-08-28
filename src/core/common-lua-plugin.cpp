@@ -139,6 +139,26 @@ static int replySocket(lua_State *L)
     return 0;
 }
 
+// args: int connId
+static int cancelRequest(lua_State *L)
+{
+    int nargs = lua_gettop(L);
+    if (nargs != 1) {
+        return luaL_error(L, "expected 1 argument, got %d", nargs);
+    }
+
+    int connId = luaL_checkinteger(L, 1);
+
+    auto conn = findConnectionById(L, connId);
+    if (!conn) {
+        return luaL_error(L, "cannot finnnnnd socket of connId %d", connId);
+    }
+
+    conn->cancelRequest();
+
+    return 0;
+}
+
 // void delay(ms, callback: fun())
 static int delay(lua_State *L)
 {
@@ -221,6 +241,7 @@ static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
     {"replySocket", replySocket},
+    {"cancelRequest", cancelRequest},
 
     {"delay", delay},
     {"luaEvent", luaEvent},

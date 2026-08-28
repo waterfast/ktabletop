@@ -9,6 +9,7 @@ ecm_add_qml_module(ktabletop_qml
         Main.qml
         LobbyPage.qml
         CreateRoomDialog.qml
+        BusyDialog.qml
     SOURCES
         qml-backend.cpp
         lua-event-listener.cpp
