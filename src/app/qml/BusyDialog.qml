@@ -9,8 +9,17 @@ import org.kde.ktabletop
 Kirigami.Dialog {
     id: root
 
-    readonly property var busy: Backend.getObservable("busyState")
+    property var busy: Backend.getObservable("busyState")
 
+    Connections {
+        target: Backend
+        function onLuaEvent(type, payload) {
+            if (root.busy === null) {
+                root.busy = Backend.getObservable("busyState")
+            }
+        }
+    }
+        
     padding: Kirigami.Units.largeSpacing
     closePolicy: QQC2.Popup.NoAutoClose
     standardButtons: Kirigami.Dialog.NoButton
