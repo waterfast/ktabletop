@@ -1,5 +1,7 @@
 local Observable = require "core.observable"
 
+---@alias BusyIndicatorKind "spinner"|"progress"
+
 ---@class BusyOptions
 ---@field enabled? boolean set to false to skip tracking this operation entirely (default true)
 ---@field message? string text shown in the busy dialog (default: a generic "waiting" message)
@@ -13,7 +15,10 @@ local Observable = require "core.observable"
 ---  (settings, leave room, ...) stays usable.
 
 ---@class BusyHandle
-local BusyHandle = {}
+---@field setMessage fun(self: BusyHandle, message: string)
+---@field setProgress fun(self: BusyHandle, progress: number)
+---@field setIndicator fun(self: BusyHandle, kind: BusyIndicatorKind)
+---@field finish fun(self: BusyHandle)
 
 ---@class BusyState: Object, Observable
 ---@field ctx Context
@@ -49,6 +54,8 @@ function BusyState:initialize(ctx)
   self:createObserveObject()
 end
 
+--- Recompute observable properties from the topmost entry that wants
+--- blocking. Entries with blocking = false never affect these properties.
 function BusyState:_refresh()
   local top = nil
 
@@ -64,16 +71,6 @@ function BusyState:_refresh()
   self:setProperty("message", top and top.message or DEFAULT_MESSAGE)
   self:setProperty("indicator", top and top.indicator or "spinner")
   self:setProperty("progress", top and top.progress or 0)
-end
-
----@param entry table
-function BusyState:_refresh(entry)
-	if not tablib.removeOne(self._stack, entry) then
-		return
-	end
-
-  self:setProperty("count", #self._stack)
-	self:_refresh()
 end
 
 --- Mark the start of a trackable async operation
@@ -127,13 +124,20 @@ function BusyState:begin(opts)
     if finished then
       return
     end
+    
     finished = true
-    busyState:_remove(entry)
+    
+    if tablib.removeOne(busyState._stack, entry) then
+      busyState:setProperty("count", #busyState._stack)
+      busyState:_refresh()
+    end
   end
   
   return handle
 end
 
+--- Called from QML (via Backend.emit("BusyState::CancelRequested")) when the
+--- user taps the cancel button. Cancels the topmost blocking+cancellable entry.
 function BusyState:cancel()
   for i = #self._stack, 1, -1 do
     local entry = self._stack[i]
