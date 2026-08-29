@@ -153,7 +153,7 @@ static int cancelRequest(lua_State *L)
 
     auto conn = findConnectionById(L, connId);
     if (!conn) {
-        return luaL_error(L, "cannot finnnnnd socket of connId %d", connId);
+        return luaL_error(L, "cannot find socket of connId %d", connId);
     }
 
     conn->cancelRequest(requestId);
