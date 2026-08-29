@@ -192,15 +192,17 @@ end
 -- fn should return immediately
 local wrap = function(fn)
   return function(...args)
-    return setmetatable({
+    local awaitable
+    awaitable = setmetatable({
       [AWAIT] = true,
     }, {
       __call = function(_, cb)
         args.n = args.n + 1
         args[args.n] = cb
-        fn(unpack(args, 1, args.n))
+        awaitable.syncResult = table.pack(fn(unpack(args, 1, args.n)))
       end
     })
+    return awaitable
   end
 end
 

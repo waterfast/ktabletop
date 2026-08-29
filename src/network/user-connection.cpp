@@ -121,7 +121,7 @@ ClientSocket *UserConnection::moveSocket()
     return socket;
 }
 
-void UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
+int UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
 {
     static int requestId = 0;
     requestId++;
@@ -132,11 +132,12 @@ void UserConnection::request(const QByteArray &command, const QByteArray &jsonDa
     auto req = new PendingRequest(this, requestId, std::move(callback), timeout);
     if (tracked) {
         pendingRequests_.insert(requestId, req);
-        lastPendingId_ = requestId;
     }
     req->send(command, jsonData, timestamp);
     if (!tracked)
         req->deleteLater();
+
+    return requestId;
 }
 
 void UserConnection::reply(int requestId, bool ok, const QByteArray &jsonData)
@@ -190,9 +191,9 @@ UserConnection::ReceivedRequest UserConnection::receivedRequest(int requestId) c
 }
 
 // cancel last request from the sender
-void UserConnection::cancelRequest()
+void UserConnection::cancelRequest(int requestId)
 {
-    auto req = pendingRequests_.value(lastPendingId_, nullptr);
+    auto req = pendingRequests_.value(requestId, nullptr);
     if (!req)
         return;
     req->finish(QByteArray{}, std::make_error_code(std::errc::timed_out));

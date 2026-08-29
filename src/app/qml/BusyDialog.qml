@@ -15,7 +15,13 @@ Kirigami.Dialog {
     closePolicy: QQC2.Popup.NoAutoClose
     standardButtons: Kirigami.Dialog.NoButton
 
-    visible: busy !== null && busy.blocking === true
+    Connections {
+        target: root.busy
+        function onBlockingChanged() {
+            if (root.busy.blocking) root.open()
+            else root.close()
+        }
+    }
 
     customFooterActions: [
         Kirigami.Action {

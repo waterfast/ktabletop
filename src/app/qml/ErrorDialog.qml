@@ -15,7 +15,13 @@ Kirigami.Dialog {
     padding: Kirigami.Units.largeSpacing
     standardButtons: Kirigami.Dialog.Ok
 
-    visible: errorState !== null && errorState.active === true
+    Connections {
+        target: root.errorState
+        function onActiveChanged() {
+            if (root.errorState.active) root.open()
+            else root.close()
+        }
+    }
 
     onAccepted: Backend.emit("ErrorState::Dismissed", {})
     onRejected: Backend.emit("ErrorState::Dismissed", {})

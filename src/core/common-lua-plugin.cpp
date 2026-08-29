@@ -113,7 +113,10 @@ static int requestSocket(lua_State *L)
 
     conn->request(command, jsonData, time, timestamp, cb);
 
-    return 0;
+    int requestId = conn->request(command, jsonData, time, timestamp, cb);
+
+    lua_pushinteger(L, requestId);
+    return 1;
 }
 
 // args: int connId, int requestId, string jsonData, callback: fun(result, err)
@@ -143,18 +146,19 @@ static int replySocket(lua_State *L)
 static int cancelRequest(lua_State *L)
 {
     int nargs = lua_gettop(L);
-    if (nargs != 1) {
-        return luaL_error(L, "expected 1 argument, got %d", nargs);
+    if (nargs != 2) {
+        return luaL_error(L, "expected 2 arguments, got %d", nargs);
     }
 
     int connId = luaL_checkinteger(L, 1);
+    int requestId = luaL_checkinteger(L, 2);
 
     auto conn = findConnectionById(L, connId);
     if (!conn) {
         return luaL_error(L, "cannot finnnnnd socket of connId %d", connId);
     }
 
-    conn->cancelRequest();
+    conn->cancelRequest(requestId);
 
     return 0;
 }

@@ -66,13 +66,6 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    Connections {
-        target: Backend
-        function onLuaEvent(tp, payload) {
-            console.log(tp, JSON.stringify(payload));
-        }
-    }
-
     BusyDialog {}
     
     ErrorDialog {}

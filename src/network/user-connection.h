@@ -48,13 +48,13 @@ public:
     void setSocket(ClientSocket *socket);
     ClientSocket *moveSocket();
 
-    void request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp = -1, ReplyCallback callback = {});
+    int request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp = -1, ReplyCallback callback = {});
     void reply(int requestId, bool ok, const QByteArray &jsonData);
     void notify(const QByteArray &command, const QByteArray &jsonData);
 
     ReceivedRequest receivedRequest(int requestId) const;
 
-    void cancelRequest();
+    void cancelRequest(int requestId);
 
 Q_SIGNALS:
     void messageReady(const QByteArray &msg);
@@ -70,7 +70,6 @@ private:
     // Sending side
     friend class PendingRequest;
     QHash<int, PendingRequest *> pendingRequests_;
-    int lastPendingId_ = 0;
 
     // Receiving side
     QHash<int, ReceivedRequest> receivedRequests_;
