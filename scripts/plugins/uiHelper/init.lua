@@ -53,7 +53,7 @@ function M.setup(ctx)
       local cancelled = false
       opts = tablib.assign({}, opts or {})
 
-      if opts.cancelable and not opts.onCancel then
+      if opts.cancellable and not opts.onCancel then
         opts.onCancel = function()
           cancelled = true
           local requestId = awaitable.syncResult and awaitable.syncResult[1]
