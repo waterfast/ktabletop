@@ -17,7 +17,8 @@ function M.setup(ctx, config)
     cpp.luaEvent("Client::PushLobby", {})
 
     local myself = ctx:get("myself") --[[ @as ClientPlayer ]]
-    local reply = myself:request(Commands.FetchRoomList, nil, nil, nil, nil, {
+    local uiHelper = ctx:get("uiHelper")
+    local reply = uiHelper.awaitRequest(myself, myself:asyncRequest(Commands.FetchRoomList), {
       cancellable = true,
       message = "Loading rooms..."
     })

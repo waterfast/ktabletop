@@ -15,19 +15,19 @@ ctx:loadPlugin(require "plugins.roomManager.client")
 -- dispatcher wrapped with async.sync, wrapped cb-last-param fn can be waited
 ctx:on("Client::ConnectToHost", async.async(function(param)
   local uiHelper = ctx:get("uiHelper")
-  local handle = uiHelper.beginBusy({ message = "Connecting..." })
-  
-  local connect = async.wrap(ctx:get("__cpp.client").connectToHost)
-  local _, err = async.await(connect(param.host, param.port))
-  handle:finish()
+  uiHelper.withBusy({ message = "Connecting..." }, function ()
+    local connect = async.wrap(ctx:get("__cpp.client").connectToHost)
+    local _, err = async.await(connect(param.host, param.port))
 
-  local cpp = ctx:get("__cpp.common")
-  if err then
-    uiHelper.showError("Could not connect to the server: " .. tostring(err), "network")
-    cpp.luaEvent("Client::ConnectError", { error = err })
-  else
-    cpp.luaEvent("Client::Connected", {})
-  end
+    local cpp = ctx:get("__cpp.common")
+
+    if err then 
+      uiHelper.showError("Could not connect to the server: " .. tostring(err), "network")
+      cpp.luaEvent("Client::ConnectError", { error = err })
+    else
+      cpp.luaEvent("Client::Connected", {})
+    end
+  end)
 end))
 
 -- Fired by UserConnection::socketError, forwarded as a lua event by

@@ -196,10 +196,10 @@ local wrap = function(fn)
     awaitable = setmetatable({
       [AWAIT] = true,
     }, {
-      __call = function(_, cb)
+      __call = function(self, cb)
         args.n = args.n + 1
         args[args.n] = cb
-        awaitable.syncResult = table.pack(fn(unpack(args, 1, args.n)))
+        self.syncResult = table.pack(fn(unpack(args, 1, args.n)))
       end
     })
     return awaitable

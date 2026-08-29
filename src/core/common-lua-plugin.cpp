@@ -111,8 +111,6 @@ static int requestSocket(lua_State *L)
         luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
     };
 
-    conn->request(command, jsonData, time, timestamp, cb);
-
     int requestId = conn->request(command, jsonData, time, timestamp, cb);
 
     lua_pushinteger(L, requestId);
