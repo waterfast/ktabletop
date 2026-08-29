@@ -79,18 +79,21 @@ end
 function BusyState:begin(opts)
   opts = opts or {}
 
+  local cancellable = opts.cancellable or false
+
+  if cancellable and not opts.onCancel then
+    print("BusyState:begin: cancellable = true but no onCancel was given; ignoring cancellable for this operation")
+    cancellable = false
+  end
+  
   local entry = {
     message = opts.message or DEFAULT_MESSAGE,
     indicator = opts.indicator or "spinner",
     progress = opts.progress or 0,
-    cancellable = opts.cancellable or false,
-    onCancel = opts.onCancel,
+    cancellable = cancellable,
+    onCancel = cancellable and opts.onCancel or nil,
     blocking = (opts.blocking == nil) and true or opts.blocking,
   }
-
-  if opts.cancellable then
-    assert(entry.onCancel, "cancellable busy operations must provide onCancel")
-  end
 
   self._stack[#self._stack + 1] = entry
   self:setProperty("count", #self._stack)
