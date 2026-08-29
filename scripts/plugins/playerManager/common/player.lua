@@ -22,7 +22,7 @@ end
 ---@param data any
 ---@param isJson? boolean if true, should not json.encode here
 function Player:notify(command, data, isJson)
-    self._cpp.notifySocket(self.connId, command, isJson and data or json.encode(data))
+  self._cpp.notifySocket(self.connId, command, isJson and data or json.encode(data))
 end
 
 ---@param busyOpts? BusyOptions
