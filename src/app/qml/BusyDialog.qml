@@ -6,48 +6,46 @@ import org.kde.kirigami as Kirigami
 
 import org.kde.ktabletop
 
-Item {
+Kirigami.Dialog {
     id: root
 
     readonly property var busy: Backend.getObservable("busyState")
-    readonly property bool active: busy !== null && busy.blocking === true
-    readonly property bool cancellable: busy !== null && busy.cancellable === true
 
-    visible: active
+    padding: Kirigami.Units.largeSpacing
+    closePolicy: QQC2.Popup.NoAutoClose
+    standardButtons: Kirigami.Dialog.NoButton
 
-    // swallow all input so the UI underrneath is truly locked
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        onWheel: event => event.accepted = true
-    }
+    visible: busy !== null && busy.blocking === true
 
-    Rectangle {
-        anchors.fill: parent
-        color: Kirigami.Theme.backgroundColor
-        opacity: 0.6
-    }
+    customFooterActions: [
+        Kirigami.Action {
+            text: i18n("Cancel")
+            icon.name: "dialog-cancel"
+            visible: root.busy !== null && root.busy.cancellable === true
+            onTriggered: Backend.emit("BusyState::CancelRequested", {})
+        }
+    ]
 
-    ColumnLayout {
-        anchors.centerIn: parent
+    contentItem: ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
 
         QQC2.BusyIndicator {
             Layout.alignment: Qt.AlignHCenter
-            running: root.active
+            visible: root.busy === null || root.busy.indicator !== "progress"
+            running: visible
+        }
+
+        QQC2.ProgressBar {
+            Layout.fillWidth: true
+            visible: root.busy !== null && root.busy.indicator === "progress"
+            from: 0
+            to: 1
+            value: root.busy !== null ? root.busy.progress : 0
         }
 
         QQC2.Label {
             Layout.alignment: Qt.AlignHCenter
-            text: i18n("Waiting for the server…")
-        }
-
-        QQC2.Button {
-            Layout.alignment: Qt.AlignHCenter
-            visible: root.cancellable
-            text: i18n("Cancel")
-            icon.name: "dialog-cancel"
-            onClicked: Backend.emit("BusyState::CancelRequested", {})
+            text: root.busy !== null && root.busy.message !== "" ? root.busy.message : i18n("Waiting for the server…")
         }
     }
 }

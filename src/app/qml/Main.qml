@@ -73,12 +73,10 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Global busy/blocking overlay, always on top of the page stack and any popups.
-    BusyDialog {
-        parent: root.overlay
-        anchors.fill: parent
-    }
-
+    BusyDialog {}
+    
+    ErrorDialog {}
+    
     Component.onCompleted: {
     }
 }

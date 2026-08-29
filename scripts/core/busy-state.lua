@@ -2,6 +2,9 @@ local Observable = require "core.observable"
 
 ---@class BusyOptions
 ---@field enabled? boolean set to false to skip tracking this operation entirely (default true)
+---@field message? string text shown in the busy dialog (default: a generic "waiting" message)
+---@field indicator? BusyIndicatorKind "spinner" (default) or "progress"
+---@field progress? number 0..1, only used when indicator == "progress"
 ---@field cancellable? boolean whether QML should offer a cancel action (default false)
 ---@field onCancel? fun() called when the user cancels; required if cancellable is true
 ---@field blocking? boolean whether this operation should lock the whole UI (default true).
@@ -9,16 +12,27 @@ local Observable = require "core.observable"
 ---  indicator (e.g. waiting for the opponent's move) while the rest of the UI
 ---  (settings, leave room, ...) stays usable.
 
+---@class BusyHandle
+local BusyHandle = {}
+
 ---@class BusyState: Object, Observable
 ---@field ctx Context
 ---@field count integer number of currently tracked operations
----@field blocking boolean whether at least one active operation wants a full block
----@field cancellable boolean whether the most recent cancellable operation can be cancelled
+---@field blocking boolean whether the topmost blocking operation wants a full block
+---@field cancellable boolean whether the topmost blocking operation can be cancelled
+---@field message string display text of the topmost blocking operation
+---@field indicator BusyIndicatorKind
+---@field progress number
 local BusyState = class("BusyState")
 BusyState:include(Observable)
 BusyState:registerProperty("count")
 BusyState:registerProperty("blocking")
 BusyState:registerProperty("cancellable")
+BusyState:registerProperty("message")
+BusyState:registerProperty("indicator")
+BusyState:registerProperty("progress")
+
+local DEFAULT_MESSAGE = "Waiting for the server..."
 
 ---@param ctx Context
 function BusyState:initialize(ctx)
@@ -27,63 +41,106 @@ function BusyState:initialize(ctx)
   self.count = 0
   self.blocking = false
   self.cancellable = false
-  self._blockingCount = 0
-  self._cancelStack = {}
+  self.message = DEFAULT_MESSAGE
+  self.indicator = "spinner"
+  self.progress = 0
+  self._stack = {}
 
   self:createObserveObject()
 end
 
+function BusyState:_refresh()
+  local top = nil
+
+  for i = #self._stack, 1, -1 do
+    if self._stack[i].blocking then
+      top = self._stack[i]
+      break
+    end
+  end
+
+  self:setProperty("blocking", top ~= nil)
+  self:setProperty("cancellable", top ~= nil and top.cancellable or false)
+  self:setProperty("message", top and top.message or DEFAULT_MESSAGE)
+  self:setProperty("indicator", top and top.indicator or "spinner")
+  self:setProperty("progress", top and top.progress or 0)
+end
+
+---@param entry table
+function BusyState:_refresh(entry)
+	if not tablib.removeOne(self._stack, entry) then
+		return
+	end
+
+  self:setProperty("count", #self._stack)
+	self:_refresh()
+end
+
 --- Mark the start of a trackable async operation
 ---@param opts? BusyOptions
----@return fun() finish call exactly once, on success, error, or timeout
+---@return BusyHandle
 function BusyState:begin(opts)
   opts = opts or {}
-  local isBlocking = opts.blocking
 
-  if isBlocking == nil then
-    isBlocking = true
-  end
-
-  self:setProperty("count", self.count + 1)
-
-  if isBlocking then
-    self._blockingCount = self._blockingCount + 1
-    self:setProperty("blocking", true)
-  end
+  local entry = {
+    message = opts.message or DEFAULT_MESSAGE,
+    indicator = opts.indicator or "spinner",
+    progress = opts.progress or 0,
+    cancellable = opts.cancellable or false,
+    onCancel = opts.onCancel,
+    blocking = (opts.blocking == nil) and true or opts.blocking,
+  }
 
   if opts.cancellable then
-    assert(opts.onCancel, "cancellable busy operations must provide onCancel")
-    self._cancelStack[#self._cancelStack + 1] = opts.onCancel
-    self:setProperty("cancellable", true)
+    assert(entry.onCancel, "cancellable busy operations must provide onCancel")
   end
 
+  self._stack[#self._stack + 1] = entry
+  self:setProperty("count", #self._stack)
+  self:_refresh()
+
+  local busyState = self
   local finished = false
 
-  return function()
+  ---@type BusyHandle
+  local handle = {}
+  
+  function handle:setMessage(message)
+    entry.message = message
+    busyState:_refresh()
+  end
+
+  function handle:setProgress(progress)
+    entry.progress = progress
+    entry.indicator = "progress"
+    busyState:_refresh()
+  end
+
+  function handle:setIndicator(kind)
+    entry.indicator = kind
+    busyState:_refresh()
+  end
+  
+  --- Idempotent: safe to call more than once (e.g. once from the await
+  --- continuation and once from an error path).
+  function handle:finish()
     if finished then
       return
     end
     finished = true
-
-    self:setProperty("count", self.count - 1)
-
-    if isBlocking then
-      self._blockingCount = self._blockingCount - 1
-      self:setProperty("blocking", self._blockingCount > 0)
-    end
-
-    if opts.cancellable then
-      tablib.removeOne(self._cancelStack, opts.onCancel)
-      self:setProperty("cancellable", #self._cancelStack > 0)
-    end
+    busyState:_remove(entry)
   end
+  
+  return handle
 end
 
 function BusyState:cancel()
-  local onCancel = self._cancelStack[#self._cancelStack]
-
-  if onCancel then
-    onCancel()
+  for i = #self._stack, 1, -1 do
+    local entry = self._stack[i]
+    if entry.blocking and entry.cancellable and entry.onCancel then
+      entry.onCancel()
+      return
+    end
   end
 end
 

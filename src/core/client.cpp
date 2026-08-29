@@ -51,6 +51,10 @@ Client::Client(QObject *parent)
                     {u"data"_s, QJsonValue::fromJson(req.jsonData).toVariant()},
                 });
     });
+
+    connect(connection_, &UserConnection::socketError, [this](const QString &msg) {
+        L->emit(u"Core::Socket::Error"_s, {{u"message"_s, msg}});
+    });
 }
 
 Client::~Client()
