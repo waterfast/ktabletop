@@ -7,8 +7,6 @@ local class = ktabletop.class
 local PlayerManager = require "server.user.player-manager"
 local RoomManager = require "server.room.room-manager"
 
---- Server-side entry point. Owns the player and room managers and dispatches
---- socket events coming from C++.
 ---@class Server: Object
 ---@field playerManager PlayerManager
 ---@field roomManager RoomManager

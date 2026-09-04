@@ -2,7 +2,6 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local RoomBase = require "server.room.roombase"
-local Commands = require "core.network-commands"
 
 ---@class Lobby: ServerRoomBase
 local Lobby = RoomBase:subclass("Lobby")
@@ -12,7 +11,7 @@ function Lobby:addPlayer(player)
   RoomBase.addPlayer(self, player)
   -- TODO: should write some client-side Lua and GUI code here!
   -- Otherwise the room manager is not possible for testing
-  player:notify(Commands.EnterLobby, nil)
+  player:notify("EnterLobby", nil)
   self:updateOnlineInfo()
 end
 
@@ -23,7 +22,7 @@ function Lobby:removePlayer(player)
 end
 
 function Lobby:updateOnlineInfo()
-  self:broadcast(Commands.UpdatePlayerNum, { #self.players })
+  self:broadcast("UpdatePlayerNum", { #self.players })
 end
 
 return Lobby

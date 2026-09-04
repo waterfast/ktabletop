@@ -45,18 +45,7 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
     client->connectToHost(address, port);
 }
 
-void QmlBackendController::onPropertyMapValueChanged(const QString &objectName, const QString &key, const QVariant &value)
+void QmlBackendController::onPropertyMapValueChanged(const QString &, const QString &, const QVariant &)
 {
-    Q_UNUSED(objectName);
-    Q_UNUSED(key);
-    Q_UNUSED(value);
-    // TODO: LuaBinding::emit removed; rework how QML-side observable changes
-    // are pushed back to Lua.
-    // auto L = Client::instance()->luaBinding();
-    // L->emit(u"Core::ObservingObject::ValueChanged"_s,
-    //         {
-    //             {u"_stringId"_s, objectName},
-    //             {u"key"_s, key},
-    //             {u"value"_s, value},
-    //         });
+    qWarning("Changing value directly from QML view will have no effect.");
 }

@@ -2,7 +2,6 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local RoomBase = require "server.room.roombase"
-local Commands = require "core.network-commands"
 
 ---@class Room: ServerRoomBase
 ---@field owner Player?
@@ -24,16 +23,16 @@ end
 ---@param player Player
 function Room:addPlayer(player)
   if #self.players >= self.capacity then
-    player:notify(Commands.ErrorMsg, "Room is full or already started")
+    player:notify("ErrorMsg", "Room is full or already started")
     return
   end
 
-  self:broadcast(Commands.AddPlayer, { player.connId })
+  self:broadcast("AddPlayer", { player.connId })
 
-  player:notify(Commands.EnterRoom, { id = self.id, name = self.name, capacity = self.capacity })
+  player:notify("EnterRoom", { id = self.id, name = self.name, capacity = self.capacity })
 
   for i = 1, #self.players do
-    player:notify(Commands.AddPlayer, { self.players[i].connId })
+    player:notify("AddPlayer", { self.players[i].connId })
   end
 
   RoomBase.addPlayer(self, player)
@@ -41,7 +40,7 @@ function Room:addPlayer(player)
   if self.owner == nil then
     self:setOwner(player)
   else
-    player:notify(Commands.RoomOwner, { self.owner.connId })
+    player:notify("RoomOwner", { self.owner.connId })
   end
 end
 
@@ -51,7 +50,7 @@ function Room:removePlayer(player)
     return
   end
 
-  self:broadcast(Commands.RemovePlayer, { player.connId })
+  self:broadcast("RemovePlayer", { player.connId })
 
   if player == self.owner then
     if #self.players > 0 then
@@ -65,7 +64,7 @@ end
 ---@param player Player
 function Room:setOwner(player)
   self.owner = player
-  self:broadcast(Commands.RoomOwner, { player.connId })
+  self:broadcast("RoomOwner", { player.connId })
 end
 
 return Room

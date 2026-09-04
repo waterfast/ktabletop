@@ -3,10 +3,8 @@ local async = require "corelib.async"
 local class = ktabletop.class
 local json = ktabletop.json
 
---- Common player representation
---- Only holds data both sides need; socket I/O lives in the subclasses.
 ---@class Player: Object
----@field connId integer
+---@field connId integer My socket
 ---@field id integer
 ---@field username string
 local Player = class("Player")

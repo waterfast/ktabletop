@@ -32,16 +32,18 @@ Client::Client(QObject *parent)
     connection_ = new UserConnection(this, new ClientSocket);
 
     connect(connection_, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
-        L->call(u"client"_s, u"processNotification"_s, {connection_->connId(), QString::fromUtf8(command), QJsonValue::fromJson(jsonData).toVariant()});
+        L->callMethod(u"client"_s, u"processNotification"_s, {connection_->connId(), QString::fromUtf8(command), QJsonValue::fromJson(jsonData).toVariant()});
     });
 
     connect(connection_, &UserConnection::requestGot, [this, conn = connection_](int requestId) {
         const auto &req = conn->receivedRequest(requestId);
-        L->call(u"client"_s, u"processRequest"_s, {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
+        L->callMethod(u"client"_s,
+                      u"processRequest"_s,
+                      {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
     });
 
     connect(connection_, &UserConnection::socketError, [this](const QString &msg) {
-        L->call(u"client"_s, u"onSocketError"_s, {msg});
+        L->callMethod(u"client"_s, u"onSocketError"_s, {msg});
     });
 }
 
@@ -62,5 +64,5 @@ UserConnection *Client::connection() const
 
 void Client::connectToHost(const QString &server, ushort port)
 {
-    L->call(u"client"_s, u"connectToHost"_s, {server, port});
+    L->callMethod(u"client"_s, u"connectToHost"_s, {server, port});
 }

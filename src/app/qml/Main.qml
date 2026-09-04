@@ -13,9 +13,6 @@ import org.kde.ktabletop
 
 Kirigami.ApplicationWindow {
     id: root
-    width: 240
-    height: 400
-
 
     pageStack {
         columnView.columnResizeMode: KL.ColumnView.SingleColumn

@@ -1,8 +1,6 @@
 local RoomBase = require "core.room-base"
 local Observable = require "corelib.observable"
 
---- Client-side lobby. Only the local player is tracked here (via
---- playerManager); `playerCount` reflects the server-broadcast total.
 ---@class ClientLobby: RoomBase, Observable
 ---@field playerCount integer
 local ClientLobby = RoomBase:subclass("ClientLobby")

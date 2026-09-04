@@ -59,9 +59,38 @@ void LuaBinding::triggerLuaEvent(const QString &type, const QVariant &payload)
     luaEvent(type, payload);
 }
 
-void LuaBinding::call(const QString &subtable, const QString &method, const QVariantList &args)
+QVariant LuaBinding::callMethod(const QString &subtable, const QString &method, const QVariantList &args)
 {
-    L->callMethod(subtable, method, args);
+    lua_State *L = this->L->state();
+
+    lua_getglobal(L, "debug");
+    lua_getfield(L, -1, "traceback");
+    lua_replace(L, -2);
+
+    lua_getglobal(L, "ktabletop"); // ktabletop
+    lua_getfield(L, -1, subtable.toUtf8().constData()); // ktabletop.<field>
+    lua_replace(L, -2);
+    lua_getfield(L, -1, method.toUtf8().constData());
+    // stack: msgh, <object>, <fn>
+    lua_pushvalue(L, -2);
+
+    int nargs = 1; // self
+    for (auto &v : args) {
+        LuaVM::pushValue(L, v);
+        nargs++;
+    }
+    // stack: msgh, <object>, <fn>, self, args...
+
+    int err = lua_pcall(L, nargs, 1, -nargs - 3);
+    if (err) {
+        qCritical() << lua_tostring(L, -1);
+        lua_pop(L, 3);
+        return QVariant();
+    }
+    auto result = LuaVM::readValue(L);
+    lua_pop(L, 2);
+
+    return result;
 }
 
 LuaVM &LuaBinding::vm()

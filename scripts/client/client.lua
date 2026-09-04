@@ -8,8 +8,6 @@ local UiHelper = require "client.ui"
 local ClientPlayerManager = require "client.user.player-manager"
 local ClientRoomManager = require "client.room.room-manager"
 
---- Client-side entry point. Owns the UI helper and the client player/room
---- managers, and dispatches socket events coming from C++.
 ---@class Client: Object
 ---@field uiHelper UiHelper
 ---@field playerManager ClientPlayerManager

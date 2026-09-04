@@ -1,12 +1,10 @@
---- Common room representation shared by client and server.
---- Only holds data both sides need; broadcasting/notifying is server-only
---- and lives in the server subclass.
+local class = ktabletop.class
+local tablib = ktabletop.tablib
+
 ---@class RoomBase: Object
 ---@field id integer
 ---@field players Player[]
 ---@field observers Player[]
-local class = ktabletop.class
-local tablib = ktabletop.tablib
 local RoomBase = class("RoomBase")
 
 function RoomBase:initialize()

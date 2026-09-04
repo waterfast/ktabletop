@@ -21,29 +21,12 @@ lua_State *LuaVM::state() const
     return L;
 }
 
-bool LuaVM::needLock()
-{
-    auto thr = QThread::currentThread();
-    bool ret = false;
-    bool locked = true;
-    if (interpreter_lock.tryLock(0)) {
-        locked = false;
-        interpreter_lock.unlock();
-    }
-    if (!locked || current_thread != thr) {
-        current_thread = thr;
-        ret = true;
-    }
-    return ret;
-}
-
 bool LuaVM::dofile(const QString &path)
 {
     if (!QFile::exists(path)) {
         qCritical() << path << "does not exist!";
         return false;
     }
-    QMutexLocker locker(needLock() ? &interpreter_lock : nullptr);
 
     lua_getglobal(L, "debug");
     lua_getfield(L, -1, "traceback");
@@ -61,14 +44,6 @@ bool LuaVM::dofile(const QString &path)
 
     lua_pop(L, 1);
     return true;
-}
-
-void LuaVM::setGlobal(const QString &name, const QString &jsonValue)
-{
-    QMutexLocker locker(needLock() ? &interpreter_lock : nullptr);
-    auto bytes = jsonValue.toUtf8();
-    lua_pushlstring(L, bytes.constData(), bytes.size());
-    lua_setglobal(L, name.toUtf8().constData());
 }
 
 void LuaVM::dumpStack()
@@ -98,8 +73,6 @@ void LuaVM::dumpStack()
 
 QVariant LuaVM::call(const QString &func_name, QVariantList params)
 {
-    QMutexLocker locker(needLock() ? &interpreter_lock : nullptr);
-
     lua_getglobal(L, "debug");
     lua_getfield(L, -1, "traceback");
     lua_replace(L, -2);
@@ -127,37 +100,8 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
     return result;
 }
 
-void LuaVM::callMethod(const QString &field, const QString &method, QVariantList params)
-{
-    QMutexLocker locker(needLock() ? &interpreter_lock : nullptr);
-
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
-    // stack: debug.traceback (index 1, the error handler)
-
-    lua_getglobal(L, "ktabletop"); // ktabletop
-    lua_getfield(L, -1, field.toUtf8().constData()); // ktabletop.<field>
-    lua_getfield(L, -1, method.toUtf8().constData());
-    lua_pushvalue(L, -2); // self = ktabletop.<field>
-
-    int nargs = 1; // self
-    for (auto v : params) {
-        pushValue(L, v);
-        nargs++;
-    }
-
-    int err = lua_pcall(L, nargs, 0, 1);
-    if (err) {
-        qCritical() << lua_tostring(L, -1);
-    }
-    lua_settop(L, 0);
-}
-
 QVariant LuaVM::eval(const QString &lua)
 {
-    QMutexLocker locker(needLock() ? &interpreter_lock : nullptr);
-
     lua_getglobal(L, "debug");
     lua_getfield(L, -1, "traceback");
     lua_replace(L, -2);

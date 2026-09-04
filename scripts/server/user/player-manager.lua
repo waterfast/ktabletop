@@ -5,7 +5,6 @@ local ServerPlayer = require "server.user.player"
 
 local class = ktabletop.class
 
---- Tracks connected players and assigns them an identity on connect.
 ---@class PlayerManager: Object
 ---@field private players table<integer, Player>
 local PlayerManager = class("PlayerManager")

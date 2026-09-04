@@ -68,8 +68,10 @@ void Server::processNewConnection(ClientSocket *client)
 
     connect(conn, &UserConnection::requestGot, [this, conn](int requestId) {
         const auto &req = conn->receivedRequest(requestId);
-        L->call(u"server"_s, u"processRequest"_s, {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
+        L->callMethod(u"server"_s,
+                      u"processRequest"_s,
+                      {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
     });
 
-    L->call(u"server"_s, u"onNewConnection"_s, {connId});
+    L->callMethod(u"server"_s, u"onNewConnection"_s, {connId});
 }

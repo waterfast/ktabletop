@@ -24,8 +24,7 @@ public:
     explicit LuaBinding(QObject *parent = nullptr, Role role = Server);
     ~LuaBinding() override;
 
-    // Execute the entry script for the role. Must be called after the C++
-    // backend has registered its globals (e.g. KTabletop::open).
+    // Execute the entry script for the role.
     void run();
 
     Role role() const;
@@ -36,8 +35,8 @@ public:
     // called by Lua
     void triggerLuaEvent(const QString &type, const QVariant &payload);
 
-    // Call `ktabletop.<subtable>.<method>(args...)` using colon semantics.
-    void call(const QString &subtable, const QString &method, const QVariantList &args = {});
+    // Call `ktabletop.<subtable>:<method>(args...)`
+    QVariant callMethod(const QString &subtable, const QString &method, const QVariantList &args = {});
 
     LuaVM &vm();
     lua_State *state() const;

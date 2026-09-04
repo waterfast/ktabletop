@@ -25,19 +25,11 @@ public:
     void dumpStack();
 
     QVariant call(const QString &func_name, QVariantList params = QVariantList());
-    // Call `ktabletop.<field>.<method>(args...)` using colon semantics, i.e.
-    // `ktabletop.<field>` is passed as self. No return value is read.
-    void callMethod(const QString &field, const QString &method, QVariantList params = QVariantList());
     QVariant eval(const QString &lua);
-    void setGlobal(const QString &name, const QString &jsonValue);
 
     static void pushValue(lua_State *L, QVariant v);
     static QVariant readValue(lua_State *L, int index = 0, QHash<const void *, bool> stack = QHash<const void *, bool>());
 
 private:
     lua_State *L;
-    QMutex interpreter_lock;
-    QThread *current_thread = nullptr;
-
-    bool needLock();
 };
