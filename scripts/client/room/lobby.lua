@@ -1,5 +1,5 @@
-local RoomBase = require "plugins.roomManager.common.room-base"
-local Observable = require "core.observable"
+local RoomBase = require "core.room-base"
+local Observable = require "corelib.observable"
 
 --- Client-side lobby. Only the local player is tracked here (via
 --- playerManager); `playerCount` reflects the server-broadcast total.
@@ -9,9 +9,8 @@ local ClientLobby = RoomBase:subclass("ClientLobby")
 ClientLobby:include(Observable)
 ClientLobby:registerProperty("playerCount")
 
----@param ctx Context
-function ClientLobby:initialize(ctx)
-  RoomBase.initialize(self, ctx)
+function ClientLobby:initialize()
+  RoomBase.initialize(self)
   self._stringId = "lobby"
   self.playerCount = 0
 

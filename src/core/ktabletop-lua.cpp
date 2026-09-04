@@ -1,10 +1,15 @@
-#include "common-lua-plugin.h"
+// SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
+#include "ktabletop-lua.h"
 #include "client.h"
 #include "lua/c-wrapper.h" // for LuaVM::readValue
 #include "lua/lua-binding.h"
+#include "network/client-socket.h"
 #include "network/user-connection.h"
 #include "server.h"
 
+#include <QAbstractSocket>
 #include <QStringLiteral>
 #include <QTimer>
 using namespace Qt::Literals::StringLiterals;
@@ -117,7 +122,7 @@ static int requestSocket(lua_State *L)
     return 1;
 }
 
-// args: int connId, int requestId, string jsonData, callback: fun(result, err)
+// args: int connId, int requestId, bool ok, string jsonData
 static int replySocket(lua_State *L)
 {
     int nargs = lua_gettop(L);
@@ -140,7 +145,7 @@ static int replySocket(lua_State *L)
     return 0;
 }
 
-// args: int connId
+// args: int connId, int requestId
 static int cancelRequest(lua_State *L)
 {
     int nargs = lua_gettop(L);
@@ -239,6 +244,90 @@ static int luaEvent(lua_State *L)
     return 0;
 }
 
+// client-only: args: string host, int port, callback: fun(err: string?)
+static int connectToHost(lua_State *L)
+{
+    auto binding = LuaBinding::forState(L);
+    if (!binding) {
+        return luaL_error(L, "No LuaBinding found for this Lua VM");
+    }
+
+    if (lua_gettop(L) != 3)
+        return luaL_error(L, "expected 3 arguments");
+    const char *host = luaL_checkstring(L, 1);
+    int port = luaL_checkinteger(L, 2);
+    luaL_checktype(L, 3, LUA_TFUNCTION);
+
+    lua_pushvalue(L, 3);
+    int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+    auto *sock = Client::instance()->connection()->socket()->socket();
+
+    auto *timer = new QTimer(binding);
+    timer->setSingleShot(true);
+
+    auto ctx = new QObject;
+
+    std::function<void(const char *)> invoke = [ctx, L = binding->vm().state(), ref, timer](const char *err) {
+        ctx->deleteLater();
+        timer->stop();
+        timer->deleteLater();
+
+        lua_getglobal(L, "debug");
+        lua_getfield(L, -1, "traceback");
+        lua_replace(L, -2);
+        lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+        if (err) {
+            lua_pushstring(L, err);
+        } else {
+            lua_pushnil(L);
+        }
+
+        if (lua_pcall(L, 1, 0, -3) != LUA_OK) {
+            qCritical() << lua_tostring(L, -1);
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    };
+
+    sock->connect(
+        sock,
+        &QAbstractSocket::connected,
+        ctx,
+        [invoke] {
+            invoke(nullptr);
+        },
+        Qt::SingleShotConnection);
+    sock->connect(
+        sock,
+        &QAbstractSocket::errorOccurred,
+        ctx,
+        [invoke, sock](QAbstractSocket::SocketError) {
+            invoke(sock->errorString().toUtf8().constData());
+        },
+        Qt::SingleShotConnection);
+    timer->connect(
+        timer,
+        &QTimer::timeout,
+        ctx,
+        [invoke] {
+            invoke("timeout");
+        },
+        Qt::SingleShotConnection);
+    timer->start(5000);
+
+    sock->connectToHost(QString::fromUtf8(host), static_cast<ushort>(port));
+    return 0;
+}
+
+// client-only: returns int
+static int getConnId(lua_State *L)
+{
+    lua_pushinteger(L, Client::instance()->connection()->connId());
+    return 1;
+}
+
 static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
@@ -251,41 +340,22 @@ static luaL_Reg commonFuncTable[] = {
     {NULL, NULL},
 };
 
-static int commonPluginSetup(lua_State *L)
+static luaL_Reg clientFuncTable[] = {
+    {"connectToHost", connectToHost},
+    {"getConnId", getConnId},
+    {NULL, NULL},
+};
+
+extern "C" int luaopen_ktabletop(lua_State *L)
 {
-    int nargs = lua_gettop(L);
-    if (nargs < 1) {
-        return luaL_error(L, "at least a ctx param should be provided");
-    }
-    luaL_checktype(L, 1, LUA_TTABLE);
-
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
-
-    // ctx:set("__cpp.common", functable) ctx should be the first arg
-    lua_getfield(L, 1, "set");
-    if (!lua_isfunction(L, -1)) {
-        return luaL_error(L, "ctx.set is not a function");
-    }
-
-    lua_pushvalue(L, 1); // push ctx to stack top
-    lua_pushliteral(L, "__cpp.common");
     lua_newtable(L);
     luaL_setfuncs(L, commonFuncTable, 0);
 
-    if (lua_pcall(L, 3, 0, -5) != LUA_OK) {
-        return luaL_error(L, "failed to call ctx:set: %s", lua_tostring(L, -1));
+    auto binding = LuaBinding::forState(L);
+    if (binding && binding->role() == LuaBinding::Client) {
+        luaL_setfuncs(L, clientFuncTable, 0);
     }
 
+    lua_setglobal(L, "ktabletop");
     return 0;
-}
-
-QVariantMap CommonLuaPlugin::create()
-{
-    return {
-        {u"name"_s, u"/ktabletop/cpp/commonPlugin"_s},
-        {u"ifaces"_s, {u"ktabletop.cpp.common"_s}},
-        {u"setup"_s, QVariant::fromValue<lua_CFunction>(commonPluginSetup)},
-    };
 }

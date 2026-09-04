@@ -1,5 +1,7 @@
-local RoomBase = require "plugins.roomManager.common.room-base"
-local ClientPlayer = require "plugins.playerManager.client.player"
+local RoomBase = require "core.room-base"
+local ClientPlayer = require "client.user.player"
+
+local tablib = ktabletop.tablib
 
 ---@class ClientRoom: RoomBase
 ---@field name string?
@@ -7,12 +9,11 @@ local ClientPlayer = require "plugins.playerManager.client.player"
 ---@field ownerConnId integer?
 local ClientRoom = RoomBase:subclass("ClientRoom")
 
----@param ctx Context
 ---@param id integer
 ---@param name string
 ---@param capacity integer
-function ClientRoom:initialize(ctx, id, name, capacity)
-  RoomBase.initialize(self, ctx)
+function ClientRoom:initialize(id, name, capacity)
+  RoomBase.initialize(self)
   self.id = id
   self.name = name
   self.capacity = capacity
@@ -26,7 +27,7 @@ function ClientRoom:addMember(connId)
   if existing then
     return existing
   end
-  local player = ClientPlayer:new(self.ctx, connId)
+  local player = ClientPlayer:new(connId)
   self:addPlayer(player)
   return player
 end

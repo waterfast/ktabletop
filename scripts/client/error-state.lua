@@ -1,9 +1,10 @@
-local Observable = require "core.observable"
+local Observable = require "corelib.observable"
+
+local class = ktabletop.class
 
 ---@alias ErrorKind "network"|"aborted"|"luaError"
 
 ---@class ErrorState: Object, Observable
----@field ctx Context
 ---@field active boolean
 ---@field message string
 ---@field kind ErrorKind
@@ -13,9 +14,7 @@ ErrorState:registerProperty("active")
 ErrorState:registerProperty("message")
 ErrorState:registerProperty("kind")
 
----@param ctx Context
-function ErrorState:initialize(ctx)
-  self.ctx = ctx
+function ErrorState:initialize()
   self._stringId = "errorState"
   self.active = false
   self.message = ""

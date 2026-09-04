@@ -1,4 +1,7 @@
-local Observable = require "core.observable"
+local Observable = require "corelib.observable"
+
+local class = ktabletop.class
+local tablib = ktabletop.tablib
 
 ---@alias BusyIndicatorKind "spinner"|"progress"
 
@@ -21,7 +24,6 @@ local Observable = require "core.observable"
 ---@field finish fun(self: BusyHandle)
 
 ---@class BusyState: Object, Observable
----@field ctx Context
 ---@field count integer number of currently tracked operations
 ---@field blocking boolean whether the topmost blocking operation wants a full block
 ---@field cancellable boolean whether the topmost blocking operation can be cancelled
@@ -39,9 +41,7 @@ BusyState:registerProperty("progress")
 
 local DEFAULT_MESSAGE = "Waiting for the server..."
 
----@param ctx Context
-function BusyState:initialize(ctx)
-  self.ctx = ctx
+function BusyState:initialize()
   self._stringId = "busyState"
   self.count = 0
   self.blocking = false

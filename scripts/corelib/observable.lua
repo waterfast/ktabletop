@@ -12,8 +12,8 @@ function Observable:setProperty(key, value)
   self[key] = value
   if type(value) == "table" or oldValue ~= value then
     -- TODO: need more discussion here
-    -- as we can see, this assumes base class has `_stringId` and `ctx` field
-    self.ctx:get("__cpp.common").luaEvent("Observable::ValueChanged", {
+    -- assumes the including class has a `_stringId` field
+    ktabletop.luaEvent("Observable::ValueChanged", {
       _stringId = self._stringId,
       key = key,
       value = value,
@@ -32,8 +32,7 @@ function Observable:getPropertyMap()
 end
 
 function Observable:createObserveObject()
-  local cpp = self.ctx:get("__cpp.common")
-  cpp.luaEvent("Observable::NewObject", self:getPropertyMap())
+  ktabletop.luaEvent("Observable::NewObject", self:getPropertyMap())
 end
 
 ---@param key string

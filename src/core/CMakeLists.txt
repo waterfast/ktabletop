@@ -1,8 +1,7 @@
 add_library(ktabletop_core STATIC
     server.cpp
     client.cpp
-    client-lua-plugin.cpp
-    common-lua-plugin.cpp
+    ktabletop-lua.cpp
 )
 
 target_link_libraries(ktabletop_core PUBLIC

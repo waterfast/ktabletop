@@ -25,6 +25,9 @@ public:
     void dumpStack();
 
     QVariant call(const QString &func_name, QVariantList params = QVariantList());
+    // Call `ktabletop.<field>.<method>(args...)` using colon semantics, i.e.
+    // `ktabletop.<field>` is passed as self. No return value is read.
+    void callMethod(const QString &field, const QString &method, QVariantList params = QVariantList());
     QVariant eval(const QString &lua);
     void setGlobal(const QString &name, const QString &jsonValue);
 
@@ -38,5 +41,3 @@ private:
 
     bool needLock();
 };
-
-Q_DECLARE_METATYPE(lua_CFunction)

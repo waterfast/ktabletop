@@ -37,7 +37,7 @@ Kirigami.Dialog {
             text: i18n("Cancel")
             icon.name: "dialog-cancel"
             visible: root.busy !== null && root.busy.cancellable === true
-            onTriggered: Backend.emit("BusyState::CancelRequested", {})
+            // onTriggered: Backend.emit("BusyState::CancelRequested", {})
         }
     ]
 

@@ -1,4 +1,4 @@
-local Player = require "plugins.playerManager.common.player"
+local Player = require "core.player"
 
 ---@class ClientPlayer: Player
 local ClientPlayer = Player:subclass("ClientPlayer")

@@ -4,15 +4,10 @@
 #include "c-wrapper.h"
 #include <QFile>
 
-extern "C" {
-int luaopen_ktabletop(lua_State *);
-}
-
 LuaVM::LuaVM()
 {
     L = luaL_newstate();
     luaL_openlibs(L);
-    // luaopen_ktabletop(L);
 }
 
 LuaVM::~LuaVM()
@@ -132,6 +127,33 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
     return result;
 }
 
+void LuaVM::callMethod(const QString &field, const QString &method, QVariantList params)
+{
+    QMutexLocker locker(needLock() ? &interpreter_lock : nullptr);
+
+    lua_getglobal(L, "debug");
+    lua_getfield(L, -1, "traceback");
+    lua_replace(L, -2);
+    // stack: debug.traceback (index 1, the error handler)
+
+    lua_getglobal(L, "ktabletop"); // ktabletop
+    lua_getfield(L, -1, field.toUtf8().constData()); // ktabletop.<field>
+    lua_getfield(L, -1, method.toUtf8().constData());
+    lua_pushvalue(L, -2); // self = ktabletop.<field>
+
+    int nargs = 1; // self
+    for (auto v : params) {
+        pushValue(L, v);
+        nargs++;
+    }
+
+    int err = lua_pcall(L, nargs, 0, 1);
+    if (err) {
+        qCritical() << lua_tostring(L, -1);
+    }
+    lua_settop(L, 0);
+}
+
 QVariant LuaVM::eval(const QString &lua)
 {
     QMutexLocker locker(needLock() ? &interpreter_lock : nullptr);
@@ -214,12 +236,8 @@ void LuaVM::pushValue(lua_State *L, QVariant v)
         lua_pushnil(L);
         break;
     default:
-        if (typeId == QMetaType::fromType<lua_CFunction>().id()) {
-            lua_pushcfunction(L, v.value<lua_CFunction>());
-        } else {
-            qCritical() << "cannot handle QVariant type" << v.typeName() << "(id:" << v.typeId() << "): pushing nil";
-            lua_pushnil(L);
-        }
+        qCritical() << "cannot handle QVariant type" << v.typeName() << "(id:" << v.typeId() << "): pushing nil";
+        lua_pushnil(L);
         break;
     }
 }

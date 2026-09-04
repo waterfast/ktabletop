@@ -32,8 +32,8 @@ Kirigami.Dialog {
         }
     }
 
-    onAccepted: Backend.emit("ErrorState::Dismissed", {})
-    onRejected: Backend.emit("ErrorState::Dismissed", {})
+    // onAccepted: Backend.emit("ErrorState::Dismissed", {})
+    // onRejected: Backend.emit("ErrorState::Dismissed", {})
 
     contentItem: ColumnLayout {
         spacing: Kirigami.Units.largeSpacing

@@ -1,8 +1,8 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-local RoomBase = require "plugins.roomManager.server.roombase"
-local Commands = require "plugins.playerManager.common.network-commands"
+local RoomBase = require "server.room.roombase"
+local Commands = require "core.network-commands"
 
 ---@class Lobby: ServerRoomBase
 local Lobby = RoomBase:subclass("Lobby")

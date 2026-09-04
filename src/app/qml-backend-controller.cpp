@@ -41,17 +41,22 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
     auto client = Client::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, m_backend, &QmlBackend::emitLuaEvent, Qt::UniqueConnection);
     connect(client->luaBinding(), &LuaBinding::luaEvent, LuaEventListenerManager::instance(), &LuaEventListenerManager::dispatch, Qt::UniqueConnection);
-    connect(m_backend, &QmlBackend::emitRequested, client->luaBinding(), &LuaBinding::emit, Qt::UniqueConnection);
+    // connect(m_backend, &QmlBackend::emitRequested, client->luaBinding(), &LuaBinding::emit, Qt::UniqueConnection);
     client->connectToHost(address, port);
 }
 
 void QmlBackendController::onPropertyMapValueChanged(const QString &objectName, const QString &key, const QVariant &value)
 {
-    auto L = Client::instance()->luaBinding();
-    L->emit(u"Core::ObservingObject::ValueChanged"_s,
-            {
-                {u"_stringId"_s, objectName},
-                {u"key"_s, key},
-                {u"value"_s, value},
-            });
+    Q_UNUSED(objectName);
+    Q_UNUSED(key);
+    Q_UNUSED(value);
+    // TODO: LuaBinding::emit removed; rework how QML-side observable changes
+    // are pushed back to Lua.
+    // auto L = Client::instance()->luaBinding();
+    // L->emit(u"Core::ObservingObject::ValueChanged"_s,
+    //         {
+    //             {u"_stringId"_s, objectName},
+    //             {u"key"_s, key},
+    //             {u"value"_s, value},
+    //         });
 }

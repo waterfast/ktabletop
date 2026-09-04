@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QObject>
+#include <QVariant>
 
 class LuaVM;
 struct lua_State;
@@ -23,6 +24,10 @@ public:
     explicit LuaBinding(QObject *parent = nullptr, Role role = Server);
     ~LuaBinding() override;
 
+    // Execute the entry script for the role. Must be called after the C++
+    // backend has registered its globals (e.g. KTabletop::open).
+    void run();
+
     Role role() const;
     // for GameThread role only
     int gameThreadId() const;
@@ -31,10 +36,11 @@ public:
     // called by Lua
     void triggerLuaEvent(const QString &type, const QVariant &payload);
 
-    void emit(const QString &type, const QVariantMap &payload);
-    void loadPlugin(const QVariantMap &plugin);
+    // Call `ktabletop.<subtable>.<method>(args...)` using colon semantics.
+    void call(const QString &subtable, const QString &method, const QVariantList &args = {});
 
     LuaVM &vm();
+    lua_State *state() const;
 
     static LuaBinding *forState(lua_State *state);
 

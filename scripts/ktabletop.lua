@@ -3,19 +3,16 @@
 
 -- script executed before entering client or server script PWD should be `scripts/`
 
---=======================
--- Global variables
---=======================
+-- The `ktabletop` table is created by C++ (luaopen_ktabletop) and already holds
+-- the C++ backend functions. Here we extend it with the Lua-side libraries, so
+-- the global scope only gains `ktabletop` itself.
 
-json = require "3rdparty.json"
-class = require "3rdparty.middleclass"
-inspect = require "3rdparty.inspect"
+ktabletop.json = require "3rdparty.json"
+ktabletop.class = require "3rdparty.middleclass"
+ktabletop.inspect = require "3rdparty.inspect"
 
-tablib = require "corelib.tablib"
-strlib = require "corelib.strlib"
-
--- for c++ (Lua::call needs global function)
-require "corelib.global-functions"
+ktabletop.tablib = require "corelib.tablib"
+ktabletop.strlib = require "corelib.strlib"
 
 -- I think that're all preparations to do?
 do return end

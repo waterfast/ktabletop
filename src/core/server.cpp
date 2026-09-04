@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "server.h"
-#include "common-lua-plugin.h"
+#include "ktabletop-lua.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
 #include "network/server-socket.h"
@@ -27,7 +27,8 @@ Server::Server(QObject *parent)
     : QObject(parent)
 {
     L = new LuaBinding(this, LuaBinding::Server);
-    L->loadPlugin(CommonLuaPlugin::create());
+    luaopen_ktabletop(L->state());
+    L->run();
 
     server = new ServerSocket(this);
     connect(server, &ServerSocket::newConnection, this, &Server::processNewConnection);
@@ -67,14 +68,8 @@ void Server::processNewConnection(ClientSocket *client)
 
     connect(conn, &UserConnection::requestGot, [this, conn](int requestId) {
         const auto &req = conn->receivedRequest(requestId);
-        L->emit(u"Core::Socket::RequestGot"_s,
-                {
-                    {u"connId"_s, conn->connId()},
-                    {u"requestId"_s, requestId},
-                    {u"command"_s, QString::fromUtf8(req.command)},
-                    {u"data"_s, QJsonValue::fromJson(req.jsonData).toVariant()},
-                });
+        L->call(u"server"_s, u"processRequest"_s, {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
     });
 
-    L->emit(u"Socket::NewConnection"_s, {{u"connId"_s, connId}});
+    L->call(u"server"_s, u"onNewConnection"_s, {connId});
 }

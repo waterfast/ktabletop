@@ -20,20 +20,23 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
 {
     L = new LuaVM;
     bindingInstances.insert(L->state(), this);
-
-    QDir::setCurrent(u"scripts"_s);
-    if (role == Server) {
-        L->dofile(u"server/entry.lua"_s);
-    } else {
-        L->dofile(u"client/entry.lua"_s);
-    }
-    QDir::setCurrent(u".."_s);
 }
 
 LuaBinding::~LuaBinding()
 {
     bindingInstances.remove(L->state());
     delete L;
+}
+
+void LuaBinding::run()
+{
+    QDir::setCurrent(u"scripts"_s);
+    if (role_ == Server) {
+        L->dofile(u"server/entry.lua"_s);
+    } else {
+        L->dofile(u"client/entry.lua"_s);
+    }
+    QDir::setCurrent(u".."_s);
 }
 
 LuaBinding::Role LuaBinding::role() const
@@ -56,19 +59,19 @@ void LuaBinding::triggerLuaEvent(const QString &type, const QVariant &payload)
     luaEvent(type, payload);
 }
 
-void LuaBinding::emit(const QString &type, const QVariantMap &payload)
+void LuaBinding::call(const QString &subtable, const QString &method, const QVariantList &args)
 {
-    L->call(u"Emit"_s, {type, payload});
-}
-
-void LuaBinding::loadPlugin(const QVariantMap &plugin)
-{
-    L->call(u"LoadPlugin"_s, {plugin});
+    L->callMethod(subtable, method, args);
 }
 
 LuaVM &LuaBinding::vm()
 {
     return *L;
+}
+
+lua_State *LuaBinding::state() const
+{
+    return L->state();
 }
 
 LuaBinding *LuaBinding::forState(lua_State *state)

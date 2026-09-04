@@ -2,15 +2,14 @@
 --- Only holds data both sides need; broadcasting/notifying is server-only
 --- and lives in the server subclass.
 ---@class RoomBase: Object
----@field ctx Context
 ---@field id integer
 ---@field players Player[]
 ---@field observers Player[]
+local class = ktabletop.class
+local tablib = ktabletop.tablib
 local RoomBase = class("RoomBase")
 
----@param ctx Context
-function RoomBase:initialize(ctx)
-  self.ctx = ctx
+function RoomBase:initialize()
   self.id = 0
   self.players = {}
   self.observers = {}

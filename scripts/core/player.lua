@@ -1,21 +1,21 @@
-local async = require "core.async"
+local async = require "corelib.async"
+
+local class = ktabletop.class
+local json = ktabletop.json
 
 --- Common player representation
 --- Only holds data both sides need; socket I/O lives in the subclasses.
 ---@class Player: Object
----@field ctx Context
 ---@field connId integer
 ---@field id integer
 ---@field username string
 local Player = class("Player")
 
----@param ctx Context
 ---@param connId integer
-function Player:initialize(ctx, connId)
-  self.ctx = ctx
+function Player:initialize(connId)
   self.connId = connId
   self.id = connId
-  self._cpp = ctx:get("__cpp.common")
+  self._cpp = ktabletop
 end
 
 ---@param command string

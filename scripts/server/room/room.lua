@@ -1,8 +1,8 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-local RoomBase = require "plugins.roomManager.server.roombase"
-local Commands = require "plugins.playerManager.common.network-commands"
+local RoomBase = require "server.room.roombase"
+local Commands = require "core.network-commands"
 
 ---@class Room: ServerRoomBase
 ---@field owner Player?
@@ -12,9 +12,8 @@ local Room = RoomBase:subclass("Room")
 
 local nextRoomId = 1
 
----@param ctx Context
-function Room:initialize(ctx)
-  RoomBase.initialize(self, ctx)
+function Room:initialize()
+  RoomBase.initialize(self)
   self.id = nextRoomId
   nextRoomId = nextRoomId + 1
   self.owner = nil

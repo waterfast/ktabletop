@@ -1,0 +1,47 @@
+-- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
+-- SPDX-License-Identifier: LGPL-2.1-or-later
+
+local ServerPlayer = require "server.user.player"
+
+local class = ktabletop.class
+
+--- Tracks connected players and assigns them an identity on connect.
+---@class PlayerManager: Object
+---@field private players table<integer, Player>
+local PlayerManager = class("PlayerManager")
+
+---@param server Server
+function PlayerManager:initialize(server)
+  self.server = server
+  self.players = {}
+end
+
+---@param connId integer
+---@return Player
+function PlayerManager:addConnection(connId)
+  local player = ServerPlayer:new(connId)
+  player.id = connId
+  player.username = "guest" .. connId
+
+  self:addPlayer(player)
+  player:notify("SetupPlayer", { id = player.id, username = player.username })
+  return player
+end
+
+---@param player Player
+function PlayerManager:addPlayer(player)
+  self.players[player.connId] = player
+end
+
+---@param connId integer
+function PlayerManager:removePlayer(connId)
+  self.players[connId] = nil
+end
+
+---@param connId integer
+---@return Player?
+function PlayerManager:findPlayer(connId)
+  return self.players[connId]
+end
+
+return PlayerManager
