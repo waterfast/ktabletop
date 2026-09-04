@@ -8,7 +8,6 @@
 #include <QAbstractSocket>
 #include <QTimer>
 #include <QVariantMap>
-#include <memory>
 using namespace Qt::Literals::StringLiterals;
 
 #include <lua.hpp>

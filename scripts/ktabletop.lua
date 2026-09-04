@@ -1,22 +1,21 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
--- script executed before entering client or server script
--- PWD should be `scripts/`
+-- script executed before entering client or server script PWD should be `scripts/`
 
--- load libraries as global variable
--- Note: we must avoid globals as much as possible.
+--=======================
+-- Global variables
+--=======================
 
 json = require "3rdparty.json"
 class = require "3rdparty.middleclass"
 inspect = require "3rdparty.inspect"
 
--- These will be used very frequently too, making it global should make sense
-tablib = require "global.tablib"
-strlib = require "global.strlib"
+tablib = require "corelib.tablib"
+strlib = require "corelib.strlib"
 
 -- for c++ (Lua::call needs global function)
-require "global.global-functions"
+require "corelib.global-functions"
 
 -- I think that're all preparations to do?
 do return end

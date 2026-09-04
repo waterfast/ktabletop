@@ -23,9 +23,9 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
 
     QDir::setCurrent(u"scripts"_s);
     if (role == Server) {
-        L->dofile(u"server-entry.lua"_s);
+        L->dofile(u"server/entry.lua"_s);
     } else {
-        L->dofile(u"client-entry.lua"_s);
+        L->dofile(u"client/entry.lua"_s);
     }
     QDir::setCurrent(u".."_s);
 }

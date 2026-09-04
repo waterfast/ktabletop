@@ -7,7 +7,6 @@
 #include "network/client-socket.h"
 #include "network/server-socket.h"
 #include "network/user-connection.h"
-#include "server-lua-plugin.h"
 
 #include <QJsonDocument>
 #include <QJsonValue>
@@ -29,7 +28,6 @@ Server::Server(QObject *parent)
 {
     L = new LuaBinding(this, LuaBinding::Server);
     L->loadPlugin(CommonLuaPlugin::create());
-    L->loadPlugin(ServerLuaPlugin::create());
 
     server = new ServerSocket(this);
     connect(server, &ServerSocket::newConnection, this, &Server::processNewConnection);
