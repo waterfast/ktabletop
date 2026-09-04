@@ -42,3 +42,9 @@ function Object:isSubclassOf(cls) end
 function Object:include(e) end
 
 ktabletop = {}
+ktabletop.log = {
+  info = function(...) end,
+  warn = function(...) end,
+  debug = function(...) end,
+  critical = function(...) end,
+}

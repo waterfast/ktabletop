@@ -1,10 +1,13 @@
 add_library(ktabletop_core STATIC
     server.cpp
     client.cpp
+    logger.cpp
     ktabletop-lua.cpp
 )
 
 target_link_libraries(ktabletop_core PUBLIC
+    spdlog::spdlog
+
     ktabletop_network
     ktabletop_lua
 )

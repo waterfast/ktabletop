@@ -19,7 +19,9 @@
 #include <KirigamiAppDefaults>
 
 #include <QDir>
+#include <QThread>
 
+#include "core/logger.h"
 #include "qml-backend-controller.h"
 #include "qml/qml-backend.h"
 
@@ -30,6 +32,11 @@ Q_DECL_EXPORT
 #endif
 int main(int argc, char *argv[])
 {
+    QThread::currentThread()->setObjectName(QStringLiteral("Main"));
+
+    initLogger();
+    installQtMessageHandler();
+
 #ifdef Q_OS_ANDROID
     QGuiApplication app(argc, argv);
 #else

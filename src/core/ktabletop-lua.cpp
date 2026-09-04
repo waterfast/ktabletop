@@ -346,6 +346,57 @@ static luaL_Reg clientFuncTable[] = {
     {NULL, NULL},
 };
 
+// Something like Lua `print` function, that is,
+// read varargs and output everything in order, separated by '\t'.
+// Non-string values are converted via `tostring (luaL_tolstring) first.
+static QString collectLogArgs(lua_State *L)
+{
+    const int n = lua_gettop(L);
+    QString result;
+    for (int i = 1; i <= n; i++) {
+        size_t len = 0;
+        const char *s = luaL_tolstring(L, i, &len);
+        if (i > 1) {
+            result += QLatin1Char('\t');
+        }
+        result += QString::fromUtf8(s, static_cast<int>(len));
+        lua_pop(L, 1);
+    }
+    return result;
+}
+
+static int loggerInfo(lua_State *L)
+{
+    qInfo().noquote() << collectLogArgs(L);
+    return 0;
+}
+
+static int loggerWarn(lua_State *L)
+{
+    qWarning().noquote() << collectLogArgs(L);
+    return 0;
+}
+
+static int loggerDebug(lua_State *L)
+{
+    qDebug().noquote() << collectLogArgs(L);
+    return 0;
+}
+
+static int loggerCritical(lua_State *L)
+{
+    qCritical().noquote() << collectLogArgs(L);
+    return 0;
+}
+
+static luaL_Reg loggerTable[] = {
+    {"info", loggerInfo},
+    {"warn", loggerWarn},
+    {"debug", loggerDebug},
+    {"critical", loggerCritical},
+    {NULL, NULL},
+};
+
 extern "C" int luaopen_ktabletop(lua_State *L)
 {
     lua_newtable(L);
@@ -355,6 +406,10 @@ extern "C" int luaopen_ktabletop(lua_State *L)
     if (binding && binding->role() == LuaBinding::Client) {
         luaL_setfuncs(L, clientFuncTable, 0);
     }
+
+    lua_newtable(L); // ktabletop.log
+    luaL_setfuncs(L, loggerTable, 0);
+    lua_setfield(L, -2, "log");
 
     lua_setglobal(L, "ktabletop");
     return 0;

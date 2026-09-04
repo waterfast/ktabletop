@@ -27,7 +27,7 @@ function ClientRoomManager:initialize(client)
       cancellable = true,
       message = "Loading rooms..."
     })
-    print("FetchRoomList reply", inspect(reply))
+    ktabletop.log.info("FetchRoomList reply", inspect(reply))
   end))
 
   client:onNotificationGot("UpdatePlayerNum", function(data)

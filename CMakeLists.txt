@@ -40,6 +40,7 @@ endif()
 find_package(Lua ${LUA_EXACT_VERSION} REQUIRED EXACT)
 find_package(OpenSSL REQUIRED)
 find_package(LibGit2 ${GIT2_MIN_VERSION} REQUIRED)
+find_package(spdlog REQUIRED)
 
 find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS Qml ${QT_EXTRA_COMPONENTS})
 find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS Kirigami CoreAddons Config I18n)

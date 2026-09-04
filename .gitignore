@@ -15,3 +15,4 @@ src/res.generated.qrc
 .qmlls.ini
 
 /ktabletop-app
+*.log
