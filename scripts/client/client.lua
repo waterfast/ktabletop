@@ -5,9 +5,11 @@ local async = require "corelib.async"
 local class = ktabletop.class
 
 local ClientPlayer = require "client.user.player"
+local ClientLobby = require "client.room.lobby"
 
 ---@class Client: Object
 ---@field myself ClientPlayer
+---@field lobby ClientLobby
 local Client = class("Client")
 
 function Client:initialize()
@@ -15,9 +17,11 @@ function Client:initialize()
   self._requestHandlers = {}
 
   self.myself = ClientPlayer:new()
+  self.lobby = ClientLobby:new()
 
   self:setCallback("SetupPlayer", self.setupPlayer)
   self:setCallback("EnterLobby", self.enterLobby)
+  self:setCallback("UpdateOnlineInfo", self.updateOnlineInfo)
 end
 
 ---@param cmd string
@@ -59,6 +63,10 @@ end
 
 function Client:enterLobby()
   ktabletop.luaEvent("Client::EnterLobby", nil)
+end
+
+function Client:updateOnlineInfo(data)
+  self.lobby.playerCount = data[1]
 end
 
 ------------------------------------------------------------

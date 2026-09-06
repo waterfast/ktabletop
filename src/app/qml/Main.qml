@@ -30,7 +30,6 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
                 text: "Single Player"
                 onClicked: {
-                    console.log("Single Player clicked")
                     Backend.startServer(17943);
                     Backend.joinServer("127.0.0.1");
                 }

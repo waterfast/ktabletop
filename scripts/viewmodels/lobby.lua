@@ -12,7 +12,9 @@ LobbyViewModel:Property("playerCount")
 LobbyViewModel:Invokable("disconnectFromHost")
 
 function LobbyViewModel:initialize()
-  self.playerCount = 0
+  self:setPropertyBinding("playerCount", function()
+    return ktabletop.client.lobby.playerCount
+  end)
 end
 
 function LobbyViewModel:disconnectFromHost()

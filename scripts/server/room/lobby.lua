@@ -22,7 +22,7 @@ function Lobby:removePlayer(player)
 end
 
 function Lobby:updateOnlineInfo()
-  self:broadcast("UpdatePlayerNum", { #self.players })
+  self:broadcast("UpdateOnlineInfo", { #self.players })
 end
 
 return Lobby
