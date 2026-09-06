@@ -49,5 +49,10 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
 {
     auto client = Client::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
+    connect(client->luaBinding(), &LuaBinding::luaEvent, this, [this](const QString &sig, const QVariant &) {
+        if (sig != u"Client::EnterLobby"_s)
+            return;
+        m_backend->enterLobby();
+    });
     client->connectToHost(address, port);
 }

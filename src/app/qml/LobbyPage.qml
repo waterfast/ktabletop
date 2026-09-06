@@ -12,15 +12,7 @@ Kirigami.Page {
 
     title: "Lobby"
 
-    LuaObject {
-      id: asd
-      opts: ({ type: "lobby" })
-
-      onSignalEmitted: (name, data) => {
-        invoke('cccc', 1);
-      }
-    }
-
+    required property LuaObject d
     actions: [
         Kirigami.Action {
             text: "Create Room"
@@ -31,7 +23,7 @@ Kirigami.Page {
 
     QQC2.Label {
         anchors.centerIn: parent
-        text: "No rooms yet, players = " + Backend.getObservable("lobby").playerCount
+        text: "No rooms yet, players = " + d.playerCount + " " + d.objectName
     }
 
     CreateRoomDialog {

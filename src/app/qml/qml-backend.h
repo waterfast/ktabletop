@@ -32,6 +32,8 @@ Q_SIGNALS:
     void startServerRequested(ushort port);
     void joinServerRequested(const QString &address, ushort port);
 
+    void enterLobby();
+
     // emitted from QML (via emit()), forwarded by the host to luaBinding->emit
     void emitRequested(const QString &type, const QVariantMap &payload);
 };

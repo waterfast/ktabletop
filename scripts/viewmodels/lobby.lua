@@ -3,7 +3,7 @@
 
 local LObject = require "corelib.lobject"
 
----@class LobbyViewModel: LObject
+---@class LobbyViewModel: Object, LObject
 ---@field playerCount integer
 local LobbyViewModel = ktabletop.class("LobbyViewModel")
 LobbyViewModel:include(LObject)

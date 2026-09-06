@@ -82,13 +82,14 @@ QVariant LuaBinding::callMethod(const QString &subtable, const QString &method, 
     // stack: msgh, <object>, <fn>, self, args...
 
     int err = lua_pcall(L, nargs, 1, -nargs - 3);
+    // stack: msgh, <object>, <ret>
     if (err) {
         qCritical() << lua_tostring(L, -1);
         lua_pop(L, 3);
         return QVariant();
     }
     auto result = LuaVM::readValue(L);
-    lua_pop(L, 2);
+    lua_pop(L, 3);
 
     return result;
 }
@@ -108,31 +109,31 @@ QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
     lua_getfield(L, -1, "getViewModel");
     lua_pushvalue(L, -2);
     LuaVM::pushValue(L, QVariant(opts));
+    // stack: msgh, vmManager, fn, vmManager, opts
 
     if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
         qCritical() << lua_tostring(L, -1);
         lua_pop(L, 3);
         return {};
     }
-    // stack: msgh, LObject, obj
     const int obj = lua_gettop(L);
 
-    lua_pushvalue(L, obj);
-    const int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-
+    // stack: msgh, vmManager, retObj
     lua_getfield(L, obj, "createCppObject");
-    lua_pushvalue(L, obj);
+    lua_pushvalue(L, -2);
     if (lua_pcall(L, 1, 1, msgh) != LUA_OK) {
         qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 3);
-        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+        lua_pop(L, 4);
         return {};
     }
-    // stack: msgh, obj, data
-    QVariantMap data = LuaVM::readValue(L, -1).toMap();
+
+    // stack: msgh, vmManager, retObj, ret
+    QVariantMap data = LuaVM::readValue(L).toMap();
+    lua_pop(L, 1);
+    const int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    data[u"refIndex"_s] = ref;
     lua_pop(L, 3);
 
-    data[u"refIndex"_s] = ref;
     return data;
 }
 
@@ -157,11 +158,11 @@ QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVarian
 
     if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
         qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 2);
+        lua_pop(L, 3);
         return {};
     }
     // stack: msgh, obj, result
-    QVariant result = LuaVM::readValue(L, -1);
+    QVariant result = LuaVM::readValue(L);
     lua_pop(L, 3);
     return result;
 }

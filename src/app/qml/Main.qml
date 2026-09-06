@@ -51,9 +51,14 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    Component {
-        id: lobbyPageComponent
-        LobbyPage {}
+    Connections {
+        target: Backend
+        function onEnterLobby() {
+          const pageComponent = Qt.createComponent("org.kde.ktabletop", "LobbyPage");
+          const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
+          root.pageStack.push(pageComponent.createObject(root, { d: 
+            lobject.createObject(root, { opts: { type: "lobby" } })}));
+        }
     }
 
     Component.onCompleted: {
