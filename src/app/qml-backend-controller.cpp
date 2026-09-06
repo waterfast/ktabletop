@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "qml-backend-controller.h"
-#include "qml/lua-event-listener.h"
-#include "qml/observable-manager.h"
+#include "qml/lobject-manager.h"
 #include "qml/qml-backend.h"
 
 #include "core/client.h"
@@ -20,7 +19,7 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
 {
     connect(m_backend, &QmlBackend::startServerRequested, this, &QmlBackendController::onStartServerRequested);
     connect(m_backend, &QmlBackend::joinServerRequested, this, &QmlBackendController::onJoinServerRequested);
-    connect(ObservableManager::instance(), &ObservableManager::valueChanged, this, &QmlBackendController::onPropertyMapValueChanged);
+    connect(LObjectManager::instance(), &LObjectManager::valueChanged, this, &QmlBackendController::onPropertyMapValueChanged);
 }
 
 QmlBackendController::~QmlBackendController()
@@ -39,9 +38,7 @@ void QmlBackendController::onStartServerRequested(ushort port)
 void QmlBackendController::onJoinServerRequested(const QString &address, ushort port)
 {
     auto client = Client::instance();
-    connect(client->luaBinding(), &LuaBinding::luaEvent, m_backend, &QmlBackend::emitLuaEvent, Qt::UniqueConnection);
-    connect(client->luaBinding(), &LuaBinding::luaEvent, LuaEventListenerManager::instance(), &LuaEventListenerManager::dispatch, Qt::UniqueConnection);
-    // connect(m_backend, &QmlBackend::emitRequested, client->luaBinding(), &LuaBinding::emit, Qt::UniqueConnection);
+    connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
     client->connectToHost(address, port);
 }
 

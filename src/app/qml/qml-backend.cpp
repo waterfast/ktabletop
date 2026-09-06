@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "qml-backend.h"
-#include "observable-manager.h"
+#include "lobject-manager.h"
+#include "lobject-proxy.h"
 
 #include <QCoreApplication>
 #include <QJSEngine>
@@ -25,17 +26,12 @@ void QmlBackend::joinServer(const QString &address, ushort port)
     Q_EMIT joinServerRequested(address, port);
 }
 
-QQmlPropertyMap *QmlBackend::getObservable(const QString &objectName) const
+LObjectProxy *QmlBackend::getObservable(const QString &objectName) const
 {
-    return ObservableManager::instance()->get(objectName);
+    return LObjectManager::instance()->get(objectName);
 }
 
 void QmlBackend::emit(const QString &type, const QVariantMap &payload)
 {
     Q_EMIT emitRequested(type, payload);
-}
-
-void QmlBackend::emitLuaEvent(const QString &type, const QVariant &payload)
-{
-    Q_EMIT luaEvent(type, payload);
 }

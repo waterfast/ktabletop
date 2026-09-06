@@ -11,15 +11,6 @@ Kirigami.Dialog {
 
     property var errorState: Backend.getObservable("errorState")
 
-    Connections {
-        target: Backend
-        function onLuaEvent(type, payload) {
-            if (root.errorState === null) {
-                root.errorState = Backend.getObservable("errorState")
-            }
-        }
-    }
-        
     title: i18n("Error")
     padding: Kirigami.Units.largeSpacing
     standardButtons: Kirigami.Dialog.Ok

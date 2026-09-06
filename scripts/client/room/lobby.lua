@@ -1,18 +1,16 @@
 local RoomBase = require "core.room-base"
-local Observable = require "corelib.observable"
+local LObject = require "corelib.lobject"
 
----@class ClientLobby: RoomBase, Observable
+---@class ClientLobby: RoomBase, LObject
 ---@field playerCount integer
 local ClientLobby = RoomBase:subclass("ClientLobby")
-ClientLobby:include(Observable)
-ClientLobby:registerProperty("playerCount")
+ClientLobby:include(LObject)
+ClientLobby:Property("playerCount")
 
 function ClientLobby:initialize()
   RoomBase.initialize(self)
-  self._stringId = "lobby"
-  self.playerCount = 0
 
-  self:createObserveObject()
+  self.playerCount = 0
 end
 
 return ClientLobby

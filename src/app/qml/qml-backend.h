@@ -5,7 +5,10 @@
 
 #include <QMap>
 #include <QObject>
-#include <QQmlPropertyMap>
+#include <QVariant>
+#include <QtQml>
+
+class LObjectProxy;
 
 class QmlBackend : public QObject
 {
@@ -20,9 +23,7 @@ public:
     Q_INVOKABLE void startServer(ushort port);
     Q_INVOKABLE void joinServer(const QString &address, ushort port = 17943);
 
-    void emitLuaEvent(const QString &type, const QVariant &payload);
-
-    Q_INVOKABLE QQmlPropertyMap *getObservable(const QString &objectName) const;
+    Q_INVOKABLE LObjectProxy *getObservable(const QString &objectName) const;
 
     Q_INVOKABLE void emit(const QString &type, const QVariantMap &payload);
 
@@ -30,9 +31,6 @@ Q_SIGNALS:
     // emitted from QML
     void startServerRequested(ushort port);
     void joinServerRequested(const QString &address, ushort port);
-
-    // emitted from C++, by calling emitLuaEvent
-    void luaEvent(const QString &type, const QVariant &payload);
 
     // emitted from QML (via emit()), forwarded by the host to luaBinding->emit
     void emitRequested(const QString &type, const QVariantMap &payload);

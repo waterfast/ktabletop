@@ -13,8 +13,8 @@ ecm_add_qml_module(ktabletop_qml
         ErrorDialog.qml
     SOURCES
         qml-backend.cpp
-        lua-event-listener.cpp
-        observable-manager.cpp
+        lobject-manager.cpp
+        lobject-proxy.cpp
     DEPENDENCIES
         # org.kde.kirigamiaddons.formcard
         org.kde.kirigami

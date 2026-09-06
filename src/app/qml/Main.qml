@@ -56,17 +56,6 @@ Kirigami.ApplicationWindow {
         LobbyPage {}
     }
 
-    LuaEventListener {
-        eventName: "Client::PushLobby"
-        onTriggered: data => {
-            root.pageStack.push(lobbyPageComponent);
-        }
-    }
-
-    BusyDialog {}
-    
-    ErrorDialog {}
-    
     Component.onCompleted: {
     }
 }

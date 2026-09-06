@@ -4,23 +4,16 @@
 local async = require "corelib.async"
 local class = ktabletop.class
 
-local UiHelper = require "client.ui"
-local ClientPlayerManager = require "client.user.player-manager"
-local ClientRoomManager = require "client.room.room-manager"
+local ViewModelManager = require "viewmodels.vm-manager"
 
 ---@class Client: Object
----@field uiHelper UiHelper
----@field playerManager ClientPlayerManager
----@field roomManager ClientRoomManager
 local Client = class("Client")
 
 function Client:initialize()
   self._notificationHandlers = {}
   self._requestHandlers = {}
 
-  self.uiHelper = UiHelper:new()
-  self.playerManager = ClientPlayerManager:new(self)
-  self.roomManager = ClientRoomManager:new(self)
+  self.viewModelManager = ViewModelManager:new()
 end
 
 ---@param cmd string
@@ -45,19 +38,15 @@ end
 ---@param host string
 ---@param port integer
 function Client:connectToHost(host, port)
-  local uiHelper = self.uiHelper
   local connect = async.async(function()
-    uiHelper:withBusy({ message = "Connecting..." }, function()
       local wrapped = async.wrap(ktabletop.connectToHost)
       local _, err = async.await(wrapped(host, port))
 
       if err then
-        uiHelper:showError("Could not connect to the server: " .. tostring(err), "network")
         ktabletop.luaEvent("Client::ConnectError", { error = err })
       else
         ktabletop.luaEvent("Client::Connected", {})
       end
-    end)
   end)
   connect()
 end
@@ -107,7 +96,7 @@ end
 -- Called by C++ when a socket error happens outside a tracked request.
 ---@param message string
 function Client:onSocketError(message)
-  self.uiHelper:showError(message, "network")
+  -- self.uiHelper:showError(message, "network")
 end
 
 return Client
