@@ -19,7 +19,17 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
 {
     connect(m_backend, &QmlBackend::startServerRequested, this, &QmlBackendController::onStartServerRequested);
     connect(m_backend, &QmlBackend::joinServerRequested, this, &QmlBackendController::onJoinServerRequested);
-    connect(LObjectManager::instance(), &LObjectManager::valueChanged, this, &QmlBackendController::onPropertyMapValueChanged);
+
+    auto *manager = LObjectManager::instance();
+    manager->setCreateObjectFn([](const QVariantMap &opts) {
+        return Client::instance()->luaBinding()->createLObject(opts);
+    });
+    manager->setReleaseObjectFn([](int ref) {
+        Client::instance()->luaBinding()->releaseLObject(ref);
+    });
+    QObject::connect(manager, &LObjectManager::invoked, [](int ref, const QString &method, const QVariant &args) {
+        Client::instance()->luaBinding()->invokeLObject(ref, method, args);
+    });
 }
 
 QmlBackendController::~QmlBackendController()
@@ -40,9 +50,4 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
     auto client = Client::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
     client->connectToHost(address, port);
-}
-
-void QmlBackendController::onPropertyMapValueChanged(const QString &, const QString &, const QVariant &)
-{
-    qWarning("Changing value directly from QML view will have no effect.");
 }

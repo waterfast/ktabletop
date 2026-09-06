@@ -5,11 +5,21 @@ import QtQuick
 import QtQuick.Controls as QQC2
 
 import org.kde.kirigami as Kirigami
+import org.kde.ktabletop
 
 Kirigami.Page {
     id: root
 
     title: "Lobby"
+
+    LuaObject {
+      id: asd
+      opts: ({ type: "lobby" })
+
+      onSignalEmitted: (name, data) => {
+        invoke('cccc', 1);
+      }
+    }
 
     actions: [
         Kirigami.Action {

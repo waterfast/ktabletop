@@ -7,36 +7,46 @@
 #include <QObject>
 #include <QVariant>
 
+#include <functional>
+
 class LObjectProxy;
-class LuaEventListener;
 
 class LObjectManager : public QObject
 {
     Q_OBJECT
 
 public:
+    // Handlers installed by the host (app layer) to talk to the Lua binding.
+    // Only creation needs to be synchronous (callback), invoke/signal go through signals.
+    using CreateObjectFn = std::function<QVariantMap(const QVariantMap &)>;
+    using ReleaseObjectFn = std::function<void(int)>;
+
     static LObjectManager *instance();
 
     LObjectProxy *get(const QString &objectName) const;
 
     void dispatch(const QString &type, const QVariant &payload);
 
+    void setCreateObjectFn(CreateObjectFn fn);
+    void setReleaseObjectFn(ReleaseObjectFn fn);
+
+    QVariantMap createObject(const QVariantMap &opts);
+    void releaseObject(int ref);
+
+    void registerProxy(const QString &objectName, LObjectProxy *proxy);
+    void unregisterProxy(const QString &objectName, LObjectProxy *proxy);
+
 Q_SIGNALS:
-    // emitted when QML modifies a property map value; the host forwards it to luaBinding->emit
-    void valueChanged(const QString &objectName, const QString &key, const QVariant &value);
-    // emitted when QML invokes a method on the object; the host forwards it to Lua
-    void invoked(const QString &objectName, const QString &method, const QVariant &args);
-    // emitted when a new LObject proxy becomes available (LObject::New from Lua)
-    void objectCreated(const QString &objectName);
+    // emitted when QML invokes a method on an LObject; the host forwards it to Lua
+    void invoked(int ref, const QString &method, const QVariant &args);
 
 private:
     explicit LObjectManager(QObject *parent = nullptr);
-    void onNewObject(const QVariant &data);
     void onValueChanged(const QVariant &data);
     void onSignal(const QVariant &data);
 
+    CreateObjectFn m_createObjectFn;
+    ReleaseObjectFn m_releaseObjectFn;
+
     QHash<QString, LObjectProxy *> m_maps;
-    LuaEventListener *m_newObjectListener = nullptr;
-    LuaEventListener *m_valueChangedListener = nullptr;
-    LuaEventListener *m_signalListener = nullptr;
 };

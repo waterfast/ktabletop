@@ -4,16 +4,12 @@
 local async = require "corelib.async"
 local class = ktabletop.class
 
-local ViewModelManager = require "viewmodels.vm-manager"
-
 ---@class Client: Object
 local Client = class("Client")
 
 function Client:initialize()
   self._notificationHandlers = {}
   self._requestHandlers = {}
-
-  self.viewModelManager = ViewModelManager:new()
 end
 
 ---@param cmd string

@@ -239,9 +239,14 @@ function LObject:emitSignal(sig, data)
   })
 end
 
+local reservedProperties = {
+  "id", "opts", "invoke", "signalEmitted", "onSignalEmitted",
+  "refIndex",
+}
+
 ---@param key string
 function LObject.static:Property(key, opts)
-  assert(key ~= "invoke", ("property name '%s' is reserved"):format(key))
+  assert(not tablib.contains(reservedProperties, key), ("property name '%s' is reserved"):format(key))
   local t = self.static.__properties
   opts = opts or {}
   opts.name = key
@@ -283,12 +288,11 @@ end
 
 function LObject:createCppObject()
   assert(self._stringId)
-  local props, invokables, signals, values = {}, {}, {}, {}
+  local props, invokables, signals = {}, {}, {}
   local klass = self.class
   while klass do
     for k in pairs(klass.__properties or {}) do
-      props[#props + 1] = k
-      values[k] = self[k]
+      props[k] = self[k]
     end
     for k in pairs(klass.__invokables or {}) do
       invokables[#invokables + 1] = k
@@ -307,13 +311,12 @@ function LObject:createCppObject()
     })
   end)
 
-  ktabletop.luaEvent("LObject::New", {
+  return {
     id = self._stringId,
     props = props,
     invokables = invokables,
     signals = signals,
-    values = values,
-  })
+  }
 end
 
 return LObject

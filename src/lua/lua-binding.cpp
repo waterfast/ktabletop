@@ -93,6 +93,87 @@ QVariant LuaBinding::callMethod(const QString &subtable, const QString &method, 
     return result;
 }
 
+QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
+{
+    lua_State *L = this->L->state();
+
+    lua_getglobal(L, "debug");
+    lua_getfield(L, -1, "traceback");
+    lua_replace(L, -2);
+    const int msgh = lua_gettop(L);
+
+    lua_getglobal(L, "ktabletop");
+    lua_getfield(L, -1, "viewModelManager");
+    lua_replace(L, -2);
+    lua_getfield(L, -1, "getViewModel");
+    lua_pushvalue(L, -2);
+    LuaVM::pushValue(L, QVariant(opts));
+
+    if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
+        qCritical() << lua_tostring(L, -1);
+        lua_pop(L, 3);
+        return {};
+    }
+    // stack: msgh, LObject, obj
+    const int obj = lua_gettop(L);
+
+    lua_pushvalue(L, obj);
+    const int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+    lua_getfield(L, obj, "createCppObject");
+    lua_pushvalue(L, obj);
+    if (lua_pcall(L, 1, 1, msgh) != LUA_OK) {
+        qCritical() << lua_tostring(L, -1);
+        lua_pop(L, 3);
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+        return {};
+    }
+    // stack: msgh, obj, data
+    QVariantMap data = LuaVM::readValue(L, -1).toMap();
+    lua_pop(L, 3);
+
+    data[u"refIndex"_s] = ref;
+    return data;
+}
+
+QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVariant &args)
+{
+    lua_State *L = this->L->state();
+
+    lua_getglobal(L, "debug");
+    lua_getfield(L, -1, "traceback");
+    lua_replace(L, -2);
+    const int msgh = lua_gettop(L);
+
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+    lua_getfield(L, -1, method.toUtf8().constData());
+    if (lua_type(L, -1) != LUA_TFUNCTION) {
+        lua_pop(L, 3);
+        qWarning() << "LObject method not invokable:" << method;
+        return {};
+    }
+    lua_pushvalue(L, -2);
+    LuaVM::pushValue(L, args);
+
+    if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
+        qCritical() << lua_tostring(L, -1);
+        lua_pop(L, 2);
+        return {};
+    }
+    // stack: msgh, obj, result
+    QVariant result = LuaVM::readValue(L, -1);
+    lua_pop(L, 3);
+    return result;
+}
+
+void LuaBinding::releaseLObject(int ref)
+{
+    if (ref == LUA_NOREF) {
+        return;
+    }
+    luaL_unref(L->state(), LUA_REGISTRYINDEX, ref);
+}
+
 LuaVM &LuaBinding::vm()
 {
     return *L;

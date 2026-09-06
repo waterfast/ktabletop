@@ -18,7 +18,6 @@ public:
 private Q_SLOTS:
     void onStartServerRequested(ushort port);
     void onJoinServerRequested(const QString &address, ushort port);
-    void onPropertyMapValueChanged(const QString &objectName, const QString &key, const QVariant &value);
 
 private:
     QmlBackend *const m_backend;

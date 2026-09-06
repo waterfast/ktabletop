@@ -4,5 +4,9 @@
 require "ktabletop"
 
 local Client = require "client.client"
+local ViewModelManager = require "viewmodels.vm-manager"
+local LobbyViewModel = require "viewmodels.lobby"
 
 ktabletop.client = Client:new()
+ktabletop.viewModelManager = ViewModelManager:new()
+ktabletop.viewModelManager:registerType("lobby", LobbyViewModel)

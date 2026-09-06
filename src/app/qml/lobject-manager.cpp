@@ -22,9 +22,7 @@ LObjectManager::LObjectManager(QObject *parent)
 
 void LObjectManager::dispatch(const QString &type, const QVariant &payload)
 {
-    if (type == u"LObject::New"_s) {
-        onNewObject(payload);
-    } else if (type == u"LObject::ValueChanged"_s) {
+    if (type == u"LObject::ValueChanged"_s) {
         onValueChanged(payload);
     } else if (type == u"LObject::Signal"_s) {
         onSignal(payload);
@@ -36,37 +34,51 @@ LObjectProxy *LObjectManager::get(const QString &objectName) const
     return m_maps.value(objectName);
 }
 
-void LObjectManager::onNewObject(const QVariant &data)
+void LObjectManager::setCreateObjectFn(CreateObjectFn fn)
 {
-    const QVariantMap map = data.toMap();
-    const QString objectName = map.value(u"id"_s).toString();
-    if (objectName.isEmpty()) {
-        return;
+    m_createObjectFn = std::move(fn);
+}
+
+void LObjectManager::setReleaseObjectFn(ReleaseObjectFn fn)
+{
+    m_releaseObjectFn = std::move(fn);
+}
+
+QVariantMap LObjectManager::createObject(const QVariantMap &opts)
+{
+    if (!m_createObjectFn) {
+        qWarning() << "LObjectManager: no createObject handler installed";
+        return {};
     }
+    return m_createObjectFn(opts);
+}
 
-    if (auto *old = m_maps.take(objectName)) {
-        old->deleteLater();
+void LObjectManager::releaseObject(int ref)
+{
+    if (m_releaseObjectFn) {
+        m_releaseObjectFn(ref);
     }
+}
 
-    auto *proxy = new LObjectProxy(this);
-    proxy->setObjectName(objectName);
-
-    const QVariantMap values = map.value(u"values"_s).toMap();
-    for (auto it = values.cbegin(), end = values.cend(); it != end; ++it) {
-        proxy->insert(it.key(), it.value());
+void LObjectManager::registerProxy(const QString &objectName, LObjectProxy *proxy)
+{
+    if (auto *old = m_maps.value(objectName)) {
+        if (old != proxy) {
+            old->deleteLater();
+        }
     }
-
-    connect(proxy, &QQmlPropertyMap::valueChanged, this, [this, objectName](const QString &key, const QVariant &value) {
-        // only fired by QML-side writes; insert()/clear() from C++ never emit it
-        Q_EMIT valueChanged(objectName, key, value);
-    });
-
-    connect(proxy, &LObjectProxy::invoked, this, [this, objectName](const QString &method, const QVariant &args) {
-        Q_EMIT invoked(objectName, method, args);
-    });
-
     m_maps.insert(objectName, proxy);
-    Q_EMIT objectCreated(objectName);
+
+    connect(proxy, &LObjectProxy::invoked, this, [this](int ref, const QString &method, const QVariant &args) {
+        Q_EMIT invoked(ref, method, args);
+    });
+}
+
+void LObjectManager::unregisterProxy(const QString &objectName, LObjectProxy *proxy)
+{
+    if (m_maps.value(objectName) == proxy) {
+        m_maps.remove(objectName);
+    }
 }
 
 void LObjectManager::onValueChanged(const QVariant &data)

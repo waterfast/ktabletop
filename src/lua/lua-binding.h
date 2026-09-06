@@ -38,6 +38,14 @@ public:
     // Call `ktabletop.<subtable>:<method>(args...)`
     QVariant callMethod(const QString &subtable, const QString &method, const QVariantList &args = {});
 
+    // call `ktabletop.viewModelManager:getViewModel(opts)`
+    // returned table is added a `refIndex` field
+    QVariantMap createLObject(const QVariantMap &opts);
+    // Call `LObject:method(args)` on the object referenced by `ref`.
+    QVariant invokeLObject(int ref, const QString &method, const QVariant &args);
+    // Release the registry reference held for an LObject.
+    void releaseLObject(int ref);
+
     LuaVM &vm();
     lua_State *state() const;
 
