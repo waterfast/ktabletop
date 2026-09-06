@@ -42,7 +42,7 @@ public:
     // returned table is added a `refIndex` field
     QVariantMap createLObject(const QVariantMap &opts);
     // Call `LObject:method(args)` on the object referenced by `ref`.
-    QVariant invokeLObject(int ref, const QString &method, const QVariant &args);
+    QVariant invokeLObject(int ref, const QString &method, const QVariantList &args);
     // Release the registry reference held for an LObject.
     void releaseLObject(int ref);
 

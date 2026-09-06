@@ -137,7 +137,7 @@ QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
     return data;
 }
 
-QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVariant &args)
+QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVariantList &args)
 {
     lua_State *L = this->L->state();
 
@@ -154,9 +154,11 @@ QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVarian
         return {};
     }
     lua_pushvalue(L, -2);
-    LuaVM::pushValue(L, args);
+    for (auto &arg : args) {
+        LuaVM::pushValue(L, arg);
+    }
 
-    if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
+    if (lua_pcall(L, args.length() + 1, 1, msgh) != LUA_OK) {
         qCritical() << lua_tostring(L, -1);
         lua_pop(L, 3);
         return {};

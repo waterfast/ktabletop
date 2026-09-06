@@ -69,7 +69,7 @@ void LObjectManager::registerProxy(const QString &objectName, LObjectProxy *prox
     }
     m_maps.insert(objectName, proxy);
 
-    connect(proxy, &LObjectProxy::invoked, this, [this](int ref, const QString &method, const QVariant &args) {
+    connect(proxy, &LObjectProxy::invoked, this, [this](int ref, const QString &method, const QVariantList &args) {
         Q_EMIT invoked(ref, method, args);
     });
 }

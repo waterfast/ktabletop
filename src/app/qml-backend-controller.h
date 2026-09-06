@@ -21,4 +21,6 @@ private Q_SLOTS:
 
 private:
     QmlBackend *const m_backend;
+
+    void handleCommonLuaEvent(const QString &command, const QVariant &data);
 };

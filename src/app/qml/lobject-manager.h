@@ -38,7 +38,7 @@ public:
 
 Q_SIGNALS:
     // emitted when QML invokes a method on an LObject; the host forwards it to Lua
-    void invoked(int ref, const QString &method, const QVariant &args);
+    void invoked(int ref, const QString &method, const QVariantList &args);
 
 private:
     explicit LObjectManager(QObject *parent = nullptr);

@@ -21,10 +21,10 @@ public:
     QVariantMap opts();
     void setOpts(QVariantMap mp);
 
-    Q_INVOKABLE void invoke(const QString &method, const QVariant &args = QVariant());
+    Q_INVOKABLE void invoke(const QString &method, const QVariantList &args = QVariantList());
 
 Q_SIGNALS:
-    void invoked(int ref, const QString &method, const QVariant &args);
+    void invoked(int ref, const QString &method, const QVariantList &args);
     void signalEmitted(const QString &name, const QVariant &data);
 
 private:

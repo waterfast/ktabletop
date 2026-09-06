@@ -59,7 +59,7 @@ void LObjectProxy::setOpts(QVariantMap mp)
     initialized = true;
 }
 
-void LObjectProxy::invoke(const QString &method, const QVariant &args)
+void LObjectProxy::invoke(const QString &method, const QVariantList &args)
 {
     if (m_refIndex < 0) {
         return;

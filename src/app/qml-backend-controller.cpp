@@ -9,7 +9,10 @@
 #include "core/server.h"
 #include "lua/lua-binding.h"
 
+#include "network/client-socket.h"
+#include "network/user-connection.h"
 #include <QHostAddress>
+#include <QTcpSocket>
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -27,7 +30,7 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
     manager->setReleaseObjectFn([](int ref) {
         Client::instance()->luaBinding()->releaseLObject(ref);
     });
-    QObject::connect(manager, &LObjectManager::invoked, [](int ref, const QString &method, const QVariant &args) {
+    QObject::connect(manager, &LObjectManager::invoked, [](int ref, const QString &method, const QVariantList &args) {
         Client::instance()->luaBinding()->invokeLObject(ref, method, args);
     });
 }
@@ -40,7 +43,7 @@ void QmlBackendController::onStartServerRequested(ushort port)
 {
     auto server = Server::instance();
     if (!server->listen(QHostAddress::Any, port)) {
-        server->deleteLater();
+        // server->deleteLater();
         qCritical("Cannot start server!");
     }
 }
@@ -49,10 +52,15 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
 {
     auto client = Client::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
-    connect(client->luaBinding(), &LuaBinding::luaEvent, this, [this](const QString &sig, const QVariant &) {
-        if (sig != u"Client::EnterLobby"_s)
-            return;
-        m_backend->enterLobby();
-    });
+    connect(client->luaBinding(), &LuaBinding::luaEvent, this, &QmlBackendController::handleCommonLuaEvent, Qt::UniqueConnection);
     client->connectToHost(address, port);
+}
+
+void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVariant &)
+{
+    if (sig == u"Client::EnterLobby"_s) {
+        m_backend->enterLobby();
+    } else if (sig == u"Client::DisconnectFromHost"_s) {
+        Client::instance()->connection()->socket()->socket()->disconnectFromHost();
+    }
 }

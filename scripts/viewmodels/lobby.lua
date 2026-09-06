@@ -7,10 +7,16 @@ local LObject = require "corelib.lobject"
 ---@field playerCount integer
 local LobbyViewModel = ktabletop.class("LobbyViewModel")
 LobbyViewModel:include(LObject)
+
 LobbyViewModel:Property("playerCount")
+LobbyViewModel:Invokable("disconnectFromHost")
 
 function LobbyViewModel:initialize()
   self.playerCount = 0
+end
+
+function LobbyViewModel:disconnectFromHost()
+  ktabletop.luaEvent("Client::DisconnectFromHost", nil)
 end
 
 return LobbyViewModel
