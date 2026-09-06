@@ -6,7 +6,7 @@ local ServerPlayer = require "server.user.player"
 local class = ktabletop.class
 
 ---@class PlayerManager: Object
----@field private players table<integer, Player>
+---@field private players table<integer, ServerPlayer>
 local PlayerManager = class("PlayerManager")
 
 ---@param server Server
@@ -16,7 +16,7 @@ function PlayerManager:initialize(server)
 end
 
 ---@param connId integer
----@return Player
+---@return ServerPlayer
 function PlayerManager:addConnection(connId)
   local player = ServerPlayer:new(connId)
   player.id = connId
@@ -27,7 +27,7 @@ function PlayerManager:addConnection(connId)
   return player
 end
 
----@param player Player
+---@param player ServerPlayer
 function PlayerManager:addPlayer(player)
   self.players[player.connId] = player
 end
@@ -38,7 +38,7 @@ function PlayerManager:removePlayer(connId)
 end
 
 ---@param connId integer
----@return Player?
+---@return ServerPlayer?
 function PlayerManager:findPlayer(connId)
   return self.players[connId]
 end

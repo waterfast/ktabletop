@@ -73,5 +73,10 @@ void Server::processNewConnection(ClientSocket *client)
                       {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
     });
 
+    connect(conn, &UserConnection::disconnected, this, [this, conn, connId, addr] {
+        L->callMethod(u"server"_s, u"onDisconnected"_s, {connId});
+        conn->deleteLater();
+    });
+
     L->callMethod(u"server"_s, u"onNewConnection"_s, {connId});
 }

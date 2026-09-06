@@ -45,6 +45,19 @@ function Server:onNewConnection(connId)
   self.roomManager.lobby:addPlayer(player)
 end
 
+-- Called by C++ when a client disconnects.
+---@param connId integer
+function Server:onDisconnected(connId)
+  local player = self.playerManager:findPlayer(connId)
+  if not player then
+    return
+  end
+
+  ktabletop.log.info(string.format("Player %s disconnected", player.username))
+  self.roomManager.lobby:removePlayer(player)
+  self.playerManager:removePlayer(connId)
+end
+
 -- Called by C++ when a notification arrives.
 ---@param connId integer
 ---@param command string

@@ -33,6 +33,7 @@ void ClientSocket::init()
 {
     connect(socket_, &QTcpSocket::readyRead, this, &ClientSocket::getMessage);
     connect(socket_, &QTcpSocket::errorOccurred, this, &ClientSocket::raiseError);
+    connect(socket_, &QTcpSocket::disconnected, this, &ClientSocket::disconnected);
     socket_->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 }
 

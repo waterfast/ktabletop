@@ -23,6 +23,7 @@ public:
 Q_SIGNALS:
     void messageGot(const QCborArray &msg);
     void errorMessage(const QString &msg);
+    void disconnected();
 
 private Q_SLOTS:
     void getMessage();
