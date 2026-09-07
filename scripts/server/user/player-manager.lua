@@ -17,7 +17,7 @@ end
 
 ---@param connId integer
 ---@return ServerPlayer
-function PlayerManager:addConnection(connId)
+function PlayerManager:createNewPlayer(connId)
   local player = ServerPlayer:new(connId)
   player.id = connId
   player.username = "guest" .. connId

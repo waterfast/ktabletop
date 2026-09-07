@@ -17,37 +17,35 @@ function Server:initialize()
   self._requestHandlers = {}
 
   self.playerManager = PlayerManager:new(self)
-  self.roomManager = RoomManager:new(self)
+  self.roomManager = RoomManager:new()
 end
 
 ---@param cmd string
----@param cb fun(data: any)
-function Server:onNotificationGot(cmd, cb)
-  local list = self._notificationHandlers[cmd]
-  if not list then
-    list = {}
-    self._notificationHandlers[cmd] = list
-  end
-  list[#list + 1] = cb
+---@param cb fun(self: Server, player: Player, data: any)
+function Server:setCallback(cmd, cb)
+  assert(self._notificationHandlers[cmd] == nil)
+  self._notificationHandlers[cmd] = cb
 end
 
 ---@param cmd string
----@param cb fun(player: Player, data: any): any, string?
-function Server:onRequestGot(cmd, cb)
+---@param cb fun(self: Server, player: Player, data: any): any, string?
+function Server:setRequestHandler(cmd, cb)
   assert(self._requestHandlers[cmd] == nil)
   self._requestHandlers[cmd] = async.async(cb)
 end
 
--- Called by C++ when a client connects.
+----------------------------------------------------------
+--- Below methods are called from C++ code.
+----------------------------------------------------------
+
 ---@param connId integer
-function Server:onNewConnection(connId)
-  local player = self.playerManager:addConnection(connId)
+function Server:processNewConnection(connId)
+  local player = self.playerManager:createNewPlayer(connId)
   self.roomManager.lobby:addPlayer(player)
 end
 
--- Called by C++ when a client disconnects.
 ---@param connId integer
-function Server:onDisconnected(connId)
+function Server:processDisconnected(connId)
   local player = self.playerManager:findPlayer(connId)
   if not player then
     return
@@ -58,30 +56,46 @@ function Server:onDisconnected(connId)
   self.playerManager:removePlayer(connId)
 end
 
--- Called by C++ when a notification arrives.
 ---@param connId integer
 ---@param command string
 ---@param data any
 function Server:processNotification(connId, command, data)
-  local list = self._notificationHandlers[command]
-  if not list then
-    return
+  local player = self.playerManager:findPlayer(connId)
+  if not player then return end
+
+  local f = self._notificationHandlers[command]
+  if f then
+    return f(self, player, data)
   end
-  for _, fn in ipairs(list) do
-    fn(data)
+
+  local room = self.roomManager:findRoomOrLobby(player.roomId)
+  if not room then return end
+
+  f = room._notificationHandlers[command]
+  if f then
+    return f(room, player, data)
   end
 end
 
-local requestDispatcher = async.async(function(server, connId, requestId, command, data)
+local requestDispatcher = async.async(function(server, player, requestId, command, data)
   local fn = server._requestHandlers[command]
+  local arg1 = server
   if not fn then
+    local room = server.roomManager:findRoomOrLobby(player.roomId)
+    if room then
+      fn = room._requestHandlers[command]
+      arg1 = room
+    end
+  end
+
+  if not fn then
+    -- must reply an error message here. the peer is waiting for reply.
+    player:reply(false, requestId, ("no match requestHandler for request '%s'"):format(command))
     return
   end
 
-  local player = server.playerManager:findPlayer(connId)
-  assert(player, ("cannot find player of connId %d in request #%d"):format(connId, requestId))
+  local ok, reply, err = async.await(fn(arg1, player, data))
 
-  local ok, reply, err = async.await(fn(player, data))
   if not ok then
     player:reply(false, requestId, reply)
   elseif err then
@@ -91,13 +105,14 @@ local requestDispatcher = async.async(function(server, connId, requestId, comman
   end
 end)
 
--- Called by C++ when a request arrives.
 ---@param connId integer
 ---@param requestId integer
 ---@param command string
 ---@param data any
 function Server:processRequest(connId, requestId, command, data)
-  requestDispatcher(self, connId, requestId, command, data)
+  local player = self.playerManager:findPlayer(connId)
+  if not player then return end
+  requestDispatcher(self, player, requestId, command, data)
 end
 
 return Server

@@ -11,15 +11,9 @@ local class = ktabletop.class
 ---@field lobby Lobby
 local RoomManager = class("RoomManager")
 
----@param server Server
-function RoomManager:initialize(server)
-  self.server = server
+function RoomManager:initialize()
   self.rooms = {}
   self.lobby = Lobby:new()
-
-  server:onRequestGot("FetchRoomList", function(player, data)
-    return {}, nil
-  end)
 end
 
 ---@param name string
@@ -31,6 +25,24 @@ function RoomManager:createRoom(name, capacity)
   room.capacity = capacity
   self.rooms[room.id] = room
   return room
+end
+
+---@param id integer
+function RoomManager:removeRoom(id)
+  self.rooms[id] = nil
+end
+
+---@param id integer
+function RoomManager:findRoomOrLobby(id)
+  if id == 0 then return self.lobby end
+  return self.rooms[id]
+end
+
+---@param id integer
+---@return Room?
+function RoomManager:findRoom(id)
+  assert(id ~= 0, "RoomManager:findRoom cannot find Lobby!")
+  return self.rooms[id]
 end
 
 return RoomManager

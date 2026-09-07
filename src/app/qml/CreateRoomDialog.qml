@@ -6,49 +6,35 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
+import org.kde.ktabletop
 
 Kirigami.Dialog {
     id: root
 
+    required property LuaObject d
+
     title: "Create Room"
+    standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+    padding: Kirigami.Units.largeSpacing
 
-    customFooterActions: [
-        Kirigami.Action {
-            text: "OK"
-            icon.name: "dialog-ok"
-            onTriggered: {
-                console.log("Create room:", nameField.text, playerCount.value)
-                root.close()
-            }
-        },
-        Kirigami.Action {
-            text: "Cancel"
-            icon.name: "dialog-cancel"
-            onTriggered: root.close()
-        }
-    ]
+    onAccepted: {
+        // TODO: maybe these data should be kept in viewmodel
+        d.invoke("accepted", [{ name: nameField.text, players: playerCount.value }]);
+    }
 
-    contentItem: ColumnLayout {
+    Kirigami.FormLayout {
         QQC2.TextField {
             id: nameField
-            Layout.fillWidth: true
-            placeholderText: "Room name"
+            Kirigami.FormData.label: "Room name"
         }
 
-        RowLayout {
+        QQC2.SpinBox {
+            id: playerCount
+            from: 2
+            to: 8
+            value: 2
             Layout.fillWidth: true
-
-            QQC2.Label {
-                text: "Players:"
-            }
-
-            QQC2.SpinBox {
-                id: playerCount
-                Layout.fillWidth: true
-                from: 2
-                to: 8
-                value: 2
-            }
+            Kirigami.FormData.label: "Players:"
         }
     }
 }

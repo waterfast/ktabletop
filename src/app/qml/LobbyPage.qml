@@ -28,6 +28,10 @@ Kirigami.Page {
 
     CreateRoomDialog {
         id: createRoomDialog
+
+        d: LuaObject {
+            opts: ({ type: "create-room" })
+        }
     }
 
     onBackRequested: event => {

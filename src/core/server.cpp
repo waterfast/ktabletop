@@ -66,6 +66,10 @@ void Server::processNewConnection(ClientSocket *client)
         connections.remove(connId);
     });
 
+    connect(conn, &UserConnection::notificationGot, [this, conn](const QByteArray &command, const QByteArray &data) {
+        L->callMethod(u"server"_s, u"processNotification"_s, {conn->connId(), QString::fromUtf8(command), QJsonValue::fromJson(data).toVariant()});
+    });
+
     connect(conn, &UserConnection::requestGot, [this, conn](int requestId) {
         const auto &req = conn->receivedRequest(requestId);
         L->callMethod(u"server"_s,
@@ -74,9 +78,9 @@ void Server::processNewConnection(ClientSocket *client)
     });
 
     connect(conn, &UserConnection::disconnected, this, [this, conn, connId, addr] {
-        L->callMethod(u"server"_s, u"onDisconnected"_s, {connId});
+        L->callMethod(u"server"_s, u"processDisconnected"_s, {connId});
         conn->deleteLater();
     });
 
-    L->callMethod(u"server"_s, u"onNewConnection"_s, {connId});
+    L->callMethod(u"server"_s, u"processNewConnection"_s, {connId});
 }

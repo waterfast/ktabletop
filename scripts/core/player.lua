@@ -7,6 +7,7 @@ local json = ktabletop.json
 ---@field connId integer My socket
 ---@field id integer
 ---@field username string
+---@field roomId integer
 local Player = class("Player")
 
 ---@param connId integer
@@ -28,20 +29,11 @@ end
 ---@param timeout? integer
 ---@param timestamp? integer
 ---@param isJson? boolean if true, should not json.encode here
----@return table awaitable
-function Player:asyncRequest(command, data, timeout, timestamp, isJson)
-  local requestFn = async.wrap(self._cpp.requestSocket)
-  return requestFn(self.connId, command, isJson and data or json.encode(data), timeout or 10, timestamp or -1)
-end
-
----@param command string
----@param data any
----@param timeout? integer
----@param timestamp? integer
----@param isJson? boolean if true, should not json.encode here
 ---@return any
 function Player:request(command, data, timeout, timestamp, isJson)
-  local ok, err, ret = async.await(self:asyncRequest(command, data, timeout, timestamp, isJson))
+  local requestFn = async.wrap(self._cpp.requestSocket)
+  data = isJson and data or json.encode(data)
+  local ok, err, ret = async.await(requestFn(self.connId, command, data, timeout or 10, timestamp or -1))
 
   -- TODO: how to properly handle error messages in request sender...
   if not ok then

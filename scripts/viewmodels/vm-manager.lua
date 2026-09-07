@@ -10,7 +10,7 @@ function ViewModelManager:initialize()
 end
 
 ---@param name string
----@param klass class
+---@param klass Object
 function ViewModelManager:registerType(name, klass)
   self._types[name] = klass
 end
