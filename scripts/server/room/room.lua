@@ -4,7 +4,8 @@
 local RoomBase = require "server.room.roombase"
 
 ---@class Room: ServerRoomBase
----@field owner Player?
+---@field players ServerPlayer[]
+---@field owner ServerPlayer
 ---@field name string
 ---@field capacity integer
 local Room = RoomBase:subclass("Room")
@@ -18,39 +19,78 @@ function Room:initialize()
   self.owner = nil
   self.name = ""
   self.capacity = 0
+
+  self:setRequestHandler("Room::AddRobot", self.handleAddRobot)
 end
 
----@param player Player
+function Room:isFull()
+  return #self.players >= self.capacity
+end
+
+---@param player ServerPlayer
+function Room:setOwner(player)
+  self.owner = player
+  self:broadcast("Room::Owner", { id = player.connId })
+end
+
+---@param player ServerPlayer
 function Room:addPlayer(player)
-  if #self.players >= self.capacity then
+  if self:isFull() --[[ or self:isStarted() ]] then
     player:notify("ErrorMsg", "Room is full or already started")
     return
   end
 
-  self:broadcast("AddPlayer", { player.connId })
-
-  player:notify("EnterRoom", { id = self.id, name = self.name, capacity = self.capacity })
-
-  for i = 1, #self.players do
-    player:notify("AddPlayer", { self.players[i].connId })
-  end
+  self:broadcast("Room::AddPlayer", {
+    id = player.id,
+    username = player.username,
+  })
 
   RoomBase.addPlayer(self, player)
+  player:notify("Room::Enter", {
+    id = self.id,
+    name = self.name,
+    capacity = self.capacity,
+  })
+
+  for _, p in ipairs(self.players) do
+    if p ~= player then
+      player:notify("Room::AddPlayer", {
+        id = p.id,
+        username = p.username,
+      })
+    end
+  end
+
+  -- TODO: observer
+
 
   if self.owner == nil then
     self:setOwner(player)
   else
-    player:notify("RoomOwner", { self.owner.connId })
+    player:notify("Room::Owner", { id = self.owner.connId })
   end
 end
 
----@param player Player
+function Room:handleAddRobot(player)
+  if self.owner ~= player then
+    return nil, "you need to be room owner to add robot!"
+  end
+
+  if self:isFull() then
+    return nil, "room is full!"
+  end
+
+  local robot = ktabletop.server.playerManager:createRobot()
+  self:addPlayer(robot)
+end
+
+---@param player ServerPlayer
 function Room:removePlayer(player)
   if not RoomBase.removePlayer(self, player) then
     return
   end
 
-  self:broadcast("RemovePlayer", { player.connId })
+  self:broadcast("Room::RemovePlayer", { id = player.connId })
 
   if player == self.owner then
     if #self.players > 0 then
@@ -59,12 +99,6 @@ function Room:removePlayer(player)
       self.owner = nil
     end
   end
-end
-
----@param player Player
-function Room:setOwner(player)
-  self.owner = player
-  self:broadcast("RoomOwner", { player.connId })
 end
 
 return Room

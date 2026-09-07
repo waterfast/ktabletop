@@ -19,9 +19,9 @@ function Client:initialize()
   self.myself = ClientPlayer:new()
   self.lobby = ClientLobby:new()
 
-  self:setCallback("SetupPlayer", self.setupPlayer)
-  self:setCallback("EnterLobby", self.enterLobby)
-  self:setCallback("UpdateOnlineInfo", self.updateOnlineInfo)
+  self:setCallback("Player::Setup", self.setupPlayer)
+  self:setCallback("Lobby::Enter", self.enterLobby)
+  self:setCallback("Lobby::UpdateOnlineInfo", self.updateOnlineInfo)
 end
 
 ---@param cmd string
@@ -50,7 +50,7 @@ function Client:enterLobby()
 end
 
 function Client:updateOnlineInfo(_, data)
-  self.lobby.playerCount = data[1]
+  self.lobby.playerCount = data.onlinePlayers
 end
 
 ----------------------------------------------------------

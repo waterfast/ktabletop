@@ -19,7 +19,7 @@ Kirigami.Dialog {
 
     onAccepted: {
         // TODO: maybe these data should be kept in viewmodel
-        d.invoke("accepted", [{ name: nameField.text, players: playerCount.value }]);
+        d.invoke("accepted", [{ name: nameField.text, capacity: capacitySpin.value }]);
     }
 
     Kirigami.FormLayout {
@@ -29,7 +29,7 @@ Kirigami.Dialog {
         }
 
         QQC2.SpinBox {
-            id: playerCount
+            id: capacitySpin
             from: 2
             to: 8
             value: 2

@@ -11,8 +11,8 @@ function Lobby:initialize()
 
   self.id = 0
 
-  self:setRequestHandler("FetchRoomList", self.handleFetchRoomList)
-  self:setRequestHandler("CreateRoom", self.handleCreateRoom)
+  self:setRequestHandler("Lobby::FetchRooms", self.handleFetchRooms)
+  self:setRequestHandler("Lobby::CreateRoom", self.handleCreateRoom)
 end
 
 ---@param player ServerPlayer
@@ -20,7 +20,7 @@ function Lobby:addPlayer(player)
   RoomBase.addPlayer(self, player)
   -- TODO: should write some client-side Lua and GUI code here!
   -- Otherwise the room manager is not possible for testing
-  player:notify("EnterLobby", nil)
+  player:notify("Lobby::Enter", nil)
   self:updateOnlineInfo()
 end
 
@@ -31,17 +31,25 @@ function Lobby:removePlayer(player)
 end
 
 function Lobby:updateOnlineInfo()
-  self:broadcast("UpdateOnlineInfo", { #self.players })
+  self:broadcast("Lobby::UpdateOnlineInfo", {
+    onlinePlayers = #self.players,
+  })
 end
 
-function Lobby:handleFetchRoomList()
+function Lobby:handleFetchRooms()
   -- TODO: ehh!!!!!!!!!!
   return {}, nil
 end
 
 function Lobby:handleCreateRoom(player, data)
-  print(player.username, "createRoom", ktabletop.inspect(data))
-  return nil, "createRoom not implemented!"
+  local rm = ktabletop.server.roomManager
+  local room = rm:createRoom(player, data.name, data.capacity)
+  if not room then
+    return nil, "createRoom failed!"
+  end
+
+  room:addPlayer(player)
+  self:removePlayer(player)
 end
 
 return Lobby

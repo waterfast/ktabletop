@@ -16,14 +16,15 @@ function RoomManager:initialize()
   self.lobby = Lobby:new()
 end
 
+---@param sender ServerPlayer
 ---@param name string
 ---@param capacity integer
 ---@return Room
-function RoomManager:createRoom(name, capacity)
+function RoomManager:createRoom(sender, name, capacity)
   local room = Room:new()
+  self.rooms[room.id] = room
   room.name = name
   room.capacity = capacity
-  self.rooms[room.id] = room
   return room
 end
 

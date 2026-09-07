@@ -12,11 +12,9 @@ function CreateRoomViewModel:initialize()
 end
 
 function CreateRoomViewModel:accepted(data)
-  print("create room:", ktabletop.json.encode(data))
   async.async(function()
-    return ktabletop.client.myself:request("CreateRoom", data)
+    return ktabletop.client.myself:request("Lobby::CreateRoom", data)
   end)()
-  -- ktabletop.luaEvent("Client::DisconnectFromHost", nil)
 end
 
 return CreateRoomViewModel

@@ -21,6 +21,7 @@ end
 ---@param data any
 ---@param isJson? boolean if true, should not json.encode here
 function Player:notify(command, data, isJson)
+  assert(type(data) ~= "table" or data[1] == nil, "do not use array as data!")
   self._cpp.notifySocket(self.connId, command, isJson and data or json.encode(data))
 end
 
@@ -31,6 +32,7 @@ end
 ---@param isJson? boolean if true, should not json.encode here
 ---@return any
 function Player:request(command, data, timeout, timestamp, isJson)
+  assert(type(data) ~= "table" or data[1] == nil, "do not use array as data!")
   local requestFn = async.wrap(self._cpp.requestSocket)
   data = isJson and data or json.encode(data)
   local ok, err, ret = async.await(requestFn(self.connId, command, data, timeout or 10, timestamp or -1))
