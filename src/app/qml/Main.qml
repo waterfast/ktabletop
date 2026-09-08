@@ -36,6 +36,10 @@ Kirigami.ApplicationWindow {
             State {
                 name: "waitingRoom"
                 when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId !== 0
+
+                PropertyChanges {
+                    root.pageStack.items: [createWaitingRoomPage()]
+                }
             },
 
             State {
@@ -60,8 +64,23 @@ Kirigami.ApplicationWindow {
         const d = lobject.createObject(null, {
             opts: { type: "lobby" }
         });
-        return pageComponent.createObject(states, { d }) as LobbyPage;
+        const ret = pageComponent.createObject(states, { d }) as LobbyPage;
+        d.parent = ret;
+        return ret;
     }
+
+    function createWaitingRoomPage(): WaitingRoomPage {
+        const pageComponent = Qt.createComponent("org.kde.ktabletop", "WaitingRoomPage");
+        const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
+        const d = lobject.createObject(null, {
+            opts: { type: "waiting-room" }
+        });
+        const ret = pageComponent.createObject(states, { d }) as WaitingRoomPage;
+        d.parent = ret;
+        console.log(ret)
+        return ret;
+    }
+
 
     Component.onCompleted: {
     }

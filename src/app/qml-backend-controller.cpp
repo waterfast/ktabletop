@@ -58,7 +58,7 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
     client->connectToHost(address, port);
 }
 
-void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVariant &)
+void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVariant &data)
 {
     auto *vm = m_backend->mainViewModel();
     if (sig == u"Client::EnterLobby"_s) {
@@ -71,5 +71,8 @@ void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVaria
         vm->setRoomId(0);
         vm->setGameStarted(false);
         Client::instance()->connection()->socket()->socket()->disconnectFromHost();
+    } else if (sig == u"Client::EnterRoom"_s) {
+        vm->setRoomId(data.toMap()[u"id"_s].toInt());
+        vm->setGameStarted(false);
     }
 }

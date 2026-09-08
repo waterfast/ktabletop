@@ -26,6 +26,7 @@ Kirigami.Dialog {
         QQC2.TextField {
             id: nameField
             Kirigami.FormData.label: "Room name"
+            text: `${root.d.username}'s room`
         }
 
         QQC2.SpinBox {

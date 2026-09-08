@@ -4,6 +4,8 @@ local async = require "corelib.async"
 
 ---@class RoomBase: Object
 ---@field id integer
+---@field name string
+---@field capacity integer
 ---@field players Player[]
 ---@field observers Player[]
 local RoomBase = class("RoomBase")
@@ -41,6 +43,13 @@ end
 function RoomBase:removePlayer(player)
   return tablib.removeOne(self.players, player)
   -- note that player.roomId is not set. Please add they to somewhere.
+end
+
+---@param id integer
+---@return Player
+function RoomBase:findPlayerById(id)
+  ---@diagnostic disable-next-line
+  return tablib.find(self.players, function(p) return p.id == id end)
 end
 
 return RoomBase

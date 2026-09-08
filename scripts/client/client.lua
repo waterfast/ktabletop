@@ -6,10 +6,12 @@ local class = ktabletop.class
 
 local ClientPlayer = require "client.user.player"
 local ClientLobby = require "client.room.lobby"
+local ClientRoom = require "client.room.room"
 
 ---@class Client: Object
 ---@field myself ClientPlayer
 ---@field lobby ClientLobby
+---@field room ClientRoom
 local Client = class("Client")
 
 function Client:initialize()
@@ -22,6 +24,8 @@ function Client:initialize()
   self:setCallback("Player::Setup", self.setupPlayer)
   self:setCallback("Lobby::Enter", self.enterLobby)
   self:setCallback("Lobby::UpdateOnlineInfo", self.updateOnlineInfo)
+
+  self:setCallback("Room::Enter", self.enterRoom)
 end
 
 ---@param cmd string
@@ -38,6 +42,9 @@ function Client:setRequestHandler(cmd, cb)
   self._requestHandlers[cmd] = async.async(cb)
 end
 
+-- helper functions that does work from playerManager & roomManager
+-- since there's only one special player (myself) and my room
+
 function Client:setupPlayer(_, data)
   self.myself = ClientPlayer:new()
   self.myself.connId = 1001
@@ -46,11 +53,26 @@ function Client:setupPlayer(_, data)
 end
 
 function Client:enterLobby()
+  self.myself.roomId = 0
   ktabletop.luaEvent("Client::EnterLobby", nil)
 end
 
 function Client:updateOnlineInfo(_, data)
   self.lobby.playerCount = data.onlinePlayers
+end
+
+function Client:enterRoom(_, data)
+  local room = ClientRoom:new()
+  room.id = data.id
+  room.name = data.name
+  room.capacity = data.capacity
+
+  self.room = room
+
+  room:addPlayer(self.myself)
+
+  -- OK let's tell GUI
+  ktabletop.luaEvent("Client::EnterRoom", data)
 end
 
 ----------------------------------------------------------
@@ -79,8 +101,23 @@ end
 ---@param command string
 ---@param data any
 function Client:processNotification(connId, command, data)
+  print(command, ktabletop.json.encode(data))
+
+  local player = self.myself
+  if not player then return end
+
   local f = self._notificationHandlers[command]
-  return f and f(self, self.myself, data)
+  if f then
+    return f(self, player, data)
+  end
+
+  local room = player.roomId == 0 and self.lobby or self.room
+  if not room then return end
+
+  f = room._notificationHandlers[command]
+  if f then
+    return f(room, player, data)
+  end
 end
 
 local requestDispatcher = async.async(function(client, connId, requestId, command, data)

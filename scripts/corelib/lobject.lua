@@ -230,6 +230,12 @@ function LObject:setOnValueChanged(fn)
   end
 end
 
+-- use this after altering table-type properties
+function LObject:notifyPropertyChanged(name)
+  local p = self:_getProp(name)
+  if p and p.changedCallback then p.changedCallback() end
+end
+
 function LObject:emitSignal(sig, data)
   assert(self.class.__signals[sig], "Signals must be registered")
   ktabletop.luaEvent("LObject::Signal", {

@@ -4,10 +4,7 @@
 local RoomBase = require "server.room.roombase"
 
 ---@class Room: ServerRoomBase
----@field players ServerPlayer[]
 ---@field owner ServerPlayer
----@field name string
----@field capacity integer
 local Room = RoomBase:subclass("Room")
 
 local nextRoomId = 1

@@ -7,6 +7,8 @@ local json = ktabletop.json
 local tablib = ktabletop.tablib
 
 ---@class ServerRoomBase: RoomBase
+---@field players ServerPlayer[]
+---@field observers ServerPlayer[]
 local ServerRoomBase = RoomBase:subclass("ServerRoomBase")
 
 ---@param players Player[]

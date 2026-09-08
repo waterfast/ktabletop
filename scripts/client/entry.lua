@@ -8,9 +8,11 @@ local Client = require "client.client"
 ktabletop.client = Client:new()
 
 local ViewModelManager = require "viewmodels.vm-manager"
-local LobbyViewModel = require "viewmodels.lobby"
-local CreateRoomViewModel = require "viewmodels.create-room"
 
-ktabletop.viewModelManager = ViewModelManager:new()
-ktabletop.viewModelManager:registerType("lobby", LobbyViewModel)
-ktabletop.viewModelManager:registerType("create-room", CreateRoomViewModel)
+local vm = ViewModelManager:new()
+for type, model in pairs {
+  ["lobby"] = require "viewmodels.lobby",
+  ["create-room"] = require "viewmodels.create-room",
+  ["waiting-room"] = require "viewmodels.waiting-room",
+} do vm:registerType(type, model) end
+ktabletop.viewModelManager = vm

@@ -10,6 +10,7 @@ ecm_add_qml_module(ktabletop_qml
         WelcomePage.qml
         LobbyPage.qml
         CreateRoomDialog.qml
+        WaitingRoomPage.qml
         BusyDialog.qml
         ErrorDialog.qml
     SOURCES
