@@ -174,7 +174,30 @@ void LuaBinding::releaseLObject(int ref)
     if (ref == LUA_NOREF) {
         return;
     }
-    luaL_unref(L->state(), LUA_REGISTRYINDEX, ref);
+
+    lua_State *L = this->L->state();
+
+    lua_getglobal(L, "debug");
+    lua_getfield(L, -1, "traceback");
+    lua_replace(L, -2);
+    const int msgh = lua_gettop(L);
+
+    lua_getglobal(L, "ktabletop");
+    lua_getfield(L, -1, "viewModelManager");
+    lua_replace(L, -2);
+    lua_getfield(L, -1, "removeViewModel");
+    lua_pushvalue(L, -2);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+    // stack: msgh, vmManager, fn, vmManager, obj(ref)
+
+    // return a nil via pcall, so I can lua_pop(L, 3) without concern about stack
+    if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
+        qCritical() << lua_tostring(L, -1);
+    }
+    lua_pop(L, 3);
+
+    // unref that obj anyway.
+    luaL_unref(L, LUA_REGISTRYINDEX, ref);
 }
 
 LuaVM &LuaBinding::vm()

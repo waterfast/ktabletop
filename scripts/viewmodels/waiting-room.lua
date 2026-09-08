@@ -12,10 +12,7 @@ WaitingRoomViewModel:Property("ownerId")
 function WaitingRoomViewModel:initialize()
   self:setPropertyBinding("players", function()
     return tablib.map(ktabletop.client.room.players, function(p)
-      return {
-        id = p.id,
-        username = p.username,
-      }
+      return p.id
     end)
   end)
   self:setPropertyBinding("ownerId", function()

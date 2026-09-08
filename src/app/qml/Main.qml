@@ -14,6 +14,8 @@ Kirigami.ApplicationWindow {
         parent: states
     }
 
+    property var _dynamicPages: []
+
     property Item states: Item {
         id: states
         states: [
@@ -55,6 +57,14 @@ Kirigami.ApplicationWindow {
             style: Kirigami.ApplicationHeaderStyle.ToolBar
             showNavigationButtons: pageStack.currentIndex > 0 || pageStack.layers.depth > 1 ? Kirigami.ApplicationHeaderStyle.ShowBackButton : 0
         }
+
+        onPageRemoved: page => {
+            const idx = root._dynamicPages.findIndex(e => e === page);
+            if (idx !== -1) {
+                root._dynamicPages.splice(idx, 1);
+                page.destroy();
+            }
+        }
     }
 
 
@@ -64,8 +74,9 @@ Kirigami.ApplicationWindow {
         const d = lobject.createObject(null, {
             opts: { type: "lobby" }
         });
-        const ret = pageComponent.createObject(states, { d }) as LobbyPage;
+        const ret = pageComponent.createObject(pageStack, { d }) as LobbyPage;
         d.parent = ret;
+        _dynamicPages.push(ret);
         return ret;
     }
 
@@ -75,9 +86,9 @@ Kirigami.ApplicationWindow {
         const d = lobject.createObject(null, {
             opts: { type: "waiting-room" }
         });
-        const ret = pageComponent.createObject(states, { d }) as WaitingRoomPage;
+        const ret = pageComponent.createObject(pageStack, { d }) as WaitingRoomPage;
         d.parent = ret;
-        console.log(ret)
+        _dynamicPages.push(ret);
         return ret;
     }
 

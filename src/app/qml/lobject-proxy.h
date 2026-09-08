@@ -13,6 +13,7 @@ class LObjectProxy : public QQmlPropertyMap
     QML_NAMED_ELEMENT(LuaObject)
 
     Q_PROPERTY(QVariantMap opts READ opts WRITE setOpts REQUIRED)
+    Q_PROPERTY(QObject *parent READ parent WRITE setParent)
 
 public:
     explicit LObjectProxy(QObject *parent = nullptr);

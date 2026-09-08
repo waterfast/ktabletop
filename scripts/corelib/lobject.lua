@@ -246,8 +246,11 @@ function LObject:emitSignal(sig, data)
 end
 
 local reservedProperties = {
-  "id", "opts", "invoke", "signalEmitted", "onSignalEmitted",
-  "refIndex",
+  -- Qt specific
+  "id", "objectName", "parent",
+
+  -- KTabletop internal
+  "opts", "invoke", "signalEmitted", "onSignalEmitted", "refIndex",
 }
 
 ---@param key string

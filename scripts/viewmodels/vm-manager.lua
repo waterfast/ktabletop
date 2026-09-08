@@ -45,4 +45,9 @@ function ViewModelManager:getViewModel(opts)
   return obj
 end
 
+---@param obj LObject
+function ViewModelManager:removeViewModel(obj)
+  self._instances[obj._stringId] = nil
+end
+
 return ViewModelManager
