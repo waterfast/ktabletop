@@ -9,6 +9,7 @@
 #include <QtQml>
 
 class LObjectProxy;
+class MainViewModel;
 
 class QmlBackend : public QObject
 {
@@ -16,24 +17,24 @@ class QmlBackend : public QObject
     QML_SINGLETON
     QML_NAMED_ELEMENT(Backend)
 
+    Q_PROPERTY(MainViewModel *mainViewModel READ mainViewModel CONSTANT)
+
 public:
     explicit QmlBackend(QObject *parent = nullptr);
     ~QmlBackend() override;
 
-    Q_INVOKABLE void startServer(ushort port);
-    Q_INVOKABLE void joinServer(const QString &address, ushort port = 17943);
+    MainViewModel *mainViewModel() const;
 
     Q_INVOKABLE LObjectProxy *getObservable(const QString &objectName) const;
 
     Q_INVOKABLE void emit(const QString &type, const QVariantMap &payload);
 
 Q_SIGNALS:
-    // emitted from QML
-    void startServerRequested(ushort port);
-    void joinServerRequested(const QString &address, ushort port);
-
     void enterLobby();
 
     // emitted from QML (via emit()), forwarded by the host to luaBinding->emit
     void emitRequested(const QString &type, const QVariantMap &payload);
+
+private:
+    MainViewModel *m_mainViewModel;
 };

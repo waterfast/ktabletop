@@ -3,6 +3,7 @@
 
 #include "qml-backend-controller.h"
 #include "qml/lobject-manager.h"
+#include "qml/main-view-model.h"
 #include "qml/qml-backend.h"
 
 #include "core/client.h"
@@ -20,8 +21,9 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
     : QObject(parent)
     , m_backend(backend)
 {
-    connect(m_backend, &QmlBackend::startServerRequested, this, &QmlBackendController::onStartServerRequested);
-    connect(m_backend, &QmlBackend::joinServerRequested, this, &QmlBackendController::onJoinServerRequested);
+    auto *vm = m_backend->mainViewModel();
+    connect(vm, &MainViewModel::startServerRequested, this, &QmlBackendController::onStartServerRequested);
+    connect(vm, &MainViewModel::joinServerRequested, this, &QmlBackendController::onJoinServerRequested);
 
     auto *manager = LObjectManager::instance();
     manager->setCreateObjectFn([](const QVariantMap &opts) {
@@ -58,9 +60,16 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
 
 void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVariant &)
 {
+    auto *vm = m_backend->mainViewModel();
     if (sig == u"Client::EnterLobby"_s) {
+        vm->setRoomId(0);
+        vm->setGameStarted(false);
+        vm->setConnected(true);
         m_backend->enterLobby();
     } else if (sig == u"Client::DisconnectFromHost"_s) {
+        vm->setConnected(false);
+        vm->setRoomId(0);
+        vm->setGameStarted(false);
         Client::instance()->connection()->socket()->socket()->disconnectFromHost();
     }
 }

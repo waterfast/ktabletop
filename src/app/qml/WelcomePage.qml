@@ -14,23 +14,19 @@ Kirigami.Page {
         QQC2.Button {
             Layout.fillWidth: true
             text: "Single Player"
-            onClicked: {
-                Backend.startServer(17943);
-                Backend.joinServer("127.0.0.1");
-            }
+            onClicked: Backend.mainViewModel.startSinglePlayer()
         }
 
         QQC2.Button {
             Layout.fillWidth: true
             text: "Multiple Players"
-            onClicked: {
-            }
+            onClicked: Backend.mainViewModel.startMultiPlayer()
         }
 
         QQC2.Button {
             Layout.fillWidth: true
             text: "Quit"
-            onClicked: Qt.exit(0)
+            onClicked: Qt.quit()
         }
     }
 }

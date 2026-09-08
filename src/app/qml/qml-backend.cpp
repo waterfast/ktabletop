@@ -4,6 +4,7 @@
 #include "qml-backend.h"
 #include "lobject-manager.h"
 #include "lobject-proxy.h"
+#include "main-view-model.h"
 
 #include <QCoreApplication>
 #include <QJSEngine>
@@ -11,19 +12,15 @@
 
 QmlBackend::QmlBackend(QObject *parent)
     : QObject(parent)
+    , m_mainViewModel(new MainViewModel(this))
 {
 }
 
 QmlBackend::~QmlBackend() = default;
 
-void QmlBackend::startServer(ushort port)
+MainViewModel *QmlBackend::mainViewModel() const
 {
-    Q_EMIT startServerRequested(port);
-}
-
-void QmlBackend::joinServer(const QString &address, ushort port)
-{
-    Q_EMIT joinServerRequested(address, port);
+    return m_mainViewModel;
 }
 
 LObjectProxy *QmlBackend::getObservable(const QString &objectName) const

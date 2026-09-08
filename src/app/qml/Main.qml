@@ -19,7 +19,7 @@ Kirigami.ApplicationWindow {
         states: [
             State {
                 name: "notConnected"
-                when: true
+                when: !Backend.mainViewModel.connected
                 PropertyChanges {
                     root.pageStack.items: [welcomePage]
                 }
@@ -27,6 +27,7 @@ Kirigami.ApplicationWindow {
 
             State {
                 name: "lobby"
+                when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId === 0
                 PropertyChanges {
                     root.pageStack.items: [createLobbyPage()]
                 }
@@ -34,10 +35,12 @@ Kirigami.ApplicationWindow {
 
             State {
                 name: "waitingRoom"
+                when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId !== 0
             },
 
             State {
                 name: "inGame"
+                when: Backend.mainViewModel.gameStarted
             }
         ]
     }
@@ -54,11 +57,10 @@ Kirigami.ApplicationWindow {
     function createLobbyPage(): LobbyPage {
         const pageComponent = Qt.createComponent("org.kde.ktabletop", "LobbyPage");
         const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
-        return pageComponent.createObject(states, {
-            d: lobject.createObject(states, {
-                opts: { type: "lobby" }
-            } as LuaObject)
-        }) as LobbyPage;
+        const d = lobject.createObject(null, {
+            opts: { type: "lobby" }
+        });
+        return pageComponent.createObject(states, { d }) as LobbyPage;
     }
 
     Component.onCompleted: {

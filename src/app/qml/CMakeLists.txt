@@ -14,6 +14,7 @@ ecm_add_qml_module(ktabletop_qml
         ErrorDialog.qml
     SOURCES
         qml-backend.cpp
+        main-view-model.cpp
         lobject-manager.cpp
         lobject-proxy.cpp
     DEPENDENCIES
