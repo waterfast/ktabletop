@@ -66,6 +66,8 @@ function Client:connectToHost(host, port)
 
     if err then
       ktabletop.luaEvent("Client::ConnectError", { error = err })
+    else
+      ktabletop.luaEvent("Client::Connected", {})
     end
   end)()
 end

@@ -7,6 +7,7 @@ ecm_add_qml_module(ktabletop_qml
     GENERATE_PLUGIN_SOURCE
     QML_FILES
         Main.qml
+        WelcomePage.qml
         LobbyPage.qml
         CreateRoomDialog.qml
         BusyDialog.qml

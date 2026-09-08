@@ -2,62 +2,63 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 import QtQuick
-import QtQuick.Controls as QQC2
-import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
-import org.kde.kirigami.controls as KControls
-import org.kde.kirigami.layouts as KL
 
 import org.kde.ktabletop
 
 Kirigami.ApplicationWindow {
     id: root
 
+    readonly property WelcomePage welcomePage: WelcomePage {
+        parent: states
+    }
+
+    property Item states: Item {
+        id: states
+        states: [
+            State {
+                name: "notConnected"
+                when: true
+                PropertyChanges {
+                    root.pageStack.items: [welcomePage]
+                }
+            },
+
+            State {
+                name: "lobby"
+                PropertyChanges {
+                    root.pageStack.items: [createLobbyPage()]
+                }
+            },
+
+            State {
+                name: "waitingRoom"
+            },
+
+            State {
+                name: "inGame"
+            }
+        ]
+    }
+
     pageStack {
-        columnView.columnResizeMode: KL.ColumnView.SingleColumn
+        // columnView.columnResizeMode: KL.ColumnView.SingleColumn
         globalToolBar {
             style: Kirigami.ApplicationHeaderStyle.ToolBar
             showNavigationButtons: pageStack.currentIndex > 0 || pageStack.layers.depth > 1 ? Kirigami.ApplicationHeaderStyle.ShowBackButton : 0
         }
     }
 
-    pageStack.initialPage: Kirigami.Page {
-        title: "KTabletop"
-        ColumnLayout {
-            anchors.centerIn: parent
-            QQC2.Button {
-                Layout.fillWidth: true
-                text: "Single Player"
-                onClicked: {
-                    Backend.startServer(17943);
-                    Backend.joinServer("127.0.0.1");
-                }
-            }
 
-            QQC2.Button {
-                Layout.fillWidth: true
-                text: "Multiple Players"
-                onClicked: {
-                }
-            }
-
-            QQC2.Button {
-                Layout.fillWidth: true
-                text: "Quit"
-                onClicked: Qt.exit(0)
-            }
-        }
-    }
-
-    Connections {
-        target: Backend
-        function onEnterLobby() {
-          const pageComponent = Qt.createComponent("org.kde.ktabletop", "LobbyPage");
-          const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
-          root.pageStack.push(pageComponent.createObject(root, { d: 
-            lobject.createObject(root, { opts: { type: "lobby" } })}));
-        }
+    function createLobbyPage(): LobbyPage {
+        const pageComponent = Qt.createComponent("org.kde.ktabletop", "LobbyPage");
+        const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
+        return pageComponent.createObject(states, {
+            d: lobject.createObject(states, {
+                opts: { type: "lobby" }
+            } as LuaObject)
+        }) as LobbyPage;
     }
 
     Component.onCompleted: {

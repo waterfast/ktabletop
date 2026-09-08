@@ -13,6 +13,7 @@ LObjectProxy::LObjectProxy(QObject *parent)
 
 LObjectProxy::~LObjectProxy()
 {
+    qDebug().noquote() << "LObjectProxy" << QJsonDocument::fromVariant(m_opts).toJson(QJsonDocument::Compact) << "destroyed!";
     auto *manager = LObjectManager::instance();
     manager->unregisterProxy(objectName(), this);
     if (m_refIndex >= 0) {
