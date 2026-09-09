@@ -18,6 +18,11 @@ Kirigami.Page {
             text: "Create Room"
             icon.name: "list-add"
             onTriggered: createRoomDialog.open()
+        },
+        Kirigami.Action {
+            text: "Quit Lobby"
+            icon.name: "application-exit"
+            onTriggered: quitLobbyDialog.open()
         }
     ]
 
@@ -34,9 +39,13 @@ Kirigami.Page {
         }
     }
 
-    onBackRequested: event => {
-        event.accepted = true;
-        Kirigami.PageStack.pop();
-        d.invoke("disconnectFromHost")
+    Kirigami.PromptDialog {
+        id: quitLobbyDialog
+
+        title: "Quit Lobby"
+        subtitle: "Are you sure to logout this server?"
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+
+        onAccepted: d.invoke("disconnectFromHost");
     }
 }
