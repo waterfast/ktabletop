@@ -19,6 +19,8 @@ function ClientRoom:initialize()
   RoomBase.initialize(self)
 
   self:setCallback("Room::Owner", self.setOwner)
+  self:setCallback("Room::AddPlayer", self.handleAddPlayer)
+  self:setCallback("Room::RemovePlayer", self.handleRemovePlayer)
 end
 
 ---@param player ClientPlayer
@@ -37,6 +39,21 @@ end
 
 function ClientRoom:setOwner(_, data)
   self.owner = self:findPlayerById(data.id)
+end
+
+function ClientRoom:handleAddPlayer(_, data)
+  local p = ClientPlayer:new()
+  p.id = data.id
+  p.username = data.username
+
+  self:addPlayer(p)
+end
+
+function ClientRoom:handleRemovePlayer(_, data)
+  local id = data.id
+
+  local p = self:findPlayerById(id)
+  if p then self:removePlayer(p) end
 end
 
 return ClientRoom

@@ -233,7 +233,7 @@ end
 -- use this after altering table-type properties
 function LObject:notifyPropertyChanged(name)
   local p = self:_getProp(name)
-  if p and p.changedCallback then p.changedCallback() end
+  if p then propertyManager:propertyChanged(p) end
 end
 
 function LObject:emitSignal(sig, data)

@@ -52,7 +52,8 @@ function Server:processDisconnected(connId)
   end
 
   ktabletop.log.info(string.format("Player %s disconnected", player.username))
-  self.roomManager.lobby:removePlayer(player)
+  local room = self.roomManager:findRoomOrLobby(player.roomId)
+  if room then room:removePlayer(player) end
   self.playerManager:removePlayer(connId)
 end
 

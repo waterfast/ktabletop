@@ -54,6 +54,7 @@ end
 
 function Client:enterLobby()
   self.myself.roomId = 0
+  self.room = nil
   ktabletop.luaEvent("Client::EnterLobby", nil)
 end
 
@@ -101,8 +102,6 @@ end
 ---@param command string
 ---@param data any
 function Client:processNotification(connId, command, data)
-  print(command, ktabletop.json.encode(data))
-
   local player = self.myself
   if not player then return end
 
