@@ -23,7 +23,9 @@ Kirigami.Page {
 
     QQC2.Label {
         anchors.centerIn: parent
-        text: "Welcome to the room!<br>Players = " + JSON.stringify(root.d.players) +
+        text: "Welcome to the room!<br>Room.name = " + root.d.name +
+            "<br>Room.Id = " + JSON.stringify(root.d.roomId) +
+            "<br>Players = " + JSON.stringify(root.d.players) +
             "<br>room owner.id = " + root.d.ownerId
         font.pixelSize: 18 // TODO: Does kirigami offer some constant?
     }

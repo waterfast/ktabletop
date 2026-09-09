@@ -14,6 +14,7 @@ LobbyViewModel:Property("playerCount")
 LobbyViewModel:Property("rooms")
 LobbyViewModel:Invokable("disconnectFromHost")
 LobbyViewModel:Invokable("fetchRooms")
+LobbyViewModel:Invokable("joinRoom")
 
 function LobbyViewModel:initialize()
   self:setPropertyBinding("playerCount", function()
@@ -33,6 +34,12 @@ function LobbyViewModel:fetchRooms()
     local rooms = ktabletop.client.myself:request("Lobby::FetchRooms", {})
     table.sort(rooms, function(a, b) return a.id < b.id end)
     ktabletop.client.lobby.rooms = rooms
+  end)()
+end
+
+function LobbyViewModel:joinRoom(roomId)
+  async.async(function()
+    ktabletop.client.myself:request("Room::Join", { id = roomId })
   end)()
 end
 

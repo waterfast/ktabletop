@@ -40,9 +40,7 @@ Kirigami.ScrollablePage {
                         Kirigami.Action {
                             text: "Join"
                             icon.name: "list-add"
-                            onTriggered: {
-                                // TODO
-                            }
+                            onTriggered: root.d.invoke("joinRoom", [modelData.id])
                         }
                     ]
                     header: Kirigami.Heading {

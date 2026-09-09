@@ -6,11 +6,19 @@ local tablib = ktabletop.tablib
 local WaitingRoomViewModel = ktabletop.class("WaitingRoomViewModel")
 WaitingRoomViewModel:include(LObject)
 
+WaitingRoomViewModel:Property("name")
+WaitingRoomViewModel:Property("roomId")
 WaitingRoomViewModel:Property("players")
 WaitingRoomViewModel:Property("ownerId")
 WaitingRoomViewModel:Invokable("quitRoom")
 
 function WaitingRoomViewModel:initialize()
+  self:setPropertyBinding("name", function()
+    return ktabletop.client.room.name
+  end)
+  self:setPropertyBinding("roomId", function()
+    return ktabletop.client.room.id
+  end)
   self:setPropertyBinding("players", function()
     return tablib.map(ktabletop.client.room.players, function(p)
       return p.id
@@ -29,4 +37,3 @@ function WaitingRoomViewModel:quitRoom()
 end
 
 return WaitingRoomViewModel
-
