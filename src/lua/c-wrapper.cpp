@@ -12,7 +12,6 @@ LuaVM::LuaVM()
 
 LuaVM::~LuaVM()
 {
-    // qDebug("LuaVM state %p closed", this);
     lua_close(L);
 }
 

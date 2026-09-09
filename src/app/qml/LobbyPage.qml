@@ -68,6 +68,10 @@ Kirigami.ScrollablePage {
         d: LuaObject {
             opts: ({ type: "create-room" })
         }
+
+        onAccepted: {
+            root.d.invoke("createRoom", [{ name: d.name, capacity: d.capacity }]);
+        }
     }
 
     Kirigami.PromptDialog {

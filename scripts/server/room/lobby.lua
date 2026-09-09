@@ -12,7 +12,7 @@ function Lobby:initialize()
   self.id = 0
 
   self:setRequestHandler("Lobby::FetchRooms", self.handleFetchRooms)
-  self:setRequestHandler("Lobby::CreateRoom", self.handleCreateRoom)
+  self:setRequestHandler("Room::Create", self.handleCreateRoom)
   self:setRequestHandler("Room::Join", self.handleJoinRoom)
 end
 
@@ -57,8 +57,7 @@ function Lobby:handleCreateRoom(player, data)
     return nil, "createRoom failed!"
   end
 
-  room:addPlayer(player)
-  self:removePlayer(player)
+  return room.id
 end
 
 function Lobby:handleJoinRoom(player, data)

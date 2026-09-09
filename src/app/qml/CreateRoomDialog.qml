@@ -17,16 +17,12 @@ Kirigami.Dialog {
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
     padding: Kirigami.Units.largeSpacing
 
-    onAccepted: {
-        // TODO: maybe these data should be kept in viewmodel
-        d.invoke("accepted", [{ name: nameField.text, capacity: capacitySpin.value }]);
-    }
-
     Kirigami.FormLayout {
         QQC2.TextField {
             id: nameField
             Kirigami.FormData.label: "Room name"
             text: `${root.d.username}'s room`
+            onTextChanged: root.d.invoke("updateName", [text])
         }
 
         QQC2.SpinBox {
@@ -36,6 +32,7 @@ Kirigami.Dialog {
             value: 2
             Layout.fillWidth: true
             Kirigami.FormData.label: "Players:"
+            onValueChanged: root.d.invoke("updateCapacity", [value])
         }
     }
 }

@@ -7,16 +7,24 @@ local CreateRoomViewModel = ktabletop.class("CreateRoomViewModel")
 CreateRoomViewModel:include(LObject)
 
 CreateRoomViewModel:Property("username") -- TODO: when this grow bigger, should bind to player or something
-CreateRoomViewModel:Invokable("accepted")
+CreateRoomViewModel:Property("name")
+CreateRoomViewModel:Property("capacity")
+
+CreateRoomViewModel:Invokable("updateName")
+CreateRoomViewModel:Invokable("updateCapacity")
 
 function CreateRoomViewModel:initialize()
   self.username = ktabletop.client.myself.username
+  self.name = ""
+  self.capacity = 2
 end
 
-function CreateRoomViewModel:accepted(data)
-  async.async(function()
-    return ktabletop.client.myself:request("Lobby::CreateRoom", data)
-  end)()
+function CreateRoomViewModel:updateName(name)
+  self.name = name
+end
+
+function CreateRoomViewModel:updateCapacity(capacity)
+  self.capacity = capacity
 end
 
 return CreateRoomViewModel
