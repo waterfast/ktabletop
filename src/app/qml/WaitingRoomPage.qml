@@ -14,6 +14,11 @@ Kirigami.Page {
 
     required property LuaObject d
     actions: [
+        Kirigami.Action {
+            text: "Quit Room"
+            icon.name: "application-exit"
+            onTriggered: d.invoke("quitRoom")
+        }
     ]
 
     QQC2.Label {
@@ -23,4 +28,3 @@ Kirigami.Page {
         font.pixelSize: 18 // TODO: Does kirigami offer some constant?
     }
 }
-

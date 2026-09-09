@@ -18,6 +18,7 @@ function Room:initialize()
   self.capacity = 0
 
   self:setRequestHandler("Room::AddRobot", self.handleAddRobot)
+  self:setRequestHandler("Room::Quit", self.handleQuitRoom)
 end
 
 function Room:isFull()
@@ -79,6 +80,17 @@ function Room:handleAddRobot(player)
 
   local robot = ktabletop.server.playerManager:createRobot()
   self:addPlayer(robot)
+end
+
+---@param player ServerPlayer
+function Room:handleQuitRoom(player)
+  self:removePlayer(player)
+
+  -- TODO: check if is online
+  local lobby = ktabletop.server.roomManager.lobby
+  lobby:addPlayer(player)
+
+  -- TODO: isOutdated
 end
 
 ---@param player ServerPlayer
