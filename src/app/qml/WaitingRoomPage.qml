@@ -15,6 +15,18 @@ Kirigami.Page {
     required property LuaObject d
     actions: [
         Kirigami.Action {
+            text: "Add Robot"
+            visible: d.ownerId === d.selfId
+            icon.name: "computer-fail-symbolic"
+            onTriggered: d.invoke("addRobot")
+        },
+        Kirigami.Action {
+            text: "Start Game"
+            visible: d.ownerId === d.selfId
+            icon.name: "media-playback-start"
+            onTriggered: d.invoke("startGame")
+        },
+        Kirigami.Action {
             text: "Quit Room"
             icon.name: "application-exit"
             onTriggered: d.invoke("quitRoom")

@@ -118,7 +118,7 @@ function scheduler:finish(fn)
   if fn.state == "done" then
     self:resume(a, true, unpack(fn.results, 1, fn.results.n))
   else
-    self:resume(a, false, fn.errmsg)
+    self:resume(a, false, fn.errmsg .. "\n" .. debug.traceback(fn.coro))
   end
 end
 

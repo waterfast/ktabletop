@@ -28,7 +28,7 @@ end
 ---@param player ServerPlayer
 function Room:setOwner(player)
   self.owner = player
-  self:broadcast("Room::Owner", { id = player.connId })
+  self:broadcast("Room::Owner", { id = player.id })
 end
 
 ---@param player ServerPlayer
@@ -65,7 +65,7 @@ function Room:addPlayer(player)
   if self.owner == nil then
     self:setOwner(player)
   else
-    player:notify("Room::Owner", { id = self.owner.connId })
+    player:notify("Room::Owner", { id = self.owner.id })
   end
 end
 
@@ -99,7 +99,7 @@ function Room:removePlayer(player)
     return
   end
 
-  self:broadcast("Room::RemovePlayer", { id = player.connId })
+  self:broadcast("Room::RemovePlayer", { id = player.id })
 
   if player == self.owner then
     if #self.players > 0 then

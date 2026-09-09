@@ -49,6 +49,7 @@ function Client:setupPlayer(_, data)
   self.myself = ClientPlayer:new()
   self.myself.connId = 1001
   self.myself.id = data.id
+  self.myself.state = "online"
   self.myself.username = data.username
 end
 

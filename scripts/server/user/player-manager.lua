@@ -21,6 +21,7 @@ function PlayerManager:createNewPlayer(connId)
   local player = ServerPlayer:new(connId)
   player.id = connId
   player.username = "guest" .. connId
+  player.state = "online"
 
   self:addPlayer(player)
   player:notify("Player::Setup", { id = player.id, username = player.username })
@@ -30,7 +31,7 @@ end
 local nextRobotId = -2
 function PlayerManager:createRobot()
   local robot = ServerPlayer:new(0)
-  -- TODO: state = robot
+  robot.state = "robot"
   robot.id = nextRobotId
   nextRobotId = nextRobotId - 1
   robot.username = ("COMP%d"):format(robot.id)
