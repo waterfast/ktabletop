@@ -37,8 +37,18 @@ function Lobby:updateOnlineInfo()
 end
 
 function Lobby:handleFetchRooms()
-  -- TODO: ehh!!!!!!!!!!
-  return {}, nil
+  local rm = ktabletop.server.roomManager
+  local rooms = {}
+  for _, room in pairs(rm.rooms) do
+    rooms[#rooms + 1] = {
+      id = room.id,
+      name = room.name,
+      capacity = room.capacity,
+      playerCount = #room.players,
+      ownerId = room.owner and room.owner.id or -1,
+    }
+  end
+  return rooms
 end
 
 function Lobby:handleCreateRoom(player, data)

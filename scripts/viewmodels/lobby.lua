@@ -2,6 +2,8 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local LObject = require "corelib.lobject"
+local async = require "corelib.async"
+local tablib = ktabletop.tablib
 
 ---@class LobbyViewModel: Object, LObject
 ---@field playerCount integer
@@ -9,16 +11,29 @@ local LobbyViewModel = ktabletop.class("LobbyViewModel")
 LobbyViewModel:include(LObject)
 
 LobbyViewModel:Property("playerCount")
+LobbyViewModel:Property("rooms")
 LobbyViewModel:Invokable("disconnectFromHost")
+LobbyViewModel:Invokable("fetchRooms")
 
 function LobbyViewModel:initialize()
   self:setPropertyBinding("playerCount", function()
     return ktabletop.client.lobby.playerCount
   end)
+  self:setPropertyBinding("rooms", function()
+    return ktabletop.client.lobby.rooms
+  end)
 end
 
 function LobbyViewModel:disconnectFromHost()
   ktabletop.luaEvent("Client::DisconnectFromHost", nil)
+end
+
+function LobbyViewModel:fetchRooms()
+  async.async(function()
+    local rooms = ktabletop.client.myself:request("Lobby::FetchRooms", {})
+    table.sort(rooms, function(a, b) return a.id < b.id end)
+    ktabletop.client.lobby.rooms = rooms
+  end)()
 end
 
 return LobbyViewModel

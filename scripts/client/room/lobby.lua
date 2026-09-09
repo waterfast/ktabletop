@@ -6,11 +6,13 @@ local LObject = require "corelib.lobject"
 local ClientLobby = RoomBase:subclass("ClientLobby")
 ClientLobby:include(LObject)
 ClientLobby:Property("playerCount")
+ClientLobby:Property("rooms")
 
 function ClientLobby:initialize()
   RoomBase.initialize(self)
 
   self.playerCount = 0
+  self.rooms = {}
 end
 
 return ClientLobby

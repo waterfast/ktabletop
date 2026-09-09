@@ -28,7 +28,7 @@ Kirigami.Page {
 
     QQC2.Label {
         anchors.centerIn: parent
-        text: "No rooms yet, players = " + d.playerCount + " " + d.objectName
+        text: "Players = " + d.playerCount + "\nRooms: " + JSON.stringify(d.rooms.map(e => e.name))
     }
 
     CreateRoomDialog {
@@ -47,5 +47,9 @@ Kirigami.Page {
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
 
         onAccepted: d.invoke("disconnectFromHost");
+    }
+
+    Component.onCompleted: {
+        d.invoke("fetchRooms")
     }
 }
