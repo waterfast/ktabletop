@@ -89,21 +89,9 @@ static int requestSocket(lua_State *L)
             return;
         }
 
-        int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
-
         lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
-        if (!err) {
-            lua_pushnil(L);
-        } else {
-            lua_pushstring(L, err.message().c_str());
-        }
-        lua_pushstring(L, reply.constData());
-
-        if (lua_pcall(L, 2, 0, msgh) != LUA_OK) {
-            qCritical() << lua_tostring(L, -1);
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 1);
+        QVariant errVal = err ? QString::fromStdString(err.message()) : QVariant::fromValue(nullptr);
+        LuaVM::call(L, {errVal, reply});
 
         luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
     };
@@ -183,22 +171,15 @@ static int delay(lua_State *L)
 
     auto timer = new QTimer(binding);
     timer->setSingleShot(true);
-    timer->connect(timer, &QTimer::timeout, [L = binding->vm().state(), timer, fnRef] {
-        timer->deleteLater();
-
+    timer->connect(timer, &QTimer::timeout, timer, &QObject::deleteLater);
+    timer->connect(timer, &QTimer::timeout, [L = binding->vm().state(), fnRef] {
         auto binding = LuaBinding::forState(L);
         if (!binding) {
             return;
         }
 
-        int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
-
         lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
-        if (lua_pcall(L, 0, 0, msgh) != LUA_OK) {
-            qCritical() << lua_tostring(L, -1);
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 1);
+        LuaVM::call(L);
 
         luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
     });
@@ -256,19 +237,9 @@ static int connectToHost(lua_State *L)
         timer->stop();
         timer->deleteLater();
 
-        int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
         lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-        if (err) {
-            lua_pushstring(L, err);
-        } else {
-            lua_pushnil(L);
-        }
+        LuaVM::call(L, {err ? QString::fromLocal8Bit(err) : QVariant::fromValue(nullptr)});
 
-        if (lua_pcall(L, 1, 0, msgh) != LUA_OK) {
-            qCritical() << lua_tostring(L, -1);
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 1);
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
     };
 
@@ -302,13 +273,6 @@ static int connectToHost(lua_State *L)
     return 0;
 }
 
-// client-only: returns int
-static int getConnId(lua_State *L)
-{
-    lua_pushinteger(L, Client::instance()->connection()->connId());
-    return 1;
-}
-
 static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
@@ -323,7 +287,6 @@ static luaL_Reg commonFuncTable[] = {
 
 static luaL_Reg clientFuncTable[] = {
     {"connectToHost", connectToHost},
-    {"getConnId", getConnId},
     {NULL, NULL},
 };
 
@@ -345,6 +308,10 @@ static QString collectLogArgs(lua_State *L)
     }
     return result;
 }
+
+// --------------------------------------------
+//   ktabletop.log: logging functions
+// --------------------------------------------
 
 static int loggerInfo(lua_State *L)
 {

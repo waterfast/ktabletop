@@ -20,59 +20,44 @@ lua_State *LuaVM::state() const
     return L;
 }
 
-bool LuaVM::dofile(const QString &path)
+void LuaVM::dofile(const QString &path)
 {
     if (!QFile::exists(path)) {
         qCritical() << path << "does not exist!";
-        return false;
+        return;
     }
-
-    int msgh = pushLibFunc(L, "debug", "traceback");
 
     luaL_loadfile(L, path.toUtf8().constData());
-    int error = lua_pcall(L, 0, 0, msgh);
-    if (error) {
-        qCritical().noquote() << "LuaVM::dofile(" << path << ") failed: " << lua_tostring(L, -1);
-        ;
-        lua_pop(L, 1);
-    }
-    lua_pop(L, 1);
-
-    return !error;
+    call(L);
 }
 
-void LuaVM::dumpStack()
+void LuaVM::dumpStack(lua_State *L)
 {
+    printf("=== stack of lua_State %p ===\n", (void *)L);
     int top = lua_gettop(L);
-    for (int i = 1; i <= top; i++) {
-        printf("%d\t%s\t", i, luaL_typename(L, i));
-        switch (lua_type(L, i)) {
-        case LUA_TNUMBER:
-            printf("%g\n", lua_tonumber(L, i));
-            break;
-        case LUA_TSTRING:
-            printf("%s\n", lua_tostring(L, i));
-            break;
-        case LUA_TBOOLEAN:
-            printf("%s\n", (lua_toboolean(L, i) ? "true" : "false"));
-            break;
-        case LUA_TNIL:
-            printf("%s\n", "nil");
-            break;
-        default:
-            printf("%p\n", lua_topointer(L, i));
-            break;
-        }
+    for (int i = top; i >= 1; i--) {
+        printf("[%d]\t(%8s)\t", i, luaL_typename(L, i));
+        lua_getglobal(L, "tostring");
+        lua_pushvalue(L, i);
+        lua_call(L, 1, 1);
+        printf("%s\n", lua_tostring(L, -1));
+        lua_pop(L, 1);
     }
 }
 
 QVariant LuaVM::call(const QString &func_name, QVariantList params)
 {
-    int msgh = pushLibFunc(L, "debug", "traceback");
+    lua_getglobal(L, func_name.toLatin1().data());
+    return call(L, params);
+}
+
+QVariant LuaVM::call(lua_State *L, QVariantList params)
+{
+    pushLibFunc(L, "debug", "traceback");
+    lua_rotate(L, -2, 1);
+    int msgh = lua_gettop(L) - 1;
 
     auto nargs = params.length();
-    lua_getglobal(L, func_name.toLatin1().data());
-
     for (auto v : params) {
         pushValue(L, v);
     }
@@ -80,7 +65,7 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
     QVariant result;
     int err = lua_pcall(L, nargs, 1, msgh);
     if (err) {
-        qCritical().noquote() << "LuaVM::call(" << func_name << ") failed: " << lua_tostring(L, -1);
+        qCritical().noquote() << lua_tostring(L, -1);
     } else {
         result = readValue(L);
     }
@@ -89,27 +74,46 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
     return result;
 }
 
-QVariant LuaVM::eval(const QString &lua)
+QVariant LuaVM::callMethod(const QString &method, QVariantList args)
 {
-    int err;
-    int msgh = pushLibFunc(L, "debug", "traceback");
-    err = luaL_loadstring(L, lua.toUtf8().constData());
-    if (err != LUA_OK) {
-        qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 2); // clear err+msgh
-        return QVariant();
+    pushLibFunc(L, "debug", "traceback");
+    lua_rotate(L, -2, 1);
+    int msgh = lua_gettop(L) - 1;
+
+    lua_getfield(L, -1, method.toUtf8().constData());
+    lua_pushvalue(L, -2);
+
+    int nargs = 1; // self
+    for (auto &v : args) {
+        LuaVM::pushValue(L, v);
+        nargs++;
     }
 
     QVariant result;
-    err = lua_pcall(L, 0, 1, msgh);
+    int err = lua_pcall(L, nargs, 1, msgh);
+    // stack: msgh, <object>, <ret/err>
     if (err) {
         qCritical() << lua_tostring(L, -1);
     } else {
-        result = readValue(L);
+        result = LuaVM::readValue(L);
     }
-    lua_pop(L, 2);
+
+    // clear the stack, pop the result and remove msgh
+    lua_pop(L, 1);
+    lua_remove(L, msgh);
 
     return result;
+}
+
+QVariant LuaVM::eval(const QString &lua)
+{
+    if (luaL_loadstring(L, lua.toUtf8().constData()) != LUA_OK) {
+        qCritical() << lua_tostring(L, -1);
+        lua_pop(L, 1); // clear err+msgh
+        return QVariant();
+    }
+
+    return call(L);
 }
 
 void LuaVM::pushValue(lua_State *L, QVariant v)
@@ -167,8 +171,12 @@ void LuaVM::pushValue(lua_State *L, QVariant v)
         lua_pushnil(L);
         break;
     default:
-        qCritical() << "cannot handle QVariant type" << v.typeName() << "(id:" << v.typeId() << "): pushing nil";
-        lua_pushnil(L);
+        if (typeId == QMetaType::fromType<LuaRef>().id()) {
+            lua_rawgeti(L, LUA_REGISTRYINDEX, v.value<LuaRef>().index);
+        } else {
+            qCritical() << "cannot handle QVariant type" << v.typeName() << "(id:" << v.typeId() << "): pushing nil";
+            lua_pushnil(L);
+        }
         break;
     }
 }
@@ -189,6 +197,16 @@ QVariant LuaVM::readValue(lua_State *L, int index, QHash<const void *, bool> sta
         return QString::fromUtf8(lua_tostring(L, index));
     }
     case LUA_TTABLE: {
+        // middleclass special case: if t.class exists, save to registry
+        // **MEMLEAK CAUTION**: remember to luaL_unref it!
+        int type = lua_getfield(L, index, "class");
+        lua_pop(L, 1);
+        if (type == LUA_TTABLE) {
+            lua_pushvalue(L, index);
+            int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+            return QVariant::fromValue(LuaRef{ref});
+        }
+
         auto p = lua_topointer(L, index);
         if (stack[p]) {
             qCritical("circular reference detected");

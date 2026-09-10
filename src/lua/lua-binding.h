@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include <system_error>
 
 class LuaVM;
 struct lua_State;
@@ -36,7 +37,7 @@ public:
     void triggerLuaEvent(const QString &type, const QVariant &payload);
 
     // Call `ktabletop.<subtable>:<method>(args...)`
-    QVariant callMethod(const QString &subtable, const QString &method, const QVariantList &args = {});
+    QVariant callKTabletopMethod(const QString &subtable, const QString &method, const QVariantList &args = {});
 
     // call `ktabletop.viewModelManager:getViewModel(opts)`
     // returned table is added a `refIndex` field
@@ -50,6 +51,10 @@ public:
     lua_State *state() const;
 
     static LuaBinding *forState(lua_State *state);
+
+public Q_SLOTS:
+    // void requestDone(int func, std::error_code err, QByteArray data);
+    // void delayDone(int func);
 
 Q_SIGNALS:
     void luaEvent(const QString &type, const QVariant &payload);

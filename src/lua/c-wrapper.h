@@ -11,6 +11,10 @@
 #include <QVariant>
 #include <lua.hpp>
 
+struct LuaRef {
+    int index = LUA_NOREF;
+};
+
 class LuaVM
 {
 public:
@@ -21,12 +25,18 @@ public:
 
     lua_State *state() const;
 
-    bool dofile(const QString &path);
-    void dumpStack();
+    void dofile(const QString &path);
 
-    QVariant call(const QString &func_name, QVariantList params = QVariantList());
+    QVariant call(const QString &func_name, QVariantList params = {});
+
+    // call the obj:method(params), obj should at top of stack; stack remains unchanged after call
+    QVariant callMethod(const QString &method, QVariantList args = {});
+
     QVariant eval(const QString &lua);
 
+    static void dumpStack(lua_State *L);
+    // call the function with params, function should at top of stack; it will be popped after call
+    static QVariant call(lua_State *L, QVariantList params = {});
     static void pushValue(lua_State *L, QVariant v);
     static QVariant readValue(lua_State *L, int index = 0, QHash<const void *, bool> stack = QHash<const void *, bool>());
 
@@ -35,3 +45,5 @@ public:
 private:
     lua_State *L;
 };
+
+Q_DECLARE_METATYPE(LuaRef);

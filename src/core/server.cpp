@@ -67,20 +67,20 @@ void Server::processNewConnection(ClientSocket *client)
     });
 
     connect(conn, &UserConnection::notificationGot, [this, conn](const QByteArray &command, const QByteArray &data) {
-        L->callMethod(u"server"_s, u"processNotification"_s, {conn->connId(), QString::fromUtf8(command), QJsonValue::fromJson(data).toVariant()});
+        L->callKTabletopMethod(u"server"_s, u"processNotification"_s, {conn->connId(), QString::fromUtf8(command), QJsonValue::fromJson(data).toVariant()});
     });
 
     connect(conn, &UserConnection::requestGot, [this, conn](int requestId) {
         const auto &req = conn->receivedRequest(requestId);
-        L->callMethod(u"server"_s,
-                      u"processRequest"_s,
-                      {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
+        L->callKTabletopMethod(u"server"_s,
+                               u"processRequest"_s,
+                               {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
     });
 
     connect(conn, &UserConnection::disconnected, this, [this, conn, connId, addr] {
-        L->callMethod(u"server"_s, u"processDisconnected"_s, {connId});
+        L->callKTabletopMethod(u"server"_s, u"processDisconnected"_s, {connId});
         conn->deleteLater();
     });
 
-    L->callMethod(u"server"_s, u"processNewConnection"_s, {connId});
+    L->callKTabletopMethod(u"server"_s, u"processNewConnection"_s, {connId});
 }

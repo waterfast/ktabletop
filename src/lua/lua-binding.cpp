@@ -59,32 +59,13 @@ void LuaBinding::triggerLuaEvent(const QString &type, const QVariant &payload)
     luaEvent(type, payload);
 }
 
-QVariant LuaBinding::callMethod(const QString &subtable, const QString &method, const QVariantList &args)
+QVariant LuaBinding::callKTabletopMethod(const QString &subtable, const QString &method, const QVariantList &args)
 {
     lua_State *L = this->L->state();
 
-    int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
-
-    // push ktabletop.<field> (yeah it's not a func)
     LuaVM::pushLibFunc(L, "ktabletop", subtable.toUtf8().constData());
-    lua_getfield(L, -1, method.toUtf8().constData());
-    lua_pushvalue(L, -2);
-
-    int nargs = 1; // self
-    for (auto &v : args) {
-        LuaVM::pushValue(L, v);
-        nargs++;
-    }
-
-    QVariant result;
-    int err = lua_pcall(L, nargs, 1, msgh);
-    // stack: msgh, <object>, <ret/err>
-    if (err) {
-        qCritical() << lua_tostring(L, -1);
-    } else {
-        result = LuaVM::readValue(L);
-    }
-    lua_pop(L, 3);
+    auto result = this->L->callMethod(method, args);
+    lua_pop(L, 1);
 
     return result;
 }
@@ -92,89 +73,50 @@ QVariant LuaBinding::callMethod(const QString &subtable, const QString &method, 
 QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
 {
     QVariantMap result;
-    lua_State *L = this->L->state();
+    auto vm = this->L;
+    lua_State *L = vm->state();
 
-    const int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
-
-    // push ktabletop.viewModelManager
     LuaVM::pushLibFunc(L, "ktabletop", "viewModelManager");
-    lua_getfield(L, -1, "getViewModel");
-    lua_pushvalue(L, -2);
-    LuaVM::pushValue(L, QVariant(opts));
-
-    if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
-        qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 3);
+    auto ref = vm->callMethod(u"getViewModel"_s, {opts});
+    lua_pop(L, 1);
+    if (!ref.isValid()) {
         return result;
     }
 
-    // stack after call: msgh, vmManager, obj, ret/err
-    const int obj = lua_gettop(L);
-    lua_getfield(L, obj, "createCppObject");
-    lua_pushvalue(L, -2);
-    if (lua_pcall(L, 1, 1, msgh) != LUA_OK) {
-        qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 4);
-    } else {
-        result = LuaVM::readValue(L).toMap();
-        lua_pop(L, 1);
-        const int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-        result[u"refIndex"_s] = ref;
-        lua_pop(L, 3);
+    LuaVM::pushValue(L, ref);
+    auto obj = vm->callMethod(u"createCppObject"_s);
+    lua_pop(L, 1);
+    if (!obj.isValid()) {
+        return result;
     }
+
+    result = obj.toMap();
+    result[u"refIndex"_s] = ref.value<LuaRef>().index;
 
     return result;
 }
 
 QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVariantList &args)
 {
-    QVariant result;
-    lua_State *L = this->L->state();
-
-    const int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
+    auto vm = this->L;
+    lua_State *L = vm->state();
 
     lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-    lua_getfield(L, -1, method.toUtf8().constData());
-    if (lua_type(L, -1) != LUA_TFUNCTION) {
-        lua_pop(L, 3);
-        qWarning() << "LObject method not invokable:" << method;
-        return result;
-    }
-    lua_pushvalue(L, -2);
-    for (auto &arg : args) {
-        LuaVM::pushValue(L, arg);
-    }
-
-    if (lua_pcall(L, args.length() + 1, 1, msgh) != LUA_OK) {
-        qCritical() << lua_tostring(L, -1);
-    } else {
-        result = LuaVM::readValue(L);
-    }
-    lua_pop(L, 3);
+    auto result = vm->callMethod(method, args);
+    lua_pop(L, 1);
 
     return result;
 }
 
 void LuaBinding::releaseLObject(int ref)
 {
-    if (ref == LUA_NOREF) {
-        return;
-    }
-
-    lua_State *L = this->L->state();
+    auto vm = this->L;
+    lua_State *L = vm->state();
 
     // TODO: maybe viewModelManager shouldn't hold a reference to that viewModel.
-    const int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
     LuaVM::pushLibFunc(L, "ktabletop", "viewModelManager");
-    lua_getfield(L, -1, "removeViewModel");
-    lua_pushvalue(L, -2);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-
-    // return a nil via pcall, so I can lua_pop(L, 3) without concern about stack
-    if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
-        qCritical() << lua_tostring(L, -1);
-    }
-    lua_pop(L, 3);
+    vm->callMethod(u"removeViewModel"_s, {QVariant::fromValue(LuaRef{ref})});
+    lua_pop(L, 1);
 
     luaL_unref(L, LUA_REGISTRYINDEX, ref);
 }
