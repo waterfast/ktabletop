@@ -53,6 +53,8 @@ set_package_properties(KF6KirigamiAddons PROPERTIES
 
 ecm_find_qmlmodule(org.kde.kirigamiaddons.formcard)
 
+set(QT_QML_NO_CACHEGEN ON)
+
 add_subdirectory(src)
 
 # install(FILES org.kde.kapp4.desktop DESTINATION ${KDE_INSTALL_APPDIR})

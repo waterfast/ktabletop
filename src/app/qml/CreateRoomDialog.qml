@@ -21,8 +21,8 @@ Kirigami.Dialog {
         QQC2.TextField {
             id: nameField
             Kirigami.FormData.label: "Room name"
-            text: `${d.username}'s room`
-            onTextChanged: d.invoke("updateName", [text])
+            text: `${root.d.username}'s room`
+            onTextChanged: root.d.invoke("updateName", [text])
         }
 
         QQC2.SpinBox {
@@ -32,7 +32,7 @@ Kirigami.Dialog {
             value: 2
             Layout.fillWidth: true
             Kirigami.FormData.label: "Players:"
-            onValueChanged: d.invoke("updateCapacity", [value])
+            onValueChanged: root.d.invoke("updateCapacity", [value])
         }
     }
 }

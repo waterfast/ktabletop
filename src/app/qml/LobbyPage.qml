@@ -32,16 +32,16 @@ Kirigami.ScrollablePage {
 
         QQC2.Label {
             Layout.fillWidth: true
-            visible: d.rooms.length > 0
+            visible: root.d.rooms.length > 0
             text: i18n("%1 player online", d.playerCount)
             opacity: 0.7
             font: Kirigami.Theme.smallFont
         }
 
         Kirigami.CardsLayout {
-            visible: d.rooms.length > 0
+            visible: root.d.rooms.length > 0
             Repeater {
-                model: d.rooms
+                model: root.d.rooms
                 delegate: Kirigami.Card {
                     required property var modelData
 
@@ -72,7 +72,7 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.topMargin: Kirigami.Units.gridUnit * 3
-            visible: d.rooms.length === 0
+            visible: root.d.rooms.length === 0
             icon.name: "list-add"
             text: i18n("There aren't room yet")
             explanation: i18n("Create a room to start playing with friends")
@@ -104,7 +104,7 @@ Kirigami.ScrollablePage {
         subtitle: i18n("Are you sure you want to disconnect from this server?")
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
 
-        onAccepted: d.invoke("disconnectFromHost");
+        onAccepted: root.d.invoke("disconnectFromHost");
     }
 
     Component.onCompleted: {

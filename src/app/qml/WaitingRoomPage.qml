@@ -18,21 +18,21 @@ Kirigami.Page {
         Kirigami.Action {
             text: i18n("Add Robot")
             icon.name: "computer-symbolic"
-            visible: d.ownerId === d.selfId
-            enabled: d.players.length < d.capacity
-            onTriggered: d.invoke("addRobot")
+            visible: root.d.ownerId === root.d.selfId
+            enabled: root.d.players.length < root.d.capacity
+            onTriggered: root.d.invoke("addRobot")
         },
         Kirigami.Action {
             text: i18n("Start Game")
             icon.name: "media-playback-start"
-            visible: d.ownerId === d.selfId
-            enabled: d.players.length === d.capacity
-            onTriggered: d.invoke("startGame")
+            visible: root.d.ownerId === root.d.selfId
+            enabled: root.d.players.length === root.d.capacity
+            onTriggered: root.d.invoke("startGame")
         },
         Kirigami.Action {
             text: i18n("Quit Room")
             icon.name: "application-exit"
-            onTriggered: d.invoke("quitRoom")
+            onTriggered: root.d.invoke("quitRoom")
         }
     ]
 
@@ -44,11 +44,11 @@ Kirigami.Page {
         Kirigami.Heading {
             Layout.alignment: Qt.AlignHCenter
             level: 3
-            text: i18n("%1 / %2 players", d.players.length, d.capacity)
+            text: i18n("%1 / %2 players", root.d.players.length, root.d.capacity)
         }
 
         Repeater {
-            model: d.players
+            model: root.d.players
             delegate: Kirigami.AbstractCard
             {
                 required property var modelData
@@ -80,7 +80,7 @@ Kirigami.Page {
         }
 
         Repeater {
-            model: Math.max(0, d.capacity - d.players.length)
+            model: Math.max(0, root.d.capacity - root.d.players.length)
             delegate: Kirigami.AbstractCard {
                 Layout.fillWidth: true
                 opacity: 0.5
