@@ -73,7 +73,7 @@ QVariant LuaBinding::callKTabletopMethod(const QString &subtable, const QString 
 QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
 {
     QVariantMap result;
-    auto vm = this->L;
+    auto *vm = this->L;
     lua_State *L = vm->state();
 
     LuaVM::pushLibFunc(L, "ktabletop", "viewModelManager");
@@ -98,7 +98,7 @@ QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
 
 QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVariantList &args)
 {
-    auto vm = this->L;
+    auto *vm = this->L;
     lua_State *L = vm->state();
 
     lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
@@ -110,7 +110,7 @@ QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVarian
 
 void LuaBinding::releaseLObject(int ref)
 {
-    auto vm = this->L;
+    auto *vm = this->L;
     lua_State *L = vm->state();
 
     // TODO: maybe viewModelManager shouldn't hold a reference to that viewModel.
@@ -135,7 +135,7 @@ LuaBinding *LuaBinding::forState(lua_State *state)
 {
     // find its main coroutine first. Or we cannot find that LuaBinding
     lua_rawgeti(state, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
-    auto mainState = lua_tothread(state, -1);
+    auto *mainState = lua_tothread(state, -1);
     lua_pop(state, 1);
     return bindingInstances.value(mainState);
 }

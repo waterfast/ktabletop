@@ -18,7 +18,7 @@ using namespace Qt::Literals::StringLiterals;
 
 static UserConnection *findConnectionById(lua_State *L, int connId)
 {
-    auto binding = LuaBinding::forState(L);
+    auto *binding = LuaBinding::forState(L);
     if (!binding) {
         return nullptr;
     }
@@ -50,7 +50,7 @@ static int notifySocket(lua_State *L)
     const char *command = luaL_checkstring(L, 2);
     const char *jsonData = luaL_checkstring(L, 3);
 
-    auto conn = findConnectionById(L, connId);
+    auto *conn = findConnectionById(L, connId);
     if (!conn) {
         return luaL_error(L, "cannot find socket of connId %d", connId);
     }
@@ -75,7 +75,7 @@ static int requestSocket(lua_State *L)
     qint64 timestamp = luaL_checkinteger(L, 5);
     luaL_checktype(L, 6, LUA_TFUNCTION);
 
-    auto conn = findConnectionById(L, connId);
+    auto *conn = findConnectionById(L, connId);
     if (!conn) {
         return luaL_error(L, "cannot find socket of connId %d", connId);
     }
@@ -84,7 +84,7 @@ static int requestSocket(lua_State *L)
     int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
     auto cb = [L = LuaBinding::forState(L)->vm().state(), fnRef](std::error_code err, QByteArray reply) {
-        auto binding = LuaBinding::forState(L);
+        auto *binding = LuaBinding::forState(L);
         if (!binding) {
             return;
         }
@@ -115,7 +115,7 @@ static int replySocket(lua_State *L)
     bool ok = lua_toboolean(L, 3);
     const char *jsonData = luaL_checkstring(L, 4);
 
-    auto conn = findConnectionById(L, connId);
+    auto *conn = findConnectionById(L, connId);
     if (!conn) {
         return luaL_error(L, "cannot find socket of connId %d", connId);
     }
@@ -136,7 +136,7 @@ static int cancelRequest(lua_State *L)
     int connId = luaL_checkinteger(L, 1);
     int requestId = luaL_checkinteger(L, 2);
 
-    auto conn = findConnectionById(L, connId);
+    auto *conn = findConnectionById(L, connId);
     if (!conn) {
         return luaL_error(L, "cannot find socket of connId %d", connId);
     }
@@ -149,7 +149,7 @@ static int cancelRequest(lua_State *L)
 // void delay(ms, callback: fun())
 static int delay(lua_State *L)
 {
-    auto binding = LuaBinding::forState(L);
+    auto *binding = LuaBinding::forState(L);
     if (!binding) {
         return luaL_error(L, "No LuaBinding found for this Lua VM");
     }
@@ -169,11 +169,11 @@ static int delay(lua_State *L)
     lua_pushvalue(L, 2);
     int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
-    auto timer = new QTimer(binding);
+    auto *timer = new QTimer(binding);
     timer->setSingleShot(true);
     timer->connect(timer, &QTimer::timeout, timer, &QObject::deleteLater);
     timer->connect(timer, &QTimer::timeout, [L = binding->vm().state(), fnRef] {
-        auto binding = LuaBinding::forState(L);
+        auto *binding = LuaBinding::forState(L);
         if (!binding) {
             return;
         }
@@ -191,7 +191,7 @@ static int delay(lua_State *L)
 // args: string type, var data
 static int luaEvent(lua_State *L)
 {
-    auto binding = LuaBinding::forState(L);
+    auto *binding = LuaBinding::forState(L);
     if (!binding) {
         return luaL_error(L, "No LuaBinding found for this Lua VM");
     }
@@ -211,7 +211,7 @@ static int luaEvent(lua_State *L)
 // client-only: args: string host, int port, callback: fun(err: string?)
 static int connectToHost(lua_State *L)
 {
-    auto binding = LuaBinding::forState(L);
+    auto *binding = LuaBinding::forState(L);
     if (!binding) {
         return luaL_error(L, "No LuaBinding found for this Lua VM");
     }
@@ -230,7 +230,7 @@ static int connectToHost(lua_State *L)
     auto *timer = new QTimer(binding);
     timer->setSingleShot(true);
 
-    auto ctx = new QObject;
+    auto *ctx = new QObject;
 
     std::function<void(const char *)> invoke = [ctx, L = binding->vm().state(), ref, timer](const char *err) {
         ctx->deleteLater();
@@ -350,7 +350,7 @@ extern "C" int luaopen_ktabletop(lua_State *L)
     lua_newtable(L);
     luaL_setfuncs(L, commonFuncTable, 0);
 
-    auto binding = LuaBinding::forState(L);
+    auto *binding = LuaBinding::forState(L);
     if (binding && binding->role() == LuaBinding::Client) {
         luaL_setfuncs(L, clientFuncTable, 0);
     }

@@ -43,7 +43,7 @@ QmlBackendController::~QmlBackendController()
 
 void QmlBackendController::onStartServerRequested(ushort port)
 {
-    auto server = Server::instance();
+    auto *server = Server::instance();
     if (!server->listen(QHostAddress::Any, port)) {
         // server->deleteLater();
         qCritical("Cannot start server!");
@@ -52,7 +52,7 @@ void QmlBackendController::onStartServerRequested(ushort port)
 
 void QmlBackendController::onJoinServerRequested(const QString &address, ushort port)
 {
-    auto client = Client::instance();
+    auto *client = Client::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
     connect(client->luaBinding(), &LuaBinding::luaEvent, this, &QmlBackendController::handleCommonLuaEvent, Qt::UniqueConnection);
     client->connectToHost(address, port);

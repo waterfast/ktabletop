@@ -115,7 +115,7 @@ void UserConnection::setSocket(ClientSocket *socket)
 
 ClientSocket *UserConnection::moveSocket()
 {
-    auto socket = socket_;
+    auto *socket = socket_;
     socket_ = nullptr;
     socket->disconnect(this);
     socket->setParent(nullptr);
@@ -130,7 +130,7 @@ int UserConnection::request(const QByteArray &command, const QByteArray &jsonDat
         requestId = 1;
 
     const bool tracked = static_cast<bool>(callback);
-    auto req = new PendingRequest(this, requestId, std::move(callback), timeout);
+    auto *req = new PendingRequest(this, requestId, std::move(callback), timeout);
     if (tracked) {
         pendingRequests_.insert(requestId, req);
     }
@@ -194,7 +194,7 @@ UserConnection::ReceivedRequest UserConnection::receivedRequest(int requestId) c
 // cancel last request from the sender
 void UserConnection::cancelRequest(int requestId)
 {
-    auto req = pendingRequests_.value(requestId, nullptr);
+    auto *req = pendingRequests_.value(requestId, nullptr);
     if (!req)
         return;
     req->finish(QByteArray{}, std::make_error_code(std::errc::timed_out));
@@ -224,7 +224,7 @@ void UserConnection::handlePacket(const QCborArray &packet)
         receivedRequests_.insert(requestId, rr);
         requestGot(requestId);
     } else if (type & TypeReply) {
-        auto req = pendingRequests_.value(requestId, nullptr);
+        auto *req = pendingRequests_.value(requestId, nullptr);
         if (!req)
             return;
 

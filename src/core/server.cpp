@@ -55,11 +55,11 @@ UserConnection *Server::findConnection(int connId) const
 
 void Server::processNewConnection(ClientSocket *client)
 {
-    auto socket = client->socket();
+    auto *socket = client->socket();
     auto addr = QString(u"[%1]:%2"_s).arg(socket->peerAddress().toString()).arg(socket->peerPort());
     qInfo() << addr << "connected";
 
-    auto conn = new UserConnection(this, client);
+    auto *conn = new UserConnection(this, client);
     auto connId = conn->connId();
     connections[connId] = conn;
     connect(conn, &QObject::destroyed, [this, connId] {

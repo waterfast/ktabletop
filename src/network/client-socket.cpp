@@ -175,7 +175,7 @@ static QCborValue readItem(QCborStreamReader &reader)
 
 QList<QCborArray> ClientSocket::readCborArrsFromBuffer(QCborError *err)
 {
-    auto cbuf = cborBuffer.constData();
+    const auto *cbuf = cborBuffer.constData();
     auto len = cborBuffer.size();
     QList<QCborArray> ret;
 

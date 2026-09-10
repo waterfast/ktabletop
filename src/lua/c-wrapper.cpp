@@ -207,7 +207,7 @@ QVariant LuaVM::readValue(lua_State *L, int index, QHash<const void *, bool> sta
             return QVariant::fromValue(LuaRef{ref});
         }
 
-        auto p = lua_topointer(L, index);
+        const auto *p = lua_topointer(L, index);
         if (stack[p]) {
             qCritical("circular reference detected");
             return QVariant();
