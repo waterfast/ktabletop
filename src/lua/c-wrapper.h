@@ -30,6 +30,8 @@ public:
     static void pushValue(lua_State *L, QVariant v);
     static QVariant readValue(lua_State *L, int index = 0, QHash<const void *, bool> stack = QHash<const void *, bool>());
 
+    static int pushLibFunc(lua_State *L, const char *libName, const char *funcName);
+
 private:
     lua_State *L;
 };

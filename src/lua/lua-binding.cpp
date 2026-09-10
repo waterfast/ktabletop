@@ -63,15 +63,11 @@ QVariant LuaBinding::callMethod(const QString &subtable, const QString &method, 
 {
     lua_State *L = this->L->state();
 
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
+    int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
 
-    lua_getglobal(L, "ktabletop"); // ktabletop
-    lua_getfield(L, -1, subtable.toUtf8().constData()); // ktabletop.<field>
-    lua_replace(L, -2);
+    // push ktabletop.<field> (yeah it's not a func)
+    LuaVM::pushLibFunc(L, "ktabletop", subtable.toUtf8().constData());
     lua_getfield(L, -1, method.toUtf8().constData());
-    // stack: msgh, <object>, <fn>
     lua_pushvalue(L, -2);
 
     int nargs = 1; // self
@@ -79,16 +75,15 @@ QVariant LuaBinding::callMethod(const QString &subtable, const QString &method, 
         LuaVM::pushValue(L, v);
         nargs++;
     }
-    // stack: msgh, <object>, <fn>, self, args...
 
-    int err = lua_pcall(L, nargs, 1, -nargs - 3);
-    // stack: msgh, <object>, <ret>
+    QVariant result;
+    int err = lua_pcall(L, nargs, 1, msgh);
+    // stack: msgh, <object>, <ret/err>
     if (err) {
         qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 3);
-        return QVariant();
+    } else {
+        result = LuaVM::readValue(L);
     }
-    auto result = LuaVM::readValue(L);
     lua_pop(L, 3);
 
     return result;
@@ -96,62 +91,54 @@ QVariant LuaBinding::callMethod(const QString &subtable, const QString &method, 
 
 QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
 {
+    QVariantMap result;
     lua_State *L = this->L->state();
 
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
-    const int msgh = lua_gettop(L);
+    const int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
 
-    lua_getglobal(L, "ktabletop");
-    lua_getfield(L, -1, "viewModelManager");
-    lua_replace(L, -2);
+    // push ktabletop.viewModelManager
+    LuaVM::pushLibFunc(L, "ktabletop", "viewModelManager");
     lua_getfield(L, -1, "getViewModel");
     lua_pushvalue(L, -2);
     LuaVM::pushValue(L, QVariant(opts));
-    // stack: msgh, vmManager, fn, vmManager, opts
 
     if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
         qCritical() << lua_tostring(L, -1);
         lua_pop(L, 3);
-        return {};
+        return result;
     }
-    const int obj = lua_gettop(L);
 
-    // stack: msgh, vmManager, retObj
+    // stack after call: msgh, vmManager, obj, ret/err
+    const int obj = lua_gettop(L);
     lua_getfield(L, obj, "createCppObject");
     lua_pushvalue(L, -2);
     if (lua_pcall(L, 1, 1, msgh) != LUA_OK) {
         qCritical() << lua_tostring(L, -1);
         lua_pop(L, 4);
-        return {};
+    } else {
+        result = LuaVM::readValue(L).toMap();
+        lua_pop(L, 1);
+        const int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        result[u"refIndex"_s] = ref;
+        lua_pop(L, 3);
     }
 
-    // stack: msgh, vmManager, retObj, ret
-    QVariantMap data = LuaVM::readValue(L).toMap();
-    lua_pop(L, 1);
-    const int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-    data[u"refIndex"_s] = ref;
-    lua_pop(L, 3);
-
-    return data;
+    return result;
 }
 
 QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVariantList &args)
 {
+    QVariant result;
     lua_State *L = this->L->state();
 
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
-    const int msgh = lua_gettop(L);
+    const int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
 
     lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
     lua_getfield(L, -1, method.toUtf8().constData());
     if (lua_type(L, -1) != LUA_TFUNCTION) {
         lua_pop(L, 3);
         qWarning() << "LObject method not invokable:" << method;
-        return {};
+        return result;
     }
     lua_pushvalue(L, -2);
     for (auto &arg : args) {
@@ -160,12 +147,11 @@ QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVarian
 
     if (lua_pcall(L, args.length() + 1, 1, msgh) != LUA_OK) {
         qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 3);
-        return {};
+    } else {
+        result = LuaVM::readValue(L);
     }
-    // stack: msgh, obj, result
-    QVariant result = LuaVM::readValue(L);
     lua_pop(L, 3);
+
     return result;
 }
 
@@ -177,18 +163,12 @@ void LuaBinding::releaseLObject(int ref)
 
     lua_State *L = this->L->state();
 
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
-    const int msgh = lua_gettop(L);
-
-    lua_getglobal(L, "ktabletop");
-    lua_getfield(L, -1, "viewModelManager");
-    lua_replace(L, -2);
+    // TODO: maybe viewModelManager shouldn't hold a reference to that viewModel.
+    const int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
+    LuaVM::pushLibFunc(L, "ktabletop", "viewModelManager");
     lua_getfield(L, -1, "removeViewModel");
     lua_pushvalue(L, -2);
     lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-    // stack: msgh, vmManager, fn, vmManager, obj(ref)
 
     // return a nil via pcall, so I can lua_pop(L, 3) without concern about stack
     if (lua_pcall(L, 2, 1, msgh) != LUA_OK) {
@@ -196,7 +176,6 @@ void LuaBinding::releaseLObject(int ref)
     }
     lua_pop(L, 3);
 
-    // unref that obj anyway.
     luaL_unref(L, LUA_REGISTRYINDEX, ref);
 }
 

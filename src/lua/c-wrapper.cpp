@@ -27,22 +27,18 @@ bool LuaVM::dofile(const QString &path)
         return false;
     }
 
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
+    int msgh = pushLibFunc(L, "debug", "traceback");
 
     luaL_loadfile(L, path.toUtf8().constData());
-    int error = lua_pcall(L, 0, 0, -2);
-
+    int error = lua_pcall(L, 0, 0, msgh);
     if (error) {
-        const char *error_msg = lua_tostring(L, -1);
-        qCritical() << error_msg;
-        lua_pop(L, 2);
-        return false;
+        qCritical().noquote() << "LuaVM::dofile(" << path << ") failed: " << lua_tostring(L, -1);
+        ;
+        lua_pop(L, 1);
     }
-
     lua_pop(L, 1);
-    return true;
+
+    return !error;
 }
 
 void LuaVM::dumpStack()
@@ -72,10 +68,7 @@ void LuaVM::dumpStack()
 
 QVariant LuaVM::call(const QString &func_name, QVariantList params)
 {
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
-    // stack: debug.traceback
+    int msgh = pushLibFunc(L, "debug", "traceback");
 
     auto nargs = params.length();
     lua_getglobal(L, func_name.toLatin1().data());
@@ -83,17 +76,14 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
     for (auto v : params) {
         pushValue(L, v);
     }
-    // stack: args(-nargs), func(-nargs-1), debug.traceback(-nargs-2)
 
-    int err = lua_pcall(L, nargs, 1, -nargs - 2);
-    // lua_pcall always removes args and func, so the stack is: result/error, debug.traceback
-    // so call lua_pop(L, 2) to clear the stack
+    QVariant result;
+    int err = lua_pcall(L, nargs, 1, msgh);
     if (err) {
-        qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 2);
-        return QVariant();
+        qCritical().noquote() << "LuaVM::call(" << func_name << ") failed: " << lua_tostring(L, -1);
+    } else {
+        result = readValue(L);
     }
-    auto result = readValue(L);
     lua_pop(L, 2);
 
     return result;
@@ -101,24 +91,22 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
 
 QVariant LuaVM::eval(const QString &lua)
 {
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    lua_replace(L, -2);
-
     int err;
+    int msgh = pushLibFunc(L, "debug", "traceback");
     err = luaL_loadstring(L, lua.toUtf8().constData());
     if (err != LUA_OK) {
         qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 2);
+        lua_pop(L, 2); // clear err+msgh
         return QVariant();
     }
-    err = lua_pcall(L, 0, 1, -2);
+
+    QVariant result;
+    err = lua_pcall(L, 0, 1, msgh);
     if (err) {
         qCritical() << lua_tostring(L, -1);
-        lua_pop(L, 2);
-        return QVariant();
+    } else {
+        result = readValue(L);
     }
-    auto result = readValue(L);
     lua_pop(L, 2);
 
     return result;
@@ -257,4 +245,14 @@ QVariant LuaVM::readValue(lua_State *L, int index, QHash<const void *, bool> sta
         qCritical("unexpected value type %s", lua_typename(L, tp));
     }
     return QVariant();
+}
+
+int LuaVM::pushLibFunc(lua_State *L, const char *libName, const char *funcName)
+{
+    lua_getglobal(L, libName);
+    lua_getfield(L, -1, funcName);
+    lua_replace(L, -2);
+
+    // return index of pushed function
+    return lua_gettop(L);
 }

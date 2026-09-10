@@ -86,18 +86,12 @@ static int requestSocket(lua_State *L)
     auto cb = [L = LuaBinding::forState(L)->vm().state(), fnRef](std::error_code err, QByteArray reply) {
         auto binding = LuaBinding::forState(L);
         if (!binding) {
-            // L might be freed here, so return
             return;
         }
 
-        // I love debug.traceback
-        lua_getglobal(L, "debug");
-        lua_getfield(L, -1, "traceback");
-        lua_replace(L, -2);
+        int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
 
-        // push Registry[fnRef] to stack
         lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
-
         if (!err) {
             lua_pushnil(L);
         } else {
@@ -105,15 +99,12 @@ static int requestSocket(lua_State *L)
         }
         lua_pushstring(L, reply.constData());
 
-        if (lua_pcall(L, 2, 0, -4) != LUA_OK) {
+        if (lua_pcall(L, 2, 0, msgh) != LUA_OK) {
             qCritical() << lua_tostring(L, -1);
-            // pop err msg
             lua_pop(L, 1);
         }
-        // pop debug.traceback
         lua_pop(L, 1);
 
-        // free that closure
         luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
     };
 
@@ -197,27 +188,18 @@ static int delay(lua_State *L)
 
         auto binding = LuaBinding::forState(L);
         if (!binding) {
-            // L might be freed here, so return
             return;
         }
 
-        // I love debug.traceback
-        lua_getglobal(L, "debug");
-        lua_getfield(L, -1, "traceback");
-        lua_replace(L, -2);
+        int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
 
-        // push Registry[fnRef] to stack
         lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
-
-        if (lua_pcall(L, 0, 0, -2) != LUA_OK) {
+        if (lua_pcall(L, 0, 0, msgh) != LUA_OK) {
             qCritical() << lua_tostring(L, -1);
-            // pop err msg
             lua_pop(L, 1);
         }
-        // pop debug.traceback
         lua_pop(L, 1);
 
-        // free that closure
         luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
     });
     timer->start(ms);
@@ -274,9 +256,7 @@ static int connectToHost(lua_State *L)
         timer->stop();
         timer->deleteLater();
 
-        lua_getglobal(L, "debug");
-        lua_getfield(L, -1, "traceback");
-        lua_replace(L, -2);
+        int msgh = LuaVM::pushLibFunc(L, "debug", "traceback");
         lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
         if (err) {
             lua_pushstring(L, err);
@@ -284,7 +264,7 @@ static int connectToHost(lua_State *L)
             lua_pushnil(L);
         }
 
-        if (lua_pcall(L, 1, 0, -3) != LUA_OK) {
+        if (lua_pcall(L, 1, 0, msgh) != LUA_OK) {
             qCritical() << lua_tostring(L, -1);
             lua_pop(L, 1);
         }
