@@ -87,7 +87,7 @@ void Server::startGameRoom(int roomId)
 {
     auto *thread = getAvailableGameThread();
     thread->addRoom(roomId);
-    thread->call(u"StartGame"_s, {roomId});
+    thread->pushRequest(-1, 0, u"newroom"_s, {{u"id"_s, roomId}});
 }
 
 void Server::processNewConnection(ClientSocket *client)

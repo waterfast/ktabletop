@@ -5,6 +5,7 @@
 
 #include <QThread>
 #include <QVariantList>
+#include <QVariantMap>
 
 class LuaBinding;
 
@@ -32,6 +33,8 @@ public:
 
     // call something inside this thread.
     void call(QString func, QVariantList args = {});
+
+    void pushRequest(int roomId, int playerId, const QString &command, const QVariantMap &data = {});
 
 Q_SIGNALS:
     void ready();

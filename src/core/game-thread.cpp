@@ -9,6 +9,8 @@
 
 #include <QEventLoop>
 
+using namespace Qt::Literals::StringLiterals;
+
 static int nextGameThreadId = 1;
 
 GameThread::GameThread(QObject *parent)
@@ -16,7 +18,7 @@ GameThread::GameThread(QObject *parent)
     , m_id(nextGameThreadId++)
     , m_capacity(DefaultCapacity)
 {
-    setObjectName(QStringLiteral("GameThread-%1").arg(m_id));
+    setObjectName(u"GameThread-%1"_s.arg(m_id));
 
     // Wait until the Lua VM is created in run()
     QEventLoop loop;
@@ -90,4 +92,9 @@ void GameThread::call(QString func, QVariantList args)
             L->vm().call(func, args);
         },
         Qt::QueuedConnection);
+}
+
+void GameThread::pushRequest(int roomId, int playerId, const QString &command, const QVariantMap &data)
+{
+    call(u"HandleRequest"_s, {roomId, playerId, command, data});
 }
