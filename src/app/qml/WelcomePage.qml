@@ -8,25 +8,67 @@ import org.kde.ktabletop
 
 
 Kirigami.Page {
-    title: "KTabletop"
+    id: root
+
     ColumnLayout {
         anchors.centerIn: parent
-        QQC2.Button {
-            Layout.fillWidth: true
-            text: "Single Player"
-            onClicked: Backend.mainViewModel.startSinglePlayer()
+        spacing: Kirigami.Units.largespacing * 2
+
+        Kirigami.Icon {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredWidth: Kirigami.Units.iconSizes.huge
+            Layout.preferredHeight: Kirigami.Units.iconSizes.huge
+            source: "org.kde.ktabletop"
         }
 
-        QQC2.Button {
-            Layout.fillWidth: true
-            text: "Multiple Players"
-            onClicked: Backend.mainViewModel.startMultiPlayer()
+        ColumnLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: Kirigami.Units.smallSpacing
+            Kirigami.Heading {
+                Layout.alignment: Qt.AlignHCenter
+                level: 1
+                text: i18n("KTabletop")
+            }
+
+            QQC2.Label {
+                Layout.alignment: Qt.AlignHCenter
+                text: i18n("Your board game platform")
+                opacity: 0.7
+            }
         }
 
-        QQC2.Button {
-            Layout.fillWidth: true
-            text: "Quit"
-            onClicked: Qt.quit()
+        ColumnLayout {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredWidth: Kirigami.Units.gridUnit * 16
+            spacing: Kirigami.Units.smallSpacing
+
+            QQC2.Button {
+                Layout.fillWidth: true
+                icon.name: "user-identity"
+                text: i18n("Sigle player")
+                onClicked: Backend.mainViewModel.startSinglePlayer()
+            }
+
+            QQC2.Button {
+                Layout.fillWidth: true
+                icon.name: "system-users"
+                text: i18n("Multiplayer")
+                onClicked: Backend.mainViewModel.startMultiPlayer()
+            }
+
+            Kirigami.Separator {
+                Layout.fillWidth: true
+                Layout.topMargin: Kirigami.Units.smallSpacing
+                Layout.bottomMargin: Kirigami.Units.smallSpacing
+            }
+
+            QQC2.Button {
+                Layout.fillWidth: true
+                flat: true
+                icon.name: "application-exit"
+                text: i18n("Exit")
+                onClicked: Qt.quit()
+            }
         }
     }
 }

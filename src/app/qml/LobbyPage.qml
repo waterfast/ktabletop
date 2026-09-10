@@ -11,54 +11,77 @@ import org.kde.ktabletop
 Kirigami.ScrollablePage {
     id: root
 
-    title: "Lobby"
+    title: i18n("Lobby")
 
     required property LuaObject d
     actions: [
         Kirigami.Action {
-            text: "Create Room"
+            text: i18n("Create room")
             icon.name: "list-add"
             onTriggered: createRoomDialog.open()
         },
         Kirigami.Action {
-            text: "Quit Lobby"
+            text: i18n("Exit lobby")
             icon.name: "application-exit"
             onTriggered: quitLobbyDialog.open()
         }
     ]
 
     ColumnLayout {
+        spacing: Kirigami.Units.largeSpacing
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            visible: d.rooms.length > 0
+            text: i18n("%1 player online", d.playerCount)
+            opacity: 0.7
+            font: Kirigami.Theme.smallFont
+        }
+
         Kirigami.CardsLayout {
+            visible: d.rooms.length > 0
             Repeater {
-                model: root.d.rooms
+                model: d.rooms
                 delegate: Kirigami.Card {
                     required property var modelData
 
-                    Layout.maximumWidth: Kirigami.Units.gridUnit * 30
+                    Layout.maximumWidth: Kirigami.Units.gridUnit * 20
 
                     actions: [
                         Kirigami.Action {
-                            text: "Join"
+                            text: i18n("join")
                             icon.name: "list-add"
-                            onTriggered: root.d.invoke("joinRoom", [modelData.id])
+                            enabled: modelData.playerCount < modelData.capacity
+                            onTriggered: d.invoke("joinRoom", [modelData.id])
                         }
                     ]
                     header: Kirigami.Heading {
                         level: 2
                         text: modelData.name
+                        elide: Text.ElideRight
                     }
                     contentItem: QQC2.Label {
-                        text: `Players: ${modelData.playerCount}/${modelData.capacity}`
+                        text: i18n("Players: %1/%2", modelData.playerCount, modelData.capacity)
+                        opacity: 0.7
                     }
                 }
             }
         }
 
-        QQC2.Label {
+        Kirigami.PlaceholderMessage {
+            Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.alignment: Qt.AlignHCenter
-            text: "No rooms yet (players = " + d.playerCount + ")"
+            Layout.topMargin: Kirigami.Units.gridUnit * 3
             visible: d.rooms.length === 0
+            icon.name: "list-add"
+            text: i18n("There aren't room yet")
+            explanation: i18n("Create a room to start playing with friends")
+
+            helpfulAction: Kirigami.Action {
+                text: i18n("Create room")
+                icon.name: "list-add"
+                onTriggered: createRoomDialog.open()
+            }
         }
     }
 
@@ -77,11 +100,11 @@ Kirigami.ScrollablePage {
     Kirigami.PromptDialog {
         id: quitLobbyDialog
 
-        title: "Quit Lobby"
-        subtitle: "Are you sure to logout this server?"
+        title: i18n("Exit lobby")
+        subtitle: i18n("Are you sure you want to disconnect from this server?")
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
 
-        onAccepted: root.d.invoke("disconnectFromHost");
+        onAccepted: d.invoke("disconnectFromHost");
     }
 
     Component.onCompleted: {

@@ -31,7 +31,7 @@ Kirigami.ApplicationWindow {
                 name: "lobby"
                 when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId === 0
                 PropertyChanges {
-                    root.pageStack.items: [createLobbyPage()]
+                    root.pageStack.items: [root.createLuaPage("LobbyPage", { type: "lobby" })]
                 }
             },
 
@@ -40,7 +40,7 @@ Kirigami.ApplicationWindow {
                 when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId !== 0
 
                 PropertyChanges {
-                    root.pageStack.items: [createWaitingRoomPage()]
+                    root.pageStack.items: [root.createLuaPage("WaitingRoomPage", { type: "waiting-room" })]
                 }
             },
 
@@ -67,31 +67,15 @@ Kirigami.ApplicationWindow {
         }
     }
 
-
-    function createLobbyPage(): LobbyPage {
-        const pageComponent = Qt.createComponent("org.kde.ktabletop", "LobbyPage");
+    function createLuaPage(pageName, opts) {
+        const pageComponent = Qt.createComponent("org.kde.ktabletop", pageName);
         const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
-        const d = lobject.createObject(null, {
-            opts: { type: "lobby" }
-        });
-        const ret = pageComponent.createObject(pageStack, { d }) as LobbyPage;
-        d.parent = ret;
-        _dynamicPages.push(ret);
-        return ret;
+        const d = lobject.createObject(null, { opts });
+        const page = pageComponent.createObject(pageStack, { d });
+        d.parent = page;
+        _dynamicPages.push(page);
+        return page;
     }
-
-    function createWaitingRoomPage(): WaitingRoomPage {
-        const pageComponent = Qt.createComponent("org.kde.ktabletop", "WaitingRoomPage");
-        const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
-        const d = lobject.createObject(null, {
-            opts: { type: "waiting-room" }
-        });
-        const ret = pageComponent.createObject(pageStack, { d }) as WaitingRoomPage;
-        d.parent = ret;
-        _dynamicPages.push(ret);
-        return ret;
-    }
-
 
     Component.onCompleted: {
     }

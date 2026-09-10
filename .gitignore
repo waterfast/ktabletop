@@ -16,3 +16,6 @@ src/res.generated.qrc
 
 /ktabletop-app
 *.log
+
+.direnv/
+flake.lock

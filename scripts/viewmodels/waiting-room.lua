@@ -11,6 +11,7 @@ WaitingRoomViewModel:Property("roomId")
 WaitingRoomViewModel:Property("players")
 WaitingRoomViewModel:Property("selfId")
 WaitingRoomViewModel:Property("ownerId")
+WaitingRoomViewModel:Property("capacity")
 
 WaitingRoomViewModel:Invokable("addRobot")
 WaitingRoomViewModel:Invokable("startGame")
@@ -23,9 +24,12 @@ function WaitingRoomViewModel:initialize()
   self:setPropertyBinding("roomId", function()
     return ktabletop.client.room.id
   end)
+  self:setPropertyBinding("capacity", function()
+    return ktabletop.client.room.capacity
+  end)
   self:setPropertyBinding("players", function()
     return tablib.map(ktabletop.client.room.players, function(p)
-      return p.id
+      return { id = p.id, username = p.username }
     end)
   end)
   self:setPropertyBinding("selfId", function()
