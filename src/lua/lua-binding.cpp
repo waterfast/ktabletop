@@ -87,6 +87,7 @@ QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
     auto obj = vm->callMethod(u"createCppObject"_s);
     lua_pop(L, 1);
     if (!obj.isValid()) {
+        luaL_unref(L, LUA_REGISTRYINDEX, ref.value<LuaRef>().index);
         return result;
     }
 
