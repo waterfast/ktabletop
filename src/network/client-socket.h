@@ -32,7 +32,7 @@ private Q_SLOTS:
 private:
     void init();
 
-    QTcpSocket *socket_;
+    QTcpSocket *m_socket;
 
     QByteArray cborBuffer;
 

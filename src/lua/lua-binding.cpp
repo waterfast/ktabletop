@@ -17,7 +17,7 @@ static const char regKey = 0;
 
 LuaBinding::LuaBinding(QObject *parent, Role role)
     : QObject(parent)
-    , role_(role)
+    , m_role(role)
 {
     L = new LuaVM;
     lua_pushlightuserdata(L->state(), this);
@@ -32,9 +32,9 @@ LuaBinding::~LuaBinding()
 void LuaBinding::run()
 {
     QDir::setCurrent(u"scripts"_s);
-    if (role_ == Server) {
+    if (m_role == Server) {
         L->dofile(u"server/entry.lua"_s);
-    } else if (role_ == GameThread) {
+    } else if (m_role == GameThread) {
         L->dofile(u"gamethread/entry.lua"_s);
     } else {
         L->dofile(u"client/entry.lua"_s);
@@ -44,17 +44,17 @@ void LuaBinding::run()
 
 LuaBinding::Role LuaBinding::role() const
 {
-    return role_;
+    return m_role;
 }
 
 int LuaBinding::gameThreadId() const
 {
-    return gameThreadId_;
+    return m_gameThreadId;
 }
 
 void LuaBinding::setGameThreadId(int id)
 {
-    gameThreadId_ = id;
+    m_gameThreadId = id;
 }
 
 void LuaBinding::triggerLuaEvent(const QString &type, const QVariant &payload)

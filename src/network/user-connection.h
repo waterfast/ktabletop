@@ -70,13 +70,13 @@ protected:
 private:
     // Sending side
     friend class PendingRequest;
-    QHash<int, PendingRequest *> pendingRequests_;
+    QHash<int, PendingRequest *> m_pendingRequests;
 
     // Receiving side
-    QHash<int, ReceivedRequest> receivedRequests_;
+    QHash<int, ReceivedRequest> m_receivedRequests;
 
-    ClientSocket *socket_ = nullptr;
-    int connId_;
+    ClientSocket *m_socket = nullptr;
+    int m_connId;
 
     enum {
         COMPRESSION_THRESHOLD = 2048

@@ -25,5 +25,5 @@ private:
     explicit Client(QObject *parent = nullptr);
 
     LuaBinding *L;
-    UserConnection *connection_;
+    UserConnection *m_connection;
 };

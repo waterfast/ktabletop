@@ -17,7 +17,7 @@ ClientSocket::ClientSocket(QObject *parent, QTcpSocket *socket)
     } else {
         socket->setParent(this);
     }
-    this->socket_ = socket;
+    this->m_socket = socket;
     // timerSignup.setSingleShot(true);
     // connect(&timerSignup, &QTimer::timeout, this,
     //         &ClientSocket::disconnectFromHost);
@@ -31,15 +31,15 @@ ClientSocket::~ClientSocket()
 
 void ClientSocket::init()
 {
-    connect(socket_, &QTcpSocket::readyRead, this, &ClientSocket::getMessage);
-    connect(socket_, &QTcpSocket::errorOccurred, this, &ClientSocket::raiseError);
-    connect(socket_, &QTcpSocket::disconnected, this, &ClientSocket::disconnected);
-    socket_->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
+    connect(m_socket, &QTcpSocket::readyRead, this, &ClientSocket::getMessage);
+    connect(m_socket, &QTcpSocket::errorOccurred, this, &ClientSocket::raiseError);
+    connect(m_socket, &QTcpSocket::disconnected, this, &ClientSocket::disconnected);
+    m_socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 }
 
 void ClientSocket::getMessage()
 {
-    cborBuffer += socket_->readAll();
+    cborBuffer += m_socket->readAll();
     QCborError err;
     auto arr = readCborArrsFromBuffer(&err);
     if (err == QCborError::EndOfFile || err == QCborError::NoError) {
@@ -47,25 +47,25 @@ void ClientSocket::getMessage()
             messageGot(a);
         return;
     } else {
-        socket_->disconnectFromHost();
+        m_socket->disconnectFromHost();
         return;
     }
 }
 
 QTcpSocket *ClientSocket::socket() const
 {
-    return socket_;
+    return m_socket;
 }
 
 void ClientSocket::send(const QByteArray &msg)
 {
-    if (socket_->state() != QTcpSocket::ConnectedState) {
+    if (m_socket->state() != QTcpSocket::ConnectedState) {
         errorMessage(u"Cannot send messages if not connected"_s);
         return;
     }
 
-    socket_->write(msg);
-    socket_->flush();
+    m_socket->write(msg);
+    m_socket->flush();
 }
 
 void ClientSocket::raiseError(QAbstractSocket::SocketError socket_error)

@@ -29,22 +29,22 @@ Client::Client(QObject *parent)
     luaopen_ktabletop(L->state());
     L->run();
 
-    connection_ = new UserConnection(this, new ClientSocket);
+    m_connection = new UserConnection(this, new ClientSocket);
 
-    connect(connection_, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
+    connect(m_connection, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
         L->callKTabletopMethod(u"client"_s,
                                u"processNotification"_s,
-                               {connection_->connId(), QString::fromUtf8(command), QJsonValue::fromJson(jsonData).toVariant()});
+                               {m_connection->connId(), QString::fromUtf8(command), QJsonValue::fromJson(jsonData).toVariant()});
     });
 
-    connect(connection_, &UserConnection::requestGot, [this, conn = connection_](int requestId) {
+    connect(m_connection, &UserConnection::requestGot, [this, conn = m_connection](int requestId) {
         const auto &req = conn->receivedRequest(requestId);
         L->callKTabletopMethod(u"client"_s,
                                u"processRequest"_s,
                                {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
     });
 
-    connect(connection_, &UserConnection::socketError, [this](const QString &msg) {
+    connect(m_connection, &UserConnection::socketError, [this](const QString &msg) {
         L->callKTabletopMethod(u"client"_s, u"onSocketError"_s, {msg});
     });
 }
@@ -61,7 +61,7 @@ LuaBinding *Client::luaBinding() const
 
 UserConnection *Client::connection() const
 {
-    return connection_;
+    return m_connection;
 }
 
 void Client::connectToHost(const QString &server, ushort port)

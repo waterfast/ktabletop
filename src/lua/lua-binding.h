@@ -60,7 +60,7 @@ Q_SIGNALS:
     void luaEvent(const QString &type, const QVariant &payload);
 
 private:
-    Role role_;
-    int gameThreadId_ = 0;
+    Role m_role;
+    int m_gameThreadId = 0;
     LuaVM *L;
 };

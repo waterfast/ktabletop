@@ -40,9 +40,9 @@ protected:
     void run() override;
 
 private:
-    int id_;
-    int capacity_;
-    QList<int> rooms_;
+    int m_id;
+    int m_capacity;
+    QList<int> m_rooms;
 
     LuaBinding *L = nullptr;
 };

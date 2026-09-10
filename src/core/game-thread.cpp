@@ -13,10 +13,10 @@ static int nextGameThreadId = 1;
 
 GameThread::GameThread(QObject *parent)
     : QThread(parent)
-    , id_(nextGameThreadId++)
-    , capacity_(DefaultCapacity)
+    , m_id(nextGameThreadId++)
+    , m_capacity(DefaultCapacity)
 {
-    setObjectName(QStringLiteral("GameThread-%1").arg(id_));
+    setObjectName(QStringLiteral("GameThread-%1").arg(m_id));
 
     // Wait until the Lua VM is created in run()
     QEventLoop loop;
@@ -46,32 +46,32 @@ void GameThread::run()
 
 int GameThread::id() const
 {
-    return id_;
+    return m_id;
 }
 
 int GameThread::capacity() const
 {
-    return capacity_;
+    return m_capacity;
 }
 
 bool GameThread::isFull() const
 {
-    return rooms_.size() >= capacity_;
+    return m_rooms.size() >= m_capacity;
 }
 
 void GameThread::addRoom(int roomId)
 {
-    rooms_.append(roomId);
+    m_rooms.append(roomId);
 }
 
 void GameThread::removeRoom(int roomId)
 {
-    rooms_.removeOne(roomId);
+    m_rooms.removeOne(roomId);
 }
 
 const QList<int> &GameThread::rooms() const
 {
-    return rooms_;
+    return m_rooms;
 }
 
 LuaBinding *GameThread::lua() const
