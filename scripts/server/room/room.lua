@@ -5,6 +5,7 @@ local RoomBase = require "server.room.roombase"
 
 ---@class Room: ServerRoomBase
 ---@field owner ServerPlayer
+---@field gameStarted boolean
 local Room = RoomBase:subclass("Room")
 
 local nextRoomId = 1
@@ -16,9 +17,11 @@ function Room:initialize()
   self.owner = nil
   self.name = ""
   self.capacity = 0
+  self.gameStarted = false
 
   self:setRequestHandler("Room::AddRobot", self.handleAddRobot)
   self:setRequestHandler("Room::Quit", self.handleQuitRoom)
+  self:setRequestHandler("Room::StartGame", self.handleStartGame)
 end
 
 function Room:isFull()
@@ -33,7 +36,7 @@ end
 
 ---@param player ServerPlayer
 function Room:addPlayer(player)
-  if self:isFull() --[[ or self:isStarted() ]] then
+  if self:isFull() or self.gameStarted then
     player:notify("ErrorMsg", "Room is full or already started")
     return
   end
@@ -69,6 +72,7 @@ function Room:addPlayer(player)
   end
 end
 
+---@param player ServerPlayer
 function Room:handleAddRobot(player)
   if self.owner ~= player then
     return nil, "you need to be room owner to add robot!"
@@ -80,6 +84,25 @@ function Room:handleAddRobot(player)
 
   local robot = ktabletop.server.playerManager:createRobot()
   self:addPlayer(robot)
+end
+
+---@param player ServerPlayer
+function Room:handleStartGame(player)
+  if player ~= self.owner then
+    return nil, "you need to be room owner to start the game!"
+  end
+
+  if self.gameStarted then
+    return nil, "game already started!"
+  end
+
+  if not self:isFull() then
+    return nil, "room is not full!"
+  end
+
+  self.gameStarted = true
+  -- TODO: impl
+  ktabletop.startGame(self.id)
 end
 
 ---@param player ServerPlayer

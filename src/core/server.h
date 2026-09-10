@@ -11,6 +11,7 @@ class LuaBinding;
 class ClientSocket;
 class ServerSocket;
 class UserConnection;
+class GameThread;
 
 class Server : public QObject
 {
@@ -24,12 +25,21 @@ public:
 
     UserConnection *findConnection(int connId) const;
 
+    GameThread *createGameThread();
+    GameThread *getGameThread(int id) const;
+    void removeGameThread(int id);
+    GameThread *getAvailableGameThread();
+
+    // TODO
+    void startGameRoom(int roomId);
+
 private:
     explicit Server(QObject *parent = nullptr);
 
     LuaBinding *L;
     ServerSocket *server;
     QHash<int, UserConnection *> connections;
+    QHash<int, GameThread *> gameThreads;
 
     void processNewConnection(ClientSocket *client);
 };

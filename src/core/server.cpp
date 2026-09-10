@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "server.h"
+#include "game-thread.h"
 #include "ktabletop-lua.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
@@ -51,6 +52,42 @@ bool Server::listen(const QHostAddress &address, ushort port)
 UserConnection *Server::findConnection(int connId) const
 {
     return connections.value(connId);
+}
+
+GameThread *Server::createGameThread()
+{
+    auto *thread = new GameThread(this);
+    gameThreads.insert(thread->id(), thread);
+    return thread;
+}
+
+GameThread *Server::getGameThread(int id) const
+{
+    return gameThreads.value(id);
+}
+
+void Server::removeGameThread(int id)
+{
+    if (auto *thread = gameThreads.take(id)) {
+        thread->deleteLater();
+    }
+}
+
+GameThread *Server::getAvailableGameThread()
+{
+    for (auto *thread : gameThreads) {
+        if (!thread->isFull()) {
+            return thread;
+        }
+    }
+    return createGameThread();
+}
+
+void Server::startGameRoom(int roomId)
+{
+    auto *thread = getAvailableGameThread();
+    thread->addRoom(roomId);
+    thread->call(u"StartGame"_s, {roomId});
 }
 
 void Server::processNewConnection(ClientSocket *client)

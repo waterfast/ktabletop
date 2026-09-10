@@ -12,19 +12,20 @@ using namespace Qt::Literals::StringLiterals;
 
 #include <lua.hpp>
 
-static QHash<lua_State *, LuaBinding *> bindingInstances;
+// Thread-safe way to get binding instance
+static const char regKey = 0;
 
 LuaBinding::LuaBinding(QObject *parent, Role role)
     : QObject(parent)
     , role_(role)
 {
     L = new LuaVM;
-    bindingInstances.insert(L->state(), this);
+    lua_pushlightuserdata(L->state(), this);
+    lua_rawsetp(L->state(), LUA_REGISTRYINDEX, &regKey);
 }
 
 LuaBinding::~LuaBinding()
 {
-    bindingInstances.remove(L->state());
     delete L;
 }
 
@@ -33,6 +34,8 @@ void LuaBinding::run()
     QDir::setCurrent(u"scripts"_s);
     if (role_ == Server) {
         L->dofile(u"server/entry.lua"_s);
+    } else if (role_ == GameThread) {
+        L->dofile(u"gamethread/entry.lua"_s);
     } else {
         L->dofile(u"client/entry.lua"_s);
     }
@@ -134,9 +137,8 @@ lua_State *LuaBinding::state() const
 
 LuaBinding *LuaBinding::forState(lua_State *state)
 {
-    // find its main coroutine first. Or we cannot find that LuaBinding
-    lua_rawgeti(state, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
-    auto *mainState = lua_tothread(state, -1);
+    lua_rawgetp(state, LUA_REGISTRYINDEX, &regKey);
+    auto *binding = static_cast<LuaBinding *>(lua_touserdata(state, -1));
     lua_pop(state, 1);
-    return bindingInstances.value(mainState);
+    return binding;
 }

@@ -3,6 +3,7 @@ add_library(ktabletop_core STATIC
     client.cpp
     logger.cpp
     ktabletop-lua.cpp
+    game-thread.cpp
 )
 
 target_link_libraries(ktabletop_core PUBLIC

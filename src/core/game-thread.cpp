@@ -1,0 +1,93 @@
+// SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
+#include "game-thread.h"
+
+#include "ktabletop-lua.h"
+#include "lua/c-wrapper.h"
+#include "lua/lua-binding.h"
+
+#include <QEventLoop>
+
+static int nextGameThreadId = 1;
+
+GameThread::GameThread(QObject *parent)
+    : QThread(parent)
+    , id_(nextGameThreadId++)
+    , capacity_(DefaultCapacity)
+{
+    setObjectName(QStringLiteral("GameThread-%1").arg(id_));
+
+    // Wait until the Lua VM is created in run()
+    QEventLoop loop;
+    connect(this, &GameThread::ready, &loop, &QEventLoop::quit);
+    start();
+    loop.exec();
+}
+
+GameThread::~GameThread()
+{
+    if (isRunning()) {
+        quit();
+        wait();
+    }
+    delete L;
+}
+
+void GameThread::run()
+{
+    L = new LuaBinding(nullptr, LuaBinding::GameThread);
+    luaopen_ktabletop(L->state());
+    L->run();
+
+    Q_EMIT ready();
+    exec();
+}
+
+int GameThread::id() const
+{
+    return id_;
+}
+
+int GameThread::capacity() const
+{
+    return capacity_;
+}
+
+bool GameThread::isFull() const
+{
+    return rooms_.size() >= capacity_;
+}
+
+void GameThread::addRoom(int roomId)
+{
+    rooms_.append(roomId);
+}
+
+void GameThread::removeRoom(int roomId)
+{
+    rooms_.removeOne(roomId);
+}
+
+const QList<int> &GameThread::rooms() const
+{
+    return rooms_;
+}
+
+LuaBinding *GameThread::lua() const
+{
+    return L;
+}
+
+void GameThread::call(QString func, QVariantList args)
+{
+    if (!L) {
+        return;
+    }
+    QMetaObject::invokeMethod(
+        L,
+        [this, func, args] {
+            L->vm().call(func, args);
+        },
+        Qt::QueuedConnection);
+}

@@ -273,6 +273,14 @@ static int connectToHost(lua_State *L)
     return 0;
 }
 
+// TODO: todoo.... just testing now
+static int startGame(lua_State *L)
+{
+    int roomId = luaL_checkinteger(L, 1);
+    Server::instance()->startGameRoom(roomId);
+    return 0;
+}
+
 static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
@@ -287,6 +295,11 @@ static luaL_Reg commonFuncTable[] = {
 
 static luaL_Reg clientFuncTable[] = {
     {"connectToHost", connectToHost},
+    {NULL, NULL},
+};
+
+static luaL_Reg serverFuncTable[] = {
+    {"startGame", startGame},
     {NULL, NULL},
 };
 
@@ -353,6 +366,8 @@ extern "C" int luaopen_ktabletop(lua_State *L)
     auto *binding = LuaBinding::forState(L);
     if (binding && binding->role() == LuaBinding::Client) {
         luaL_setfuncs(L, clientFuncTable, 0);
+    } else if (binding && binding->role() == LuaBinding::Server) {
+        luaL_setfuncs(L, serverFuncTable, 0);
     }
 
     lua_newtable(L); // ktabletop.log
