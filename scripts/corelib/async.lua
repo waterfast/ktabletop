@@ -1,14 +1,15 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
--- Async lib for KTabletop.
+-- Async lib for KTabletop. For Lua 5.5
 -- Build on top of Qt event loop, but can be easily moved to other event loop system.
 -- Can wrap Boost-style async functions, that is, have a callback as its last param
 --   which looks like `fun(errCode, value)`.
 -- Reference: GameEvent system from `Freekill'.
 
 local co = coroutine
-local unpack = table.unpack or unpack
+local unpack = table.unpack
+local pack = table.pack
 
 -- private markers
 local ASYNC = { "ASYNC" }
@@ -53,17 +54,17 @@ function scheduler:resume(fn, ...)
 
   -- fn usually call async.await inside it.
   -- awaiting something or finishing exection will make co.resume return.
-  local pack = table.pack(co.resume(coro, ...))
+  local packed = pack(co.resume(coro, ...))
   local status = co.status(coro)
-  local ok = pack[1]
-  local ret = pack[2]
+  local ok = packed[1]
+  local ret = packed[2]
 
   if status == "dead" then
     if not ok then
-      fn.state, fn.errmsg = "error", pack[2]
+      fn.state, fn.errmsg = "error", packed[2]
     else
       fn.state = "done"
-      fn.results = table.pack(table.unpack(pack, 2, pack.n))
+      fn.results = pack(unpack(packed, 2, packed.n))
     end
     return self:finish(fn)
   end
@@ -104,9 +105,9 @@ function scheduler:await(fn, ...)
       local ok = not err
       if yielded then
         f.callee = nil
-        self:resume(f, ok, err, ...)
+        return self:resume(f, ok, err, ...)
       else
-        syncResults = table.pack(ok, err, ...)
+        syncResults = pack(ok, err, ...)
       end
     end
     -- equals to call C++ function async_something(...args, callback)
@@ -141,13 +142,13 @@ function scheduler:finish(fn)
   ---@cast a -nil
   a.callee = nil
   if fn.state == "done" then
-    self:resume(a, true, unpack(fn.results, 1, fn.results.n))
+    return self:resume(a, true, unpack(fn.results, 1, fn.results.n))
   else
     local errmsg = fn.errmsg
     if not fn.cancelled then
       errmsg = debug.traceback(fn.coro, errmsg)
     end
-    self:resume(a, false, errmsg)
+    return self:resume(a, false, errmsg)
   end
 end
 
@@ -240,34 +241,38 @@ function CppAsyncFunction:__call(cb)
   local fn = self.fn
   args.n = args.n + 1
   args[args.n] = cb
-  local packed = table.pack(fn(unpack(args, 1, args.n)))
+  local packed = pack(fn(unpack(args, 1, args.n)))
   self.completionToken = packed[1]
 end
+
+--------------------------------------------------------------
+
+local M = {}
 
 -- usage: async(function() ... end)
 -- creates an asyncFunctionFactory.
 ---@param fn fun(...): any
 ---@return fun(...): any
-local async = function(fn)
+function M.async(fn)
   ---@diagnostic disable-next-line
   return AsyncFunctionFactory.new(fn)
 end
 
 --- await for another async func, or wrapped awaitable func.
 ---@param fn AsyncFunction
-local await = function(fn)
+function M.await(fn)
   return scheduler:await(fn)
 end
 
 --- cancel an async execution and everything it awaits down the chain.
 ---@param fn AsyncFunction
-local cancel = function(fn)
-  scheduler:cancel(fn)
+function M.cancel(fn)
+  return scheduler:cancel(fn)
 end
 
 -- use with function that with callback as last param
 -- fn should return immediately
-local wrap = function(fn)
+function M.wrap(fn)
   return function(...args)
     return setmetatable({
       [AWAIT] = true,
@@ -277,9 +282,4 @@ local wrap = function(fn)
   end
 end
 
-return {
-  async = async,
-  await = await,
-  wrap = wrap,
-  cancel = cancel,
-}
+return M
