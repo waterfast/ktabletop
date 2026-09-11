@@ -30,6 +30,19 @@ Kirigami.Page {
             onTriggered: root.d.invoke("startGame")
         },
         Kirigami.Action {
+            text: i18n("Chat")
+            icon.name: "dialog-messages"
+            checkable: true
+            checked: chatDrawer.opened
+            onTriggered: {
+                if (chatDrawer.opened) {
+                    chatDrawer.close();
+                } else {
+                    chatDrawer.open();
+                }
+            }
+        },
+        Kirigami.Action {
             text: i18n("Quit Room")
             icon.name: "application-exit"
             onTriggered: root.d.invoke("quitRoom")
@@ -132,6 +145,21 @@ Kirigami.Page {
                     }
                 }
             }
+        }
+    }
+
+    Kirigami.OverlayDrawer {
+        id: chatDrawer
+        edge: Qt.RightEdge
+        modal: true
+        width: Kirigami.Units.gridUnit * 18
+
+        contentItem: ChatPanel {
+            anchors.fill: parent
+            anchors.margins: Kirigami.Units.smallSpacing
+            messages: root.d.messages
+            selfId: root.d.selfId
+            onSendRequested: text => root.d.invoke("sendChatMessage", [text])
         }
     }
 }

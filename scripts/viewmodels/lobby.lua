@@ -13,11 +13,13 @@ LobbyViewModel:include(LObject)
 LobbyViewModel:Property("playerCount")
 LobbyViewModel:Property("rooms")
 LobbyViewModel:Property("selfId")
+LobbyViewModel:Property("messages")
 
 LobbyViewModel:Invokable("disconnectFromHost")
 LobbyViewModel:Invokable("fetchRooms")
 LobbyViewModel:Invokable("joinRoom")
 LobbyViewModel:Invokable("createRoom")
+LobbyViewModel:Invokable("sendChatMessage")
 
 function LobbyViewModel:initialize()
   self:setPropertyBinding("playerCount", function()
@@ -28,6 +30,9 @@ function LobbyViewModel:initialize()
   end)
   self:setPropertyBinding("selfId", function ()
     return ktabletop.client.myself.id
+  end)
+  self:setPropertyBinding("messages", function()
+    return ktabletop.client.lobby.messages
   end)
 end
 
@@ -57,5 +62,10 @@ function LobbyViewModel:createRoom(data)
   end)()
 end
 
+function LobbyViewModel:sendChatMessage(text)
+  async.async(function()
+    ktabletop.client.myself:request("Room::Chat", { text = text })
+  end)()
+end
 
 return LobbyViewModel

@@ -21,6 +21,19 @@ Kirigami.ScrollablePage {
             onTriggered: createRoomDialog.open()
         },
         Kirigami.Action {
+            text: i18n("Chat")
+            icon.name: "dialog-messages"
+            checkable: true
+            checked: chatDrawer.opened
+            onTriggered: {
+                if (chatDrawer.opened) {
+                    chatDrawer.close();
+                } else {
+                    chatDrawer.open();
+                }
+            }
+        },
+        Kirigami.Action {
             text: i18n("Exit lobby")
             icon.name: "application-exit"
             onTriggered: quitLobbyDialog.open()
@@ -150,6 +163,21 @@ Kirigami.ScrollablePage {
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
 
         onAccepted: root.d.invoke("disconnectFromHost");
+    }
+
+    Kirigami.OverlayDrawer {
+        id: chatDrawer
+        edge: Qt.RightEdge
+        modal: true
+        width: Kirigami.Units.gridUnit * 18
+
+        contentItem: ChatPanel {
+            anchors.fill: parent
+            anchors.margins: Kirigami.Units.smallSpacing
+            messages: root.d.messages
+            selfId: root.d.selfId
+            onSendRequested: text => d.invoke("sendChatMessage", [text])
+        }
     }
 
     Component.onCompleted: {

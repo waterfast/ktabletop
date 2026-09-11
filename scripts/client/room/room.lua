@@ -8,19 +8,24 @@ local tablib = ktabletop.tablib
 ---@field players ClientPlayer[]
 ---@field observers ClientPlayer[]
 ---@field owner ClientPlayer
+---@field messages { id: integer, username: string, text: string, timestamp: integer }[]
 ---@field findPlayerById fun(self, id): ClientPlayer
 local ClientRoom = RoomBase:subclass("ClientRoom")
 ClientRoom:include(LObject)
 
 ClientRoom:Property("players")
 ClientRoom:Property("owner")
+ClientRoom:Property("messages")
 
 function ClientRoom:initialize()
   RoomBase.initialize(self)
 
+  self.messages = {}
+
   self:setCallback("Room::Owner", self.setOwner)
   self:setCallback("Room::AddPlayer", self.handleAddPlayer)
   self:setCallback("Room::RemovePlayer", self.handleRemovePlayer)
+  self:setCallback("Room::ChatMessage", self.handleChatMessage)
 end
 
 ---@param player ClientPlayer
@@ -54,6 +59,19 @@ function ClientRoom:handleRemovePlayer(_, data)
 
   local p = self:findPlayerById(id)
   if p then self:removePlayer(p) end
+end
+
+function ClientRoom:handleChatMessage(_, data)
+  local msgs = {}
+  msgs[1] = data
+
+  for i = 1, #self.messages do
+    msgs[i + 1] = self.messages[i]
+  end
+
+  self.messages = msgs
+
+  self:notifyPropertyChanged("messages")
 end
 
 return ClientRoom

@@ -13,6 +13,7 @@ ecm_add_qml_module(ktabletop_qml
         WaitingRoomPage.qml
         BusyDialog.qml
         ErrorDialog.qml
+        ChatPanel.qml
     SOURCES
         qml-backend.cpp
         main-view-model.cpp
