@@ -30,12 +30,24 @@ Kirigami.ScrollablePage {
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
 
-        QQC2.Label {
+        RowLayout {
             Layout.fillWidth: true
             visible: root.d.rooms.length > 0
-            text: i18n("%1 player online", d.playerCount)
-            opacity: 0.7
-            font: Kirigami.Theme.smallFont
+
+            Kirigami.Icon {
+                Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                source: "system-users-symbolic"
+                opacity: 0.7
+            }
+
+            QQC2.Label {
+                text: i18n("%1 players online · %2 rooms", root.d.playerCount, root.d.rooms.length)
+                opacity: 0.7
+                font: Kirigami.Theme.smallFont
+            }
+
+            Item { Layout.fillWidth: true }
         }
 
         Kirigami.CardsLayout {
@@ -43,26 +55,59 @@ Kirigami.ScrollablePage {
             Repeater {
                 model: root.d.rooms
                 delegate: Kirigami.Card {
+                    id: roomCard
                     required property var modelData
+
+                    readonly property bool isFull: modelData.playerCount >= modelData.capacity
+                    readonly property bool isMine: modelData.ownerId === root.d.selfId
 
                     Layout.maximumWidth: Kirigami.Units.gridUnit * 20
 
                     actions: [
                         Kirigami.Action {
-                            text: i18n("join")
+                            text: roomCard.isFull ? i18n("Room full") : i18n("join")
                             icon.name: "list-add"
-                            enabled: modelData.playerCount < modelData.capacity
-                            onTriggered: d.invoke("joinRoom", [modelData.id])
+                            enabled: !roomCard.isFull
+                            onTriggered: d.invoke("joinRoom", [roomCard.modelData.id])
                         }
                     ]
-                    header: Kirigami.Heading {
-                        level: 2
-                        text: modelData.name
-                        elide: Text.ElideRight
+
+                    header: RowLayout {
+                        spacing: Kirigami.Units.smallSpacing
+
+                        Kirigami.Heading {
+                            Layout.fillWidth: true
+                            level: 2
+                            text: roomCard.modelData.name
+                            elide: Text.ElideRight
+                        }
+
+                        Kirigami.Badge {
+                            visible: roomCard.isMine
+                            text: i18n("Your room")
+                        }
+
+                        Kirigami.Badge {
+                            visible: roomCard.isFull
+                            text: i18n("Full")
+                            Kirigami.Theme.colorSet: Kirigami.Theme.Complementary
+                        }
                     }
-                    contentItem: QQC2.Label {
-                        text: i18n("Players: %1/%2", modelData.playerCount, modelData.capacity)
-                        opacity: 0.7
+
+                    contentItem: ColumnLayout {
+                        spacing: Kirigami.Units.smallSpacing
+
+                        QQC2.Label {
+                            text: i18n("Players: %1/%2", roomCard.modelData.playerCount, roomCard.modelData.capacity)
+                            opacity: 0.7
+                        }
+
+                        QQC2.ProgressBar {
+                            Layout.fillWidth: true
+                            from: 0
+                            to: roomCard.modelData.capacity
+                            value: roomCard.modelData.playerCount
+                        }
                     }
                 }
             }

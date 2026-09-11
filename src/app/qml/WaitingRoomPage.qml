@@ -11,7 +11,7 @@ import org.kde.ktabletop
 Kirigami.Page {
     id: root
 
-    title: d.name !== "" ? d.name : i18n("Waiting Room")
+    title: root.d.name !== "" ? root.d.name : i18n("Waiting Room")
 
     required property LuaObject d
     actions: [
@@ -41,39 +41,72 @@ Kirigami.Page {
         Layout.maximumWidth: Kirigami.Units.gridUnit * 24
         spacing: Kirigami.Units.smallSpacing
 
-        Kirigami.Heading {
+        ColumnLayout {
             Layout.alignment: Qt.AlignHCenter
-            level: 3
-            text: i18n("%1 / %2 players", root.d.players.length, root.d.capacity)
+            spacing: Kirigami.Units.smallSpacing
+
+            Kirigami.Heading {
+                Layout.alignment: Qt.AlignHCenter
+                level: 3
+                text: i18n("Waiting players")
+            }
+
+            QQC2.Label {
+                Layout.alignment: Qt.AlignHCenter
+                text: i18n("%1 / %2 players", root.d.players.length, root.d.capacity)
+                opacity: 0.7
+            }
+
+            QQC2.ProgressBar {
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 12
+                Layout.alignment: Qt.AlignHCenter
+                from: 0
+                to: root.d.capacity
+                value: root.d.players.length
+            }
         }
 
-        Repeater {
-            model: root.d.players
-            delegate: Kirigami.AbstractCard
-            {
-                required property var modelData
-                Layout.fillWidth: true
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
 
-                contentItem: RowLayout {
-                    spacing: Kirigami.Units.smallSpacing
+            Repeater {
+                model: root.d.players
+                delegate: Kirigami.AbstractCard {
+                    id: playerCard
+                    required property var modelData
 
-                    Kirigami.Icon {
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.small
-                        source: modelData.id === d.ownerId ? "im-user-star" : "im-user"
-                    }
+                    contentItem: RowLayout {
+                        spacing: Kirigami.Units.mediumSpacing
 
-                    QQC2.Label {
-                        Layout.fillWidth: true
-                        text: modelData.username + (modelData.id === d.selfId ? i18n(" (you)") : "")
-                        font.bold: modelData.id === d.ownerId
-                    }
+                        Kirigami.Icon {
+                            Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+                            Layout.preferredHeight: Kirigami.Units.iconSizes.medium
+                            source: playerCard.modelData.id === root.d.ownerId ? "im-user-star" : "im-user"
+                        }
 
-                    QQC2.Label {
-                        visible: modelData.id === d.ownerId
-                        text: i18n("Host")
-                        opacity: 0.6
-                        font: Kirigami.Theme.smallFont
+                        QQC2.Label {
+                            Layout.fillWidth: true
+                            text: playerCard.modelData.username
+                            font.bold: playerCard.modelData.id === root.d.ownerId
+                            elide: Text.ElideRight
+                        }
+
+                        RowLayout {
+                            spacing: Kirigami.Units.smallSpacing
+
+                            Kirigami.Badge {
+                                visible: playerCard.modelData.id === root.d.selfId
+                                text: i18n("You")
+                            }
+
+                            Kirigami.Badge {
+                                visible: playerCard.modelData.id === root.d.ownerId
+                                text: i18n("Owner")
+                                Kirigami.Theme.backgroundColor: Kirigami.Theme.positiveBackgroundColor
+                                Kirigami.Theme.textColor: Kirigami.Theme.positiveTextColor
+                            }
+                        }
                     }
                 }
             }
@@ -84,12 +117,13 @@ Kirigami.Page {
             delegate: Kirigami.AbstractCard {
                 Layout.fillWidth: true
                 opacity: 0.5
+                showClickFeedback: false
 
                 contentItem: RowLayout {
-                    spacing: Kirigami.Units.smallSpacing
+                    spacing: Kirigami.Units.mediumSpacing
                     Kirigami.Icon {
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+                        Layout.preferredHeight: Kirigami.Units.iconSizes.medium
                         source: "im-invisible-user"
                     }
                     QQC2.Label {
