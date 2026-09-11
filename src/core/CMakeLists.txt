@@ -1,4 +1,5 @@
 add_library(ktabletop_core STATIC
+    async-context.cpp
     server.cpp
     client.cpp
     logger.cpp

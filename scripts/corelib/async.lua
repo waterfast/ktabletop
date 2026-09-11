@@ -170,8 +170,8 @@ function scheduler:cancel(fn)
       -- will make co.resume return false, CANCELED
       error(CANCELED)
     end
-  elseif fn[AWAIT] and type(fn.completionToken) == "function" then
-    fn.completionToken(CANCELED)
+  elseif fn[AWAIT] and type(fn.cancelFunc) == "function" then
+    fn.cancelFunc(CANCELED)
   end
 end
 
@@ -231,7 +231,7 @@ end
 ---@class CppAsyncFunction
 ---@field fn fun(...)
 ---@field args table
----@field completionToken fun(err, ...)
+---@field cancelFunc fun(err, ...)
 ---@field cancelled boolean?
 local CppAsyncFunction = {}
 CppAsyncFunction.__index = CppAsyncFunction
@@ -242,7 +242,7 @@ function CppAsyncFunction:__call(cb)
   args.n = args.n + 1
   args[args.n] = cb
   local packed = pack(fn(unpack(args, 1, args.n)))
-  self.completionToken = packed[1]
+  self.cancelFunc = packed[1]
 end
 
 --------------------------------------------------------------
@@ -259,13 +259,13 @@ function M.async(fn)
 end
 
 --- await for another async func, or wrapped awaitable func.
----@param fn AsyncFunction
+---@param fn AsyncFunction|CppAsyncFunction
 function M.await(fn)
   return scheduler:await(fn)
 end
 
 --- cancel an async execution and everything it awaits down the chain.
----@param fn AsyncFunction
+---@param fn AsyncFunction|CppAsyncFunction
 function M.cancel(fn)
   return scheduler:cancel(fn)
 end

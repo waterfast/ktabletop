@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "ktabletop-lua.h"
+#include "async-context.h"
 #include "client.h"
 #include "lua/c-wrapper.h" // for LuaVM::readValue
 #include "lua/lua-binding.h"
@@ -10,9 +11,7 @@
 #include "server.h"
 
 #include <QAbstractSocket>
-#include <QStringLiteral>
 #include <QTimer>
-using namespace Qt::Literals::StringLiterals;
 
 #include <lua.hpp>
 
@@ -60,6 +59,21 @@ static int notifySocket(lua_State *L)
     return 0;
 }
 
+static int cancelContext(lua_State *L)
+{
+    // ctx must be alive when calling this function from Lua
+    // because this will only be triggered by async.cancel,
+    // and if ctx->complete has been called,
+    // corresponding awaitable must be done and removed from calling chain
+    auto *ctx = static_cast<AsyncContext *>(lua_touserdata(L, lua_upvalueindex(1)));
+
+    // TODO: add a signal AsyncContext::cancelled, to do more C++ side clean up
+    // like cancelling the request (send notification to the peer telling it
+    // cancel current request handler... that will be a bit complex)
+    ctx->complete(std::make_error_code(std::errc::operation_canceled));
+    return 0;
+}
+
 // args: int connId, string command, string jsonData, int time, int64 timestamp,
 //       callback: fun(result: string?, err: string?)
 static int requestSocket(lua_State *L)
@@ -75,6 +89,7 @@ static int requestSocket(lua_State *L)
     qint64 timestamp = luaL_checkinteger(L, 5);
     luaL_checktype(L, 6, LUA_TFUNCTION);
 
+    auto *binding = LuaBinding::forState(L);
     auto *conn = findConnectionById(L, connId);
     if (!conn) {
         return luaL_error(L, "cannot find socket of connId %d", connId);
@@ -83,22 +98,14 @@ static int requestSocket(lua_State *L)
     lua_pushvalue(L, 6);
     int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
-    auto cb = [L = LuaBinding::forState(L)->vm().state(), fnRef](std::error_code err, QByteArray reply) {
-        auto *binding = LuaBinding::forState(L);
-        if (!binding) {
-            return;
-        }
+    // TODO: conn->request is more complex than this
+    auto *ctx = new AsyncContext(binding, fnRef);
+    conn->request(command, jsonData, time, timestamp, [ctx](std::error_code err, QByteArray reply) {
+        ctx->complete(err, reply);
+    });
 
-        lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
-        QVariant errVal = err ? QString::fromStdString(err.message()) : QVariant::fromValue(nullptr);
-        LuaVM::call(L, {errVal, reply});
-
-        luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
-    };
-
-    int requestId = conn->request(command, jsonData, time, timestamp, cb);
-
-    lua_pushinteger(L, requestId);
+    lua_pushlightuserdata(L, ctx);
+    lua_pushcclosure(L, cancelContext, 1);
     return 1;
 }
 
@@ -146,7 +153,7 @@ static int cancelRequest(lua_State *L)
     return 0;
 }
 
-// void delay(ms, callback: fun())
+// void delay(ms, callback)
 static int delay(lua_State *L)
 {
     auto *binding = LuaBinding::forState(L);
@@ -165,27 +172,18 @@ static int delay(lua_State *L)
     }
     luaL_checktype(L, 2, LUA_TFUNCTION);
 
-    // Registry[fnRef] = fn; lua_pop(fn) -- fn is at top of stack
     lua_pushvalue(L, 2);
     int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
-    auto *timer = new QTimer(binding);
+    auto *ctx = new AsyncContext(binding, fnRef);
+    auto *timer = new QTimer(ctx);
     timer->setSingleShot(true);
-    timer->connect(timer, &QTimer::timeout, timer, &QObject::deleteLater);
-    timer->connect(timer, &QTimer::timeout, binding, [L = binding->vm().state(), fnRef] {
-        auto *binding = LuaBinding::forState(L);
-        if (!binding) {
-            return;
-        }
-
-        lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
-        LuaVM::call(L);
-
-        luaL_unref(L, LUA_REGISTRYINDEX, fnRef);
-    });
+    timer->connect(timer, &QTimer::timeout, ctx, &AsyncContext::completeVoid);
     timer->start(ms);
 
-    return 0;
+    lua_pushlightuserdata(L, ctx);
+    lua_pushcclosure(L, cancelContext, 1);
+    return 1;
 }
 
 // args: string type, var data
@@ -227,46 +225,17 @@ static int connectToHost(lua_State *L)
 
     auto *sock = Client::instance()->connection()->socket()->socket();
 
-    auto *timer = new QTimer(binding);
+    auto *ctx = new AsyncContext(binding, ref);
+    auto *timer = new QTimer(ctx);
     timer->setSingleShot(true);
 
-    auto *ctx = new QObject;
-
-    std::function<void(const char *)> invoke = [ctx, L = binding->vm().state(), ref, timer](const char *err) {
-        ctx->deleteLater();
-        timer->stop();
-        timer->deleteLater();
-
-        lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-        LuaVM::call(L, {err ? QString::fromLocal8Bit(err) : QVariant::fromValue(nullptr)});
-
-        luaL_unref(L, LUA_REGISTRYINDEX, ref);
-    };
-
-    sock->connect(
-        sock,
-        &QAbstractSocket::connected,
-        ctx,
-        [invoke] {
-            invoke(nullptr);
-        },
-        Qt::SingleShotConnection);
-    sock->connect(
-        sock,
-        &QAbstractSocket::errorOccurred,
-        ctx,
-        [invoke, sock](QAbstractSocket::SocketError) {
-            invoke(sock->errorString().toUtf8().constData());
-        },
-        Qt::SingleShotConnection);
-    timer->connect(
-        timer,
-        &QTimer::timeout,
-        ctx,
-        [invoke] {
-            invoke("timeout");
-        },
-        Qt::SingleShotConnection);
+    sock->connect(sock, &QAbstractSocket::connected, ctx, &AsyncContext::completeVoid);
+    sock->connect(sock, &QAbstractSocket::errorOccurred, ctx, [ctx](QAbstractSocket::SocketError) {
+        ctx->complete(std::make_error_code(std::errc::not_connected));
+    });
+    timer->connect(timer, &QTimer::timeout, ctx, [ctx] {
+        ctx->complete(std::make_error_code(std::errc::timed_out));
+    });
     timer->start(5000);
 
     sock->connectToHost(QString::fromUtf8(host), static_cast<ushort>(port));
