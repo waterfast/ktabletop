@@ -14,6 +14,8 @@ local unpack = table.unpack or unpack
 local ASYNC = { "ASYNC" }
 local AWAIT = { "AWAIT" }
 
+local CANCELED = "Operation canceled"
+
 -- AsyncScheduler handles results yielded from an async function.
 -- async functions should be started from main coroutine.
 local scheduler = {
@@ -29,6 +31,7 @@ end
 function scheduler:start(fn)
   assert(type(fn) == "table" and fn[ASYNC], "must be AsyncFunction")
   self:add(fn)
+  fn.state = "running"
   return self:resume(fn, unpack(fn.args, 1, fn.args.n))
 end
 
@@ -36,10 +39,20 @@ end
 function scheduler:resume(fn, ...)
   local coro = fn.coro
 
-  -- 1. yield a new AsyncFunction
-  -- 2. yield AWAIT; co.yield myself and wait the callback wakeup me
-  -- 3. coro is dead: yield return values of fn
-  -- 4. pack[1] == false; killed by error
+  -- when trying to resume a canceled function, finish it immediately
+  if fn.cancelled then
+    fn.state, fn.errmsg = "error", CANCELED
+    local status = co.status(coro)
+    if status == "dead" then
+      return
+    elseif status == "suspended" then
+      co.close(coro)
+    end
+    return self:finish(fn)
+  end
+
+  -- fn usually call async.await inside it.
+  -- awaiting something or finishing exection will make co.resume return.
   local pack = table.pack(co.resume(coro, ...))
   local status = co.status(coro)
   local ok = pack[1]
@@ -59,46 +72,52 @@ function scheduler:resume(fn, ...)
   if ret[ASYNC] then
     return self:start(ret)
   end
-
-  -- comment them will not change anything
-  -- if ret[AWAIT] then
-  --   return
-  -- end
 end
 
 -- await on an AsyncFunction or Awaitable
 -- return true and callback results, or false plus error message
+---@param fn AsyncFunction|CppAsyncFunction
 ---@return boolean, ...
 function scheduler:await(fn, ...)
   local current = co.running()
   local f = self.coroutineMap[current]
   assert(f, "cannot await outside async function")
+  if f.cancelled then
+    return false, CANCELED
+  end
   if not (type(fn) == "table" and (fn[ASYNC] or fn[AWAIT])) then
     -- accidentally await on normal functions; return
     return true, fn, ...
   end
 
+  f.callee = fn
+
+  -- they will yield to scheduler:resume().
   if fn[ASYNC] then
+    -- will be resumed by scheduler:finish(fn).
     return co.yield(fn)
   else
-    -- C++ note: callback must be called from main coroutine. But it can also
-    -- be invoked synchronously (re-entrantly, e.g. a Qt signal emitted inside
-    -- a `co.resume`); in that case the work is already done, so just return
-    -- its results instead of yielding.
+    -- Slot function might be called immediately.
     local yielded = false
     local syncResults
-    fn(function(err, ...)
+    local callback = function(err, ...)
       local ok = not err
       if yielded then
+        f.callee = nil
         self:resume(f, ok, err, ...)
       else
         syncResults = table.pack(ok, err, ...)
       end
-    end)
+    end
+    -- equals to call C++ function async_something(...args, callback)
+    fn(callback)
+
     if syncResults ~= nil then
+      f.callee = nil
       return unpack(syncResults, 1, syncResults.n)
     end
     yielded = true
+    -- will be resumed by callback.
     return co.yield(AWAIT)
   end
 end
@@ -107,18 +126,51 @@ end
 function scheduler:finish(fn)
   self.coroutineMap[fn.coro] = nil
   local a = fn.caller
+  -- calling async function in sync code like async.async(func)()
   if not a then
     if fn.state == "done" then
       return unpack(fn.results, 1, fn.results.n)
+    elseif fn.cancelled then
+      return nil
     else
       error(fn.errmsg)
     end
   end
-  fn.caller = nil
+
+  -- async.await(func(...)); resume exection of my caller
+  ---@cast a -nil
+  a.callee = nil
   if fn.state == "done" then
     self:resume(a, true, unpack(fn.results, 1, fn.results.n))
   else
-    self:resume(a, false, fn.errmsg .. "\n" .. debug.traceback(fn.coro))
+    local errmsg = fn.errmsg
+    if not fn.cancelled then
+      errmsg = debug.traceback(fn.coro, errmsg)
+    end
+    self:resume(a, false, errmsg)
+  end
+end
+
+---@param fn AsyncFunction|CppAsyncFunction
+function scheduler:cancel(fn)
+  if type(fn) ~= "table" or not (fn[ASYNC] or fn[AWAIT]) then
+    return
+  end
+  if fn.cancelled then return end
+  fn.cancelled = true
+  -- cancel all callees recursively
+  if fn.callee then
+    self:cancel(fn.callee)
+    fn.callee = nil
+  end
+
+  if fn[ASYNC] then
+    if co.running() == fn.coro then
+      -- will make co.resume return false, CANCELED
+      error(CANCELED)
+    end
+  elseif fn[AWAIT] and type(fn.completionToken) == "function" then
+    fn.completionToken(CANCELED)
   end
 end
 
@@ -129,10 +181,12 @@ end
 ---@class AsyncFunction
 ---@field coro thread
 ---@field args table
----@field state "pending"|"done"|"error"
+---@field state "pending"|"running"|"done"|"error"
 ---@field results any[]
 ---@field errmsg string?
 ---@field caller AsyncFunction?
+---@field callee AsyncFunction?
+---@field cancelled boolean?
 local AsyncFunction = {}
 AsyncFunction.__index = AsyncFunction
 
@@ -173,6 +227,23 @@ function AsyncFunctionFactory:__call(...args)
   return f
 end
 
+---@class CppAsyncFunction
+---@field fn fun(...)
+---@field args table
+---@field completionToken fun(err, ...)
+---@field cancelled boolean?
+local CppAsyncFunction = {}
+CppAsyncFunction.__index = CppAsyncFunction
+
+function CppAsyncFunction:__call(cb)
+  local args = self.args
+  local fn = self.fn
+  args.n = args.n + 1
+  args[args.n] = cb
+  local packed = table.pack(fn(unpack(args, 1, args.n)))
+  self.completionToken = packed[1]
+end
+
 -- usage: async(function() ... end)
 -- creates an asyncFunctionFactory.
 ---@param fn fun(...): any
@@ -188,21 +259,21 @@ local await = function(fn)
   return scheduler:await(fn)
 end
 
+--- cancel an async execution and everything it awaits down the chain.
+---@param fn AsyncFunction
+local cancel = function(fn)
+  scheduler:cancel(fn)
+end
+
 -- use with function that with callback as last param
 -- fn should return immediately
 local wrap = function(fn)
   return function(...args)
-    local awaitable
-    awaitable = setmetatable({
+    return setmetatable({
       [AWAIT] = true,
-    }, {
-      __call = function(self, cb)
-        args.n = args.n + 1
-        args[args.n] = cb
-        self.syncResult = table.pack(fn(unpack(args, 1, args.n)))
-      end
-    })
-    return awaitable
+      fn = fn,
+      args = args,
+    }, CppAsyncFunction)
   end
 end
 
@@ -210,4 +281,5 @@ return {
   async = async,
   await = await,
   wrap = wrap,
+  cancel = cancel,
 }
