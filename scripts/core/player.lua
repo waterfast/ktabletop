@@ -11,6 +11,7 @@ local json = ktabletop.json
 ---@field username string
 ---@field roomId integer
 ---@field state OnlineState
+---@field handlingRequests table<integer, AsyncFunction> requestId -> running handler
 local Player = class("Player")
 
 ---@param connId integer
@@ -19,6 +20,7 @@ function Player:initialize(connId)
   self.id = connId
   self._cpp = ktabletop
   self.state = "invalid"
+  self.handlingRequests = {}
 end
 
 ---@param command string
@@ -54,13 +56,6 @@ function Player:request(command, data, timeout, timestamp, isJson)
   else
     return json.decode(ret)
   end
-end
-
--- Cancel a request previously started via Player:asyncRequest, by its
---- requestId (awaitable.syncResult[1]).
----@param requestId integer
-function Player:cancelRequest(requestId)
-  self._cpp.cancelRequest(self.connId, requestId)
 end
 
 ---@param ok boolean

@@ -121,7 +121,7 @@ function Client:processNotification(connId, command, data)
 end
 
 local requestDispatcher = async.async(function(client, connId, requestId, command, data)
-  local player = client.playerManager.myself
+  local player = client.myself
   assert(player, ("cannot find player of connId %d in request #%d"):format(connId, requestId))
 
   local fn = client._requestHandlers[command]
@@ -129,7 +129,16 @@ local requestDispatcher = async.async(function(client, connId, requestId, comman
     return
   end
 
-  local ok, reply, err = async.await(fn(client, player, data))
+  local handler = fn(client, player, data)
+  player.handlingRequests[requestId] = handler
+  local ok, reply, err = async.await(handler)
+
+  -- canceled by the peer: the registry entry has been removed, do not reply
+  if player.handlingRequests[requestId] == nil then
+    return
+  end
+  player.handlingRequests[requestId] = nil
+
   if not ok then
     player:reply(false, requestId, reply)
   elseif err then

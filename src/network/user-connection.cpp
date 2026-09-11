@@ -6,6 +6,8 @@
 
 #include <QCborArray>
 #include <QCborValue>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QTimer>
 
 class PendingRequest : public QObject
@@ -58,6 +60,14 @@ public:
             auto cb = std::move(m_callback);
             cb(err, reply);
         }
+        deleteLater();
+    }
+
+    // drop the request without invoking the callback
+    void cancel()
+    {
+        if (m_timer)
+            m_timer->stop();
         deleteLater();
     }
 
@@ -191,13 +201,17 @@ UserConnection::ReceivedRequest UserConnection::receivedRequest(int requestId) c
     return m_receivedRequests.value(requestId);
 }
 
-// cancel last request from the sender
+// Tell the peer to cancel the running handler of `requestId`, and drop the
+// local pending request without invoking its callback.
 void UserConnection::cancelRequest(int requestId)
 {
-    auto *req = m_pendingRequests.value(requestId, nullptr);
-    if (!req)
-        return;
-    req->finish(QByteArray{}, std::make_error_code(std::errc::timed_out));
+    QJsonObject payload;
+    payload.insert(QStringLiteral("requestId"), requestId);
+    notify("Socket::CancelRequest", QJsonDocument(payload).toJson(QJsonDocument::Compact));
+
+    if (auto *req = m_pendingRequests.take(requestId)) {
+        req->cancel();
+    }
 }
 
 void UserConnection::handlePacket(const QCborArray &packet)

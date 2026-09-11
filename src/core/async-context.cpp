@@ -19,6 +19,16 @@ void AsyncContext::completeVoid()
     complete();
 }
 
+void AsyncContext::cancel()
+{
+    if (m_callback == LUA_NOREF) {
+        return;
+    }
+
+    Q_EMIT cancelled();
+    complete(std::make_error_code(std::errc::operation_canceled));
+}
+
 void AsyncContext::complete(std::error_code err, QVariant val)
 {
     if (m_callback == LUA_NOREF) {

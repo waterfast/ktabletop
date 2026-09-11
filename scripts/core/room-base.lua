@@ -17,6 +17,8 @@ function RoomBase:initialize()
 
   self._notificationHandlers = {}
   self._requestHandlers = {}
+
+  self:setCallback("Socket::CancelRequest", self.handleCancelRequest)
 end
 
 ---@param cmd string
@@ -31,6 +33,17 @@ function RoomBase:setRequestHandler(cmd, cb)
   self._requestHandlers[cmd] = async.async(cb)
 end
 
+-- Peer asked to cancel the running request handler `requestId` of `player`.
+---@param player Player
+---@param data { requestId: integer }
+function RoomBase:handleCancelRequest(player, data)
+  local requestId = data and data.requestId
+  if not requestId then return end
+
+  local f = player.handlingRequests[requestId]
+  player.handlingRequests[requestId] = nil
+  if f then async.cancel(f) end
+end
 
 ---@param player Player
 function RoomBase:addPlayer(player)

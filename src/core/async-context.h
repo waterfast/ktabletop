@@ -17,9 +17,13 @@ public:
     AsyncContext(LuaBinding *parent, int callback);
 
     void complete(std::error_code err = {}, QVariant val = {});
+    void cancel();
 
 public Q_SLOTS:
     void completeVoid();
+
+Q_SIGNALS:
+    void cancelled();
 
 private:
     LuaBinding *m_binding;

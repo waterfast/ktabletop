@@ -66,11 +66,7 @@ static int cancelContext(lua_State *L)
     // and if ctx->complete has been called,
     // corresponding awaitable must be done and removed from calling chain
     auto *ctx = static_cast<AsyncContext *>(lua_touserdata(L, lua_upvalueindex(1)));
-
-    // TODO: add a signal AsyncContext::cancelled, to do more C++ side clean up
-    // like cancelling the request (send notification to the peer telling it
-    // cancel current request handler... that will be a bit complex)
-    ctx->complete(std::make_error_code(std::errc::operation_canceled));
+    ctx->cancel();
     return 0;
 }
 
@@ -100,8 +96,11 @@ static int requestSocket(lua_State *L)
 
     // TODO: conn->request is more complex than this
     auto *ctx = new AsyncContext(binding, fnRef);
-    conn->request(command, jsonData, time, timestamp, [ctx](std::error_code err, QByteArray reply) {
+    int requestId = conn->request(command, jsonData, time, timestamp, [ctx](std::error_code err, QByteArray reply) {
         ctx->complete(err, reply);
+    });
+    QObject::connect(ctx, &AsyncContext::cancelled, conn, [conn, requestId] {
+        conn->cancelRequest(requestId);
     });
 
     lua_pushlightuserdata(L, ctx);
@@ -128,27 +127,6 @@ static int replySocket(lua_State *L)
     }
 
     conn->reply(requestId, ok, jsonData);
-
-    return 0;
-}
-
-// args: int connId, int requestId
-static int cancelRequest(lua_State *L)
-{
-    int nargs = lua_gettop(L);
-    if (nargs != 2) {
-        return luaL_error(L, "expected 2 arguments, got %d", nargs);
-    }
-
-    int connId = luaL_checkinteger(L, 1);
-    int requestId = luaL_checkinteger(L, 2);
-
-    auto *conn = findConnectionById(L, connId);
-    if (!conn) {
-        return luaL_error(L, "cannot find socket of connId %d", connId);
-    }
-
-    conn->cancelRequest(requestId);
 
     return 0;
 }
@@ -254,7 +232,6 @@ static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
     {"replySocket", replySocket},
-    {"cancelRequest", cancelRequest},
 
     {"delay", delay},
     {"luaEvent", luaEvent},

@@ -52,6 +52,14 @@ function Server:processDisconnected(connId)
   end
 
   ktabletop.log.info(string.format("Player %s disconnected", player.username))
+
+  -- clear first so resumed dispatchers skip replying on a dead socket
+  local requests = player.handlingRequests
+  player.handlingRequests = {}
+  for _, f in pairs(requests) do
+    async.cancel(f)
+  end
+
   local room = self.roomManager:findRoomOrLobby(player.roomId)
   if room then room:removePlayer(player) end
   self.playerManager:removePlayer(connId)
@@ -95,7 +103,15 @@ local requestDispatcher = async.async(function(server, player, requestId, comman
     return
   end
 
-  local ok, reply, err = async.await(fn(arg1, player, data))
+  local handler = fn(arg1, player, data)
+  player.handlingRequests[requestId] = handler
+  local ok, reply, err = async.await(handler)
+
+  -- canceled by the peer: the registry entry has been removed, do not reply
+  if player.handlingRequests[requestId] == nil then
+    return
+  end
+  player.handlingRequests[requestId] = nil
 
   if not ok then
     player:reply(false, requestId, reply)
