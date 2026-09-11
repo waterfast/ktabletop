@@ -99,15 +99,15 @@ void Server::processNewConnection(ClientSocket *client)
     auto *conn = new UserConnection(this, client);
     auto connId = conn->connId();
     connections[connId] = conn;
-    connect(conn, &QObject::destroyed, [this, connId] {
+    connect(conn, &QObject::destroyed, this, [this, connId] {
         connections.remove(connId);
     });
 
-    connect(conn, &UserConnection::notificationGot, [this, conn](const QByteArray &command, const QByteArray &data) {
+    connect(conn, &UserConnection::notificationGot, this, [this, conn](const QByteArray &command, const QByteArray &data) {
         L->callKTabletopMethod(u"server"_s, u"processNotification"_s, {conn->connId(), QString::fromUtf8(command), QJsonValue::fromJson(data).toVariant()});
     });
 
-    connect(conn, &UserConnection::requestGot, [this, conn](int requestId) {
+    connect(conn, &UserConnection::requestGot, this, [this, conn](int requestId) {
         const auto &req = conn->receivedRequest(requestId);
         L->callKTabletopMethod(u"server"_s,
                                u"processRequest"_s,

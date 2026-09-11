@@ -26,13 +26,14 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
     connect(vm, &MainViewModel::joinServerRequested, this, &QmlBackendController::onJoinServerRequested);
 
     auto *manager = LObjectManager::instance();
+    auto *client = Client::instance();
     manager->setCreateObjectFn([](const QVariantMap &opts) {
         return Client::instance()->luaBinding()->createLObject(opts);
     });
     manager->setReleaseObjectFn([](int ref) {
         Client::instance()->luaBinding()->releaseLObject(ref);
     });
-    QObject::connect(manager, &LObjectManager::invoked, [](int ref, const QString &method, const QVariantList &args) {
+    QObject::connect(manager, &LObjectManager::invoked, client, [](int ref, const QString &method, const QVariantList &args) {
         Client::instance()->luaBinding()->invokeLObject(ref, method, args);
     });
 }

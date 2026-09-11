@@ -54,6 +54,7 @@ set_package_properties(KF6KirigamiAddons PROPERTIES
 ecm_find_qmlmodule(org.kde.kirigamiaddons.formcard)
 
 set(QT_QML_NO_CACHEGEN ON)
+add_definitions(-DQT_NO_CONTEXTLESS_CONNECT)
 
 add_subdirectory(src)
 

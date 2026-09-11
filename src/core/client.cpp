@@ -31,20 +31,20 @@ Client::Client(QObject *parent)
 
     m_connection = new UserConnection(this, new ClientSocket);
 
-    connect(m_connection, &UserConnection::notificationGot, [this](const QByteArray &command, const QByteArray &jsonData) {
+    connect(m_connection, &UserConnection::notificationGot, this, [this](const QByteArray &command, const QByteArray &jsonData) {
         L->callKTabletopMethod(u"client"_s,
                                u"processNotification"_s,
                                {m_connection->connId(), QString::fromUtf8(command), QJsonValue::fromJson(jsonData).toVariant()});
     });
 
-    connect(m_connection, &UserConnection::requestGot, [this, conn = m_connection](int requestId) {
+    connect(m_connection, &UserConnection::requestGot, this, [this, conn = m_connection](int requestId) {
         const auto &req = conn->receivedRequest(requestId);
         L->callKTabletopMethod(u"client"_s,
                                u"processRequest"_s,
                                {conn->connId(), requestId, QString::fromUtf8(req.command), QJsonValue::fromJson(req.jsonData).toVariant()});
     });
 
-    connect(m_connection, &UserConnection::socketError, [this](const QString &msg) {
+    connect(m_connection, &UserConnection::socketError, this, [this](const QString &msg) {
         L->callKTabletopMethod(u"client"_s, u"onSocketError"_s, {msg});
     });
 }

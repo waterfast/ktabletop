@@ -172,7 +172,7 @@ static int delay(lua_State *L)
     auto *timer = new QTimer(binding);
     timer->setSingleShot(true);
     timer->connect(timer, &QTimer::timeout, timer, &QObject::deleteLater);
-    timer->connect(timer, &QTimer::timeout, [L = binding->vm().state(), fnRef] {
+    timer->connect(timer, &QTimer::timeout, binding, [L = binding->vm().state(), fnRef] {
         auto *binding = LuaBinding::forState(L);
         if (!binding) {
             return;
