@@ -10,6 +10,8 @@
 #include <QJsonObject>
 #include <QTimer>
 
+#include <atomic>
+
 class PendingRequest : public QObject
 {
 public:
@@ -82,6 +84,9 @@ private:
 UserConnection::UserConnection(QObject *parent, ClientSocket *socket)
     : QObject(parent)
 {
+    qRegisterMetaType<ReplyCallback>("UserConnection::ReplyCallback");
+    connect(this, &UserConnection::requestReady, this, &UserConnection::startRequest);
+
     setSocket(socket);
 
     static int nextConnId = 1000;
@@ -132,23 +137,34 @@ ClientSocket *UserConnection::moveSocket()
     return socket;
 }
 
-int UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
+int UserConnection::nextRequestId()
 {
-    static int requestId = 0;
-    requestId++;
-    if (requestId > 10000000)
-        requestId = 1;
+    static std::atomic<int> counter{0};
+    int id = ++counter;
+    if (id > 10000000) {
+        counter = 1;
+        id = 1;
+    }
+    return id;
+}
 
+void UserConnection::startRequest(int id, const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
+{
     const bool tracked = static_cast<bool>(callback);
-    auto *req = new PendingRequest(this, requestId, std::move(callback), timeout);
+    auto *req = new PendingRequest(this, id, std::move(callback), timeout);
     if (tracked) {
-        m_pendingRequests.insert(requestId, req);
+        m_pendingRequests.insert(id, req);
     }
     req->send(command, jsonData, timestamp);
     if (!tracked)
         req->deleteLater();
+}
 
-    return requestId;
+int UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
+{
+    const int id = nextRequestId();
+    Q_EMIT requestReady(id, command, jsonData, timeout, timestamp, std::move(callback));
+    return id;
 }
 
 void UserConnection::reply(int requestId, bool ok, const QByteArray &jsonData)

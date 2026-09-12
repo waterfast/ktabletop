@@ -15,6 +15,9 @@ ktabletop.strlib = require "corelib.strlib"
 
 math.randomseed(os.time())
 
+local ViewModelManager = require "viewmodels.vm-manager"
+ktabletop.viewModelManager = ViewModelManager:new()
+
 local BoardGameManager = require "core.boardgame-manager"
 ktabletop.boardgames = BoardGameManager:new()
 

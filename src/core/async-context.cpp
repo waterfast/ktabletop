@@ -5,6 +5,8 @@
 #include "lua/c-wrapper.h"
 #include "lua/lua-binding.h"
 
+#include <QThread>
+
 #include <lua.hpp>
 
 AsyncContext::AsyncContext(LuaBinding *parent, int callback)
@@ -31,6 +33,16 @@ void AsyncContext::cancel()
 
 void AsyncContext::complete(std::error_code err, QVariant val)
 {
+    if (QThread::currentThread() != thread()) {
+        QMetaObject::invokeMethod(
+            this,
+            [this, err, val] {
+                complete(err, val);
+            },
+            Qt::QueuedConnection);
+        return;
+    }
+
     if (m_callback == LUA_NOREF) {
         return;
     }

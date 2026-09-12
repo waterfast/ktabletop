@@ -47,6 +47,10 @@ Kirigami.ApplicationWindow {
             State {
                 name: "inGame"
                 when: Backend.mainViewModel.gameStarted
+
+                PropertyChanges {
+                    root.pageStack.items: [root.createLuaPageByUrl(Backend.mainViewModel.gamePageUrl, { objectName: Backend.mainViewModel.gameViewModelName })]
+                }
             }
         ]
     }
@@ -69,6 +73,22 @@ Kirigami.ApplicationWindow {
 
     function createLuaPage(uri, pageName, opts) {
         const pageComponent = Qt.createComponent(uri, pageName);
+        if (pageComponent.status == Component.Error) {
+            console.warn(pageComponent.errorString());
+        }
+        const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
+        const d = lobject.createObject(null, { opts });
+        const page = pageComponent.createObject(root, { d });
+        d.parent = page;
+        _dynamicPages.push(page);
+        return page;
+    }
+
+    function createLuaPageByUrl(url, opts) {
+        const pageComponent = Qt.createComponent(url);
+        if (pageComponent.status == Component.Error) {
+            console.warn(pageComponent.errorString());
+        }
         const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
         const d = lobject.createObject(null, { opts });
         const page = pageComponent.createObject(root, { d });

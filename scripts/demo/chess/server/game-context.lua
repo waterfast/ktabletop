@@ -6,7 +6,7 @@ local ServerGameContextMixin = require "gamethread.game-context-mixin"
 local ServerPlayer = require "demo.chess.server.player"
 local GameLogic = require "demo.chess.server.gamelogic"
 
----@class Chess.ServerGameContext: Chess.GameContext
+---@class Chess.ServerGameContext: Chess.GameContext, ServerGameContextMixin
 local ServerGameContext = GameContext:subclass("Chess.ServerGameContext")
 ServerGameContext:include(ServerGameContextMixin)
 
@@ -16,6 +16,10 @@ function ServerGameContext:initialize(data)
   ServerGameContextMixin.initialize(self, data)
   self.playerClass = ServerPlayer
   self.logicClass = GameLogic
+end
+
+function ServerGameContext:syncBoard()
+  self:broadcast("Chess.SyncBoard", { board = self.board })
 end
 
 return ServerGameContext

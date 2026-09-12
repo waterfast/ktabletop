@@ -2,6 +2,15 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 ---@class ClientPlayerMixin
+---@field user ClientUser
+---@field username string
 local ClientPlayerMixin = {}
+
+---@param user ClientUser
+function ClientPlayerMixin:initialize(user)
+  self.user = user
+  self.id = user.id
+  self.username = user.username
+end
 
 return ClientPlayerMixin

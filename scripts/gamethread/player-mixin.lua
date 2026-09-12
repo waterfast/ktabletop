@@ -10,6 +10,7 @@ local ServerPlayerMixin = {}
 function ServerPlayerMixin:initialize(user)
   self.user = user
   self.id = user.id
+  self.username = user.username
 end
 
 ---@param command string

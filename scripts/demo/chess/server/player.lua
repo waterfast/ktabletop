@@ -4,7 +4,7 @@
 local Player = require "demo.chess.player"
 local ServerPlayerMixin = require "gamethread.player-mixin"
 
----@class Chess.ServerPlayer: Chess.Player
+---@class Chess.ServerPlayer: Chess.Player, ServerPlayerMixin
 local ServerPlayer = Player:subclass("Chess.ServerPlayer")
 ServerPlayer:include(ServerPlayerMixin)
 

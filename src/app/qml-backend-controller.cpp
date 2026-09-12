@@ -12,8 +12,10 @@
 
 #include "network/client-socket.h"
 #include "network/user-connection.h"
+#include <QFileInfo>
 #include <QHostAddress>
 #include <QTcpSocket>
+#include <QUrl>
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -74,6 +76,8 @@ void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVaria
         vm->setConnected(false);
         vm->setLobbyViewModelName(QString());
         vm->setRoomViewModelName(QString());
+        vm->setGameViewModelName(QString());
+        vm->setGamePageUrl(QString());
         vm->setRoomId(0);
         vm->setGameStarted(false);
         Client::instance()->connection()->socket()->socket()->disconnectFromHost();
@@ -82,5 +86,11 @@ void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVaria
         vm->setRoomViewModelName(map.value(u"viewModelName"_s).toString());
         vm->setRoomId(map.value(u"id"_s).toInt());
         vm->setGameStarted(false);
+    } else if (sig == u"Client::EnterGame"_s) {
+        const QVariantMap map = data.toMap();
+        const QString pageUrl = map.value(u"pageUrl"_s).toString();
+        vm->setGameViewModelName(map.value(u"viewModelName"_s).toString());
+        vm->setGamePageUrl(QUrl::fromLocalFile(QFileInfo(pageUrl).absoluteFilePath()).toString());
+        vm->setGameStarted(true);
     }
 }

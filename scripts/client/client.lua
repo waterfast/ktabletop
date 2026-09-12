@@ -28,6 +28,7 @@ function Client:initialize()
   self:setCallback("Lobby::UpdateOnlineInfo", self.updateOnlineInfo)
 
   self:setCallback("Room::Enter", self.enterRoom)
+  self:setCallback("Room::StartGame", self.startGame)
   self:setRequestHandler("Auth::RequestUsername", self.handleAuthRequest)
 end
 
@@ -86,6 +87,13 @@ function Client:enterRoom(_, data)
   ktabletop.luaEvent("Client::EnterRoom", data)
 end
 
+---@param data table
+function Client:startGame(_, data)
+  self:enterGame(data.gameType, {
+    users = self.room and self.room.users or {},
+  })
+end
+
 ---@param gameType string?
 ---@param data table?
 function Client:enterGame(gameType, data)
@@ -93,8 +101,14 @@ function Client:enterGame(gameType, data)
   local bg = ktabletop.boardgames:get(gameType)
   local klass = bg and bg.clientContextClass
   assert(klass, ("no clientContextClass for boardgame '%s'"):format(gameType))
+
   self.gameContext = klass:new(gameType, data)
-  ktabletop.luaEvent("Client::EnterGame", data)
+  self.gameContext:setupViewModel()
+
+  ktabletop.luaEvent("Client::EnterGame", {
+    viewModelName = self.gameContext.vm._stringId,
+    pageUrl = bg.page and bg.page.url or "",
+  })
 end
 
 function Client:leaveGame()
@@ -144,6 +158,13 @@ function Client:processNotification(connId, command, data)
     return f(self, user, data)
   end
 
+  if self.gameContext then
+    f = self.gameContext._notificationHandlers[command]
+    if f then
+      return f(self.gameContext, user, data)
+    end
+  end
+
   local room = user.roomId == 0 and self.lobby or self.room
   if not room then return end
 
@@ -158,12 +179,17 @@ local requestDispatcher = async.async(function(client, connId, requestId, comman
   assert(user, ("cannot find user of connId %d in request #%d"):format(connId, requestId))
   user.connId = connId
 
+  local target = client
   local fn = client._requestHandlers[command]
+  if not fn and client.gameContext then
+    fn = client.gameContext._requestHandlers[command]
+    target = client.gameContext
+  end
   if not fn then
     return
   end
 
-  local handler = fn(client, user, data)
+  local handler = fn(target, user, data)
   user.handlingRequests[requestId] = handler
   local ok, reply = async.await(handler)
 

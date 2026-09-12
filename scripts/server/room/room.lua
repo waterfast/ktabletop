@@ -99,9 +99,10 @@ function Room:handleStartGame(user)
   end
 
   self.gameStarted = true
+  self:broadcast("Room::StartGame", { gameType = "chess" })
 
   local users = tablib.map(self.users, function(u)
-    return { connId = u.connId, id = u.id, username = u.username }
+    return { connId = u.connId, id = u.id, username = u.username, state = u.state }
   end)
 
   ktabletop.startGame(self.id, {

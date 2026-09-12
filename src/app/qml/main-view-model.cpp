@@ -64,6 +64,34 @@ void MainViewModel::setRoomViewModelName(const QString &name)
     Q_EMIT roomViewModelNameChanged(m_roomViewModelName);
 }
 
+QString MainViewModel::gameViewModelName() const
+{
+    return m_gameViewModelName;
+}
+
+void MainViewModel::setGameViewModelName(const QString &name)
+{
+    if (m_gameViewModelName == name) {
+        return;
+    }
+    m_gameViewModelName = name;
+    Q_EMIT gameViewModelNameChanged(m_gameViewModelName);
+}
+
+QString MainViewModel::gamePageUrl() const
+{
+    return m_gamePageUrl;
+}
+
+void MainViewModel::setGamePageUrl(const QString &url)
+{
+    if (m_gamePageUrl == url) {
+        return;
+    }
+    m_gamePageUrl = url;
+    Q_EMIT gamePageUrlChanged(m_gamePageUrl);
+}
+
 bool MainViewModel::gameStarted() const
 {
     return m_gameStarted;

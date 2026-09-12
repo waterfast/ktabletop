@@ -5,9 +5,10 @@ local class = ktabletop.class
 
 ---@class Player: Object
 ---@field id integer
+---@field username string
 ---@field role string
 ---@field seat integer
----@field next Player?
+---@field next Player
 ---@field mark table<string, any>
 local Player = class("Player")
 

@@ -4,8 +4,14 @@
 local Player = require "demo.chess.player"
 local ClientPlayerMixin = require "client.player-mixin"
 
----@class Chess.ClientPlayer: Chess.Player
+---@class Chess.ClientPlayer: Chess.Player, ClientPlayerMixin
 local ClientPlayer = Player:subclass("Chess.ClientPlayer")
 ClientPlayer:include(ClientPlayerMixin)
+
+---@param user ClientUser
+function ClientPlayer:initialize(user)
+  Player.initialize(self)
+  ClientPlayerMixin.initialize(self, user)
+end
 
 return ClientPlayer

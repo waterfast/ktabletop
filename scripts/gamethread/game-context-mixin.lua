@@ -28,7 +28,7 @@ function ServerGameContextMixin:run()
     local user = ServerUser:new(u.connId)
     user.id = u.id
     user.username = u.username
-    user.state = "online"
+    user.state = u.state or "online"
     local player = self.playerClass:new(user)
     player.ctx = self
     return player
@@ -68,7 +68,7 @@ end
 ---@param player Player
 ---@param property string
 function ServerGameContextMixin:broadcastProperty(player, property)
-  self:broadcast("PropertyUpdate", { player.id, property, player[property] })
+  self:broadcast("PropertyUpdate", { id = player.id, property = property, value = player[property] })
 end
 
 ---@param players? Player[]
@@ -80,7 +80,7 @@ function ServerGameContextMixin:arrangeSeats(players)
     players[i].next = players[i + 1] or players[1]
   end
   local ids = tablib.map(players, function(player) return player.id end)
-  self:broadcast("ArrangeSeats", ids)
+  self:broadcast("ArrangeSeats", { ids = ids })
 end
 
 ---@param ms integer
