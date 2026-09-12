@@ -31,7 +31,7 @@ Kirigami.ApplicationWindow {
                 name: "lobby"
                 when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId === 0
                 PropertyChanges {
-                    root.pageStack.items: [root.createLuaPage("LobbyPage", { type: "lobby" })]
+                    root.pageStack.items: [root.createLuaPage("org.kde.ktabletop", "LobbyPage", { type: "lobby" })]
                 }
             },
 
@@ -40,7 +40,7 @@ Kirigami.ApplicationWindow {
                 when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId !== 0
 
                 PropertyChanges {
-                    root.pageStack.items: [root.createLuaPage("WaitingRoomPage", { type: "waiting-room" })]
+                    root.pageStack.items: [root.createLuaPage("org.kde.ktabletop", "WaitingRoomPage", { type: "waiting-room" })]
                 }
             },
 
@@ -67,11 +67,11 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    function createLuaPage(pageName, opts) {
-        const pageComponent = Qt.createComponent("org.kde.ktabletop", pageName);
+    function createLuaPage(uri, pageName, opts) {
+        const pageComponent = Qt.createComponent(uri, pageName);
         const lobject = Qt.createComponent("org.kde.ktabletop", "LuaObject");
         const d = lobject.createObject(null, { opts });
-        const page = pageComponent.createObject(pageStack, { d });
+        const page = pageComponent.createObject(root, { d });
         d.parent = page;
         _dynamicPages.push(page);
         return page;

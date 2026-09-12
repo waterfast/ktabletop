@@ -168,7 +168,7 @@ Kirigami.ScrollablePage {
     Kirigami.OverlayDrawer {
         id: chatDrawer
         edge: Qt.RightEdge
-        modal: true
+        parent: QQC2.Overlay.overlay
         width: Kirigami.Units.gridUnit * 18
 
         contentItem: ChatPanel {

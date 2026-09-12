@@ -116,8 +116,8 @@ Kirigami.Page {
                             Kirigami.Badge {
                                 visible: playerCard.modelData.id === root.d.ownerId
                                 text: i18n("Owner")
-                                Kirigami.Theme.backgroundColor: Kirigami.Theme.positiveBackgroundColor
-                                Kirigami.Theme.textColor: Kirigami.Theme.positiveTextColor
+                                customColor: Kirigami.Theme.positiveBackgroundColor
+                                customTextColor: Kirigami.Theme.positiveTextColor
                             }
                         }
                     }
@@ -151,7 +151,7 @@ Kirigami.Page {
     Kirigami.OverlayDrawer {
         id: chatDrawer
         edge: Qt.RightEdge
-        modal: true
+        parent: QQC2.Overlay.overlay
         width: Kirigami.Units.gridUnit * 18
 
         contentItem: ChatPanel {
