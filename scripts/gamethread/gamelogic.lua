@@ -24,6 +24,7 @@ function GameLogic:start()
   async.run(function()
     local root = Game:new(self.ctx)
     self.root = root
+    self.ctx:broadcast("Room::StartGame", { gameType = "chess" })
     local ok, errmsg = async.await(root:exec())
     local ctx = self.ctx
     if not ctx.gameFinished then

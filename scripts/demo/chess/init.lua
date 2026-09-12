@@ -9,7 +9,7 @@ ktabletop.boardgames:register {
   serverContextClass = require "demo.chess.server.game-context",
   logicClass = require "demo.chess.server.gamelogic",
   clientContextClass = require "demo.chess.client.game-context",
-  page = { url = "demo/chess/ui/Main.qml" },
+  page = { url = "scripts/demo/chess/ui/Main.qml" },
 }
 
 ktabletop.viewModelManager:registerType("chess", require "demo.chess.client.viewmodel")
