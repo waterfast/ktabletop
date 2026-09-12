@@ -41,14 +41,14 @@ function GameContextBase:setRequestHandler(cmd, cb)
 end
 
 ---@param id integer
----@return Player?
+---@return Player
 function GameContextBase:getPlayerById(id)
   ---@diagnostic disable-next-line
   return tablib.find(self.players, function(p) return p.id == id end)
 end
 
 ---@param seat integer
----@return Player?
+---@return Player
 function GameContextBase:getPlayerBySeat(seat)
   ---@diagnostic disable-next-line
   return tablib.find(self.players, function(p) return p.seat == seat end)

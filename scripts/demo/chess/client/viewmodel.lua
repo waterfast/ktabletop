@@ -70,7 +70,6 @@ function ChessMainViewModel:clickCell(x, y)
       local lastRank = (piece == "P") and 1 or 8
       if piece:upper() == "P" and y == lastRank then
         self.promotion = { fromX = self.selected.x, fromY = self.selected.y, x = x, y = y }
-        self:notifyPropertyChanged("promotion")
         return
       end
       self:finishMove(self.selected.x, self.selected.y, x, y, nil)
@@ -82,8 +81,6 @@ function ChessMainViewModel:clickCell(x, y)
   if piece == "." then
     self.selected = nil
     self.movablePoints = {}
-    self:notifyPropertyChanged("selected")
-    self:notifyPropertyChanged("movablePoints")
     return
   end
 
@@ -103,8 +100,6 @@ function ChessMainViewModel:clickCell(x, y)
     end
   end
   self.movablePoints = moves
-  self:notifyPropertyChanged("selected")
-  self:notifyPropertyChanged("movablePoints")
 end
 
 ---@param name string
@@ -112,7 +107,6 @@ function ChessMainViewModel:accepted(name)
   if not self.promotion then return end
   local p = self.promotion
   self.promotion = nil
-  self:notifyPropertyChanged("promotion")
   self:finishMove(p.fromX, p.fromY, p.x, p.y, name)
 end
 

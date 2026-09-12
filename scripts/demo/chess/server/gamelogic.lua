@@ -61,19 +61,15 @@ end
 function ChessGameLogic:run()
   local ctx = self.ctx
 
-  ktabletop.log.info(("Chess: game start (roomId=%d, players=%d)"):format(ctx.id, #ctx.players))
-
   ctx:arrangeSeats()
   ctx:setPlayerProperty(ctx.players[1], "role", "white")
   ctx:setPlayerProperty(ctx.players[2], "role", "black")
-  ktabletop.log.info(("Chess: white=%s black=%s"):format(ctx.players[1].username, ctx.players[2].username))
   ctx:syncBoard()
 
   local current = ctx.players[1]
   local turn = 0
   while not ctx.gameFinished do
     turn = turn + 1
-    ktabletop.log.info(("Chess: turn %d, asking %s (%s)"):format(turn, current.username, current.role))
 
     local req = InteractiveRequest:new(current, "Chess.PlayChess")
     req.timeout = 30
@@ -82,14 +78,9 @@ function ChessGameLogic:run()
     local result = req:getResult(current)
 
     if not result then
-      ktabletop.log.info(("Chess: %s has no legal move, game over"):format(current.username))
       ctx:gameOver()
       return
     end
-
-    ktabletop.log.info(("Chess: %s moves (%d,%d) -> (%d,%d)%s"):format(
-      current.username, result.fromX, result.fromY, result.x, result.y,
-      result.promote and (" promote=" .. result.promote) or ""))
 
     ctx:movePieceTo(result.fromX, result.fromY, result.x, result.y, result.promote)
     ctx:broadcast("Chess.MovePieceTo", {
@@ -104,10 +95,8 @@ function ChessGameLogic:run()
     if not hasLegalMove(ctx, current.role) then
       if Engine:isChecking(ctx.board, current.role) then
         local winner = current.role == "white" and "black" or "white"
-        ktabletop.log.info(("Chess: checkmate, %s wins"):format(winner))
         ctx:broadcast("GameOver", winner)
       else
-        ktabletop.log.info("Chess: stalemate, draw")
         ctx:broadcast("GameOver", "")
       end
       ctx:gameOver()

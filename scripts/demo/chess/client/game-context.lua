@@ -48,12 +48,6 @@ function ClientGameContext:setupViewModel()
   })
 end
 
-function ClientGameContext:refresh()
-  self:notifyPropertyChanged("players")
-  self:notifyPropertyChanged("myTurn")
-  self:notifyPropertyChanged("gameOver")
-end
-
 function ClientGameContext:handleSyncBoard(_, data)
   self.board = data.board
   self.vm:emitSignal("SyncBoard", self.board)
@@ -89,20 +83,16 @@ function ClientGameContext:handleMovePieceTo(_, data)
     y = y,
     piece = self.board[y][x],
   })
-  self:refresh()
 end
 
 function ClientGameContext:handlePropertyUpdate(_, data)
   local player = self:getPlayerById(data.id)
-  if player then
-    self:setPlayerProperty(player, data.property, data.value)
-  end
-  self:refresh()
+  self:setPlayerProperty(player, data.property, data.value)
+  self:notifyPropertyChanged("players")
 end
 
 function ClientGameContext:handleArrangeSeats(_, data)
   self:arrangeSeats(data.ids)
-  self:refresh()
 end
 
 function ClientGameContext:handleGameOver(_, data)
@@ -112,13 +102,11 @@ end
 ---@param user ClientUser
 function ClientGameContext:handlePlayChess(user, data)
   self.myTurn = true
-  self:refresh()
 
   local wrapped = async.wrap(function(cb) self.moveCallback = cb end)
   local ok, move = async.await(wrapped())
 
   self.myTurn = false
-  self:refresh()
 
   if not ok then return "" end
   return move
