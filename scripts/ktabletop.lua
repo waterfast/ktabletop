@@ -11,3 +11,8 @@ ktabletop.inspect = require "3rdparty.inspect"
 
 ktabletop.tablib = require "corelib.tablib"
 ktabletop.strlib = require "corelib.strlib"
+
+local BoardGameManager = require "core.boardgame-manager"
+ktabletop.boardgames = BoardGameManager:new()
+
+require "demo.chess"

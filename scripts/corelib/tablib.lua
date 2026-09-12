@@ -190,4 +190,23 @@ function tablib.isEmpty(self)
   return next(self) == nil
 end
 
+
+-- Clone a table. Shallow by default; pass `deep = true` to clone nested tables
+-- recursively. Metatables are not preserved.
+---@generic T
+---@param self T
+---@param deep? boolean
+---@return T
+function tablib.clone(self, deep)
+  local ret = {}
+  for k, v in pairs(self) do
+    if deep and type(v) == "table" then
+      ret[k] = tablib.clone(v, deep)
+    else
+      ret[k] = v
+    end
+  end
+  return ret
+end
+
 return tablib

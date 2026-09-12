@@ -7,11 +7,13 @@ local class = ktabletop.class
 local ClientPlayer = require "client.user.player"
 local ClientLobby = require "client.room.lobby"
 local ClientRoom = require "client.room.room"
+local ClientGameRoom = require "client.room.game-room"
 
 ---@class Client: Object
 ---@field myself ClientPlayer
 ---@field lobby ClientLobby
 ---@field room ClientRoom
+---@field gameRoom ClientGameRoom?
 local Client = class("Client")
 
 function Client:initialize()
@@ -77,6 +79,21 @@ function Client:enterRoom(_, data)
 
   -- OK let's tell GUI
   ktabletop.luaEvent("Client::EnterRoom", data)
+end
+
+---@param gameType string?
+---@param data table?
+function Client:enterGame(gameType, data)
+  gameType = gameType or "chess"
+  local bg = ktabletop.boardgames:get(gameType)
+  local klass = (bg and bg.clientClass) or ClientGameRoom
+  self.gameRoom = klass:new(gameType, data)
+  ktabletop.luaEvent("Client::EnterGame", data)
+end
+
+function Client:leaveGame()
+  self.gameRoom = nil
+  ktabletop.luaEvent("Client::LeaveGame", nil)
 end
 
 function Client:handleAuthRequest(_, _)
