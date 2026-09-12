@@ -174,17 +174,6 @@ Kirigami.Page {
                             visible: root.isLastMove(bx, by) || root.isSelected(bx, by)
                         }
 
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: 20
-                            height: 20
-                            radius: 10
-                            color: "black"
-                            opacity: 0.3
-                            z: 9
-                            visible: root.isMovable(bx, by)
-                        }
-
                         TapHandler {
                             onTapped: root.d.invoke("clickCell", [bx, by])
                         }
@@ -202,6 +191,37 @@ Kirigami.Page {
                     piece: model.pc
                     flipped: root.blackView
                     cellSize: root.cellSize
+                }
+            }
+
+            Grid {
+                anchors.fill: parent
+                columns: 8
+
+                Repeater {
+                    model: 64
+
+                    delegate: Item {
+                        required property int index
+
+                        width: root.cellSize
+                        height: root.cellSize
+
+                        readonly property int dx: index % 8
+                        readonly property int dy: Math.floor(index / 8)
+                        readonly property int bx: root.boardX(dx)
+                        readonly property int by: root.boardY(dy)
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 20
+                            height: 20
+                            radius: 10
+                            color: "red"
+                            opacity: 0.3
+                            visible: root.isMovable(bx, by)
+                        }
+                    }
                 }
             }
         }
