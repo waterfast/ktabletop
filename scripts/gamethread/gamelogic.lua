@@ -6,34 +6,34 @@ local class = ktabletop.class
 local GameEvent = require "gamethread.gameevent"
 
 ---@class GameLogic: Object
----@field room GameRoom
+---@field ctx GameContextBase
 ---@field root GameEvent
 local GameLogic = class("GameLogic")
 
-function GameLogic:initialize(room)
-  self.room = room
+function GameLogic:initialize(ctx)
+  self.ctx = ctx
 end
 
 --- root event of game
 local Game = GameEvent:subclass("GameEvent.Game")
 function Game:main()
-  self.room.logic:run()
+  self.ctx.logic:run()
 end
 
 function GameLogic:start()
   async.async(function()
-    local root = Game:new(self.room)
+    local root = Game:new(self.ctx)
     self.root = root
     local ok, errmsg = async.await(root:exec())
-    local room = self.room
-    if not room.gameFinished then
+    local ctx = self.ctx
+    if not ctx.gameFinished then
       -- root event may be killed by error?
       if not ok then
         ktabletop.log.critical(errmsg)
       else
         ktabletop.log.info("Game is over now because root event finished.")
       end
-      room:gameOver()
+      ctx:gameOver()
     end
   end)()
 end

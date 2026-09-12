@@ -12,7 +12,7 @@ local ClientRoom = require "client.room.room"
 ---@field myself ClientUser
 ---@field lobby ClientLobby
 ---@field room ClientRoom
----@field gameRoom Object?
+---@field gameContext Object?
 local Client = class("Client")
 
 function Client:initialize()
@@ -85,14 +85,14 @@ end
 function Client:enterGame(gameType, data)
   gameType = gameType or "chess"
   local bg = ktabletop.boardgames:get(gameType)
-  local klass = bg and bg.clientClass
-  assert(klass, ("no clientClass for boardgame '%s'"):format(gameType))
-  self.gameRoom = klass:new(gameType, data)
+  local klass = bg and bg.clientContextClass
+  assert(klass, ("no clientContextClass for boardgame '%s'"):format(gameType))
+  self.gameContext = klass:new(gameType, data)
   ktabletop.luaEvent("Client::EnterGame", data)
 end
 
 function Client:leaveGame()
-  self.gameRoom = nil
+  self.gameContext = nil
   ktabletop.luaEvent("Client::LeaveGame", nil)
 end
 

@@ -57,6 +57,10 @@ local function inBoard(x, y)
   return x >= 1 and x <= 8 and y >= 1 and y <= 8
 end
 
+local function pointId(x, y)
+  return y * 10 + x
+end
+
 -- target square is empty or holds an enemy piece
 local function canLandOn(board, fromX, fromY, x, y)
   local target = board[y][x]
@@ -105,15 +109,46 @@ function rules.Q(board, fromX, fromY, x, y)
   return pathClear(board, fromX, fromY, x, y)
 end
 
--- TODO: castling
 function rules.K(board, fromX, fromY, x, y)
-  local dx, dy = math.abs(x - fromX), math.abs(y - fromY)
-  if dx > 1 or dy > 1 then return false end
-  if dx == 0 and dy == 0 then return false end
-  return canLandOn(board, fromX, fromY, x, y)
+  local dx, dy = x - fromX, y - fromY
+  local adx, ady = math.abs(dx), math.abs(dy)
+
+  -- normal one-square move
+  if adx <= 1 and ady <= 1 then
+    if adx == 0 and ady == 0 then return false end
+    return canLandOn(board, fromX, fromY, x, y)
+  end
+
+  -- castling: two squares along the back rank
+  if ady ~= 0 or adx ~= 2 then return false end
+  local white = Engine:isWhite(board[fromY][fromX])
+  local backY = white and 8 or 1
+  if fromY ~= backY or fromX ~= 5 or (x ~= 3 and x ~= 7) then return false end
+
+  local ctx = ktabletop.currentGameContext()
+  if not ctx then return false end
+  local flag
+  if white then
+    flag = x == 7 and "noCastleK" or "noCastleQ"
+  else
+    flag = x == 7 and "noCastlek" or "noCastleq"
+  end
+  if ctx:getMark(flag) then return false end
+
+  local rookX = x == 7 and 8 or 1
+  if board[backY][rookX] ~= (white and "R" or "r") then return false end
+  for cx = math.min(fromX, rookX) + 1, math.max(fromX, rookX) - 1 do
+    if board[backY][cx] ~= Engine.empty then return false end
+  end
+
+  local enemy = white and "black" or "white"
+  local step = dx > 0 and 1 or -1
+  for cx = fromX, x, step do
+    if Engine:isAttacked(board, cx, backY, enemy) then return false end
+  end
+  return true
 end
 
--- TODO: en passant, promotion
 function rules.P(board, fromX, fromY, x, y)
   local white = Engine:isWhite(board[fromY][fromX])
   local dir = white and -1 or 1
@@ -128,7 +163,16 @@ function rules.P(board, fromX, fromY, x, y)
     return true
   end
   if math.abs(dx) == 1 and dy == dir then
-    return board[y][x] ~= Engine.empty and canLandOn(board, fromX, fromY, x, y)
+    if board[y][x] ~= Engine.empty then
+      return canLandOn(board, fromX, fromY, x, y)
+    end
+    -- en passant: the skipped square holds a just-moved enemy pawn
+    local captured = board[fromY][x]
+    if captured == Engine.empty or captured:upper() ~= "P" or Engine:isWhite(captured) == white then
+      return false
+    end
+    local ctx = ktabletop.currentGameContext()
+    return ctx ~= nil and ctx:getMark("passedPawn") == pointId(x, y)
   end
   return false
 end
@@ -171,6 +215,20 @@ function Engine:willBeChecked(board, fromX, fromY, x, y)
   return self:isAttacked(moved, kingX, kingY, color == "white" and "black" or "white")
 end
 
+local function attacksSquare(kind, board, fromX, fromY, x, y)
+  if kind == "K" then
+    return math.abs(fromX - x) <= 1 and math.abs(fromY - y) <= 1 and (fromX ~= x or fromY ~= y)
+  end
+  if kind == "P" then
+    local white = Engine:isWhite(board[fromY][fromX])
+    local dir = white and -1 or 1
+    if math.abs(x - fromX) ~= 1 or y - fromY ~= dir then return false end
+    local target = board[y][x]
+    return target ~= Engine.empty and Engine:isWhite(target) ~= white
+  end
+  return rules[kind](board, fromX, fromY, x, y)
+end
+
 --- Whether square (x, y) is attacked by any piece of byColor.
 ---@param board string[][]
 ---@param byColor string
@@ -181,7 +239,7 @@ function Engine:isAttacked(board, x, y, byColor)
     for sx = 1, 8 do
       local piece = board[sy][sx]
       if piece ~= Engine.empty and self:isWhite(piece) == attackerIsWhite then
-        if rules[piece:upper()](board, sx, sy, x, y) then return true end
+        if attacksSquare(piece:upper(), board, sx, sy, x, y) then return true end
       end
     end
   end
@@ -209,4 +267,4 @@ function Engine:isChecking(board, color)
   return self:isAttacked(board, kingX, kingY, color == "white" and "black" or "white")
 end
 
-return Engine
+return Engine:new()

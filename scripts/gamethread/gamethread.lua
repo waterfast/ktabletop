@@ -4,26 +4,26 @@
 local class = ktabletop.class
 local GameRoom = require "gamethread.room"
 
--- Manages all game rooms running in this thread,
+-- Manages all game contexts running in this thread,
 ---@class GameThread: Object
----@field rooms table<integer, GameRoom>
+---@field contexts table<integer, GameRoom>
 local GameThread = class("GameThread")
 
 function GameThread:initialize()
-  self.rooms = {}
+  self.contexts = {}
 end
 
 ---@param roomId integer
 ---@return GameRoom
-function GameThread:registerRoom(roomId)
-  local room = GameRoom:new(roomId)
-  self.rooms[roomId] = room
-  return room
+function GameThread:registerContext(roomId)
+  local context = GameRoom:new(roomId)
+  self.contexts[roomId] = context
+  return context
 end
 
 ---@param roomId integer
-function GameThread:removeRoom(roomId)
-  self.rooms[roomId] = nil
+function GameThread:removeContext(roomId)
+  self.contexts[roomId] = nil
 end
 
 ---@param roomId integer
@@ -34,7 +34,7 @@ function GameThread:handleRequest(roomId, userId, command, data)
   ktabletop.log.info(("HandleRequest: roomId=%d userId=%d command=%s data=%s"):format(roomId, userId, command, ktabletop.json.encode(data)))
 
   if command == "newroom" then
-    self:registerRoom(data.id):run()
+    self:registerContext(data.id):run()
   end
 end
 

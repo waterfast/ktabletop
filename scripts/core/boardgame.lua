@@ -6,9 +6,9 @@ local class = ktabletop.class
 ---@class BoardGameSpec
 ---@field name string
 ---@field engine? table
----@field roomClass? Object
+---@field serverContextClass? Object
 ---@field logicClass? Object
----@field clientClass? Object
+---@field clientContextClass? Object
 ---@field page? { url?: string, uri?: string, name?: string }
 
 ---@class BoardGame: Object
@@ -19,9 +19,9 @@ function BoardGame:initialize(spec)
     "boardgame spec must have a string 'name'")
   self.name = spec.name
   self.engine = spec.engine
-  self.roomClass = spec.roomClass
+  self.serverContextClass = spec.serverContextClass
   self.logicClass = spec.logicClass
-  self.clientClass = spec.clientClass
+  self.clientContextClass = spec.clientContextClass
   self.page = spec.page
 end
 

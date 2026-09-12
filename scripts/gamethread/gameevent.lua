@@ -3,17 +3,18 @@
 
 local async = require "corelib.async"
 local class = ktabletop.class
+local contextRegistry = require "core.context-registry"
 
 -- TODO: event stack, recorder, cleaner, etc....
 
 ---@class GameEvent: Object
----@field room GameRoom
+---@field ctx GameContextBase
 ---@field data any
 ---@field func AsyncFunction?
 local GameEvent = class("GameEvent")
 
-function GameEvent:initialize(room, ...)
-  self.room = room
+function GameEvent:initialize(ctx, ...)
+  self.ctx = ctx
   self.data = table.pack(...)
   if self.data.n == 1 then self.data = self.data[1] end
 end
@@ -23,6 +24,7 @@ function GameEvent:main() end
 ---@return AsyncFunction
 function GameEvent:exec()
   self.func = async.async(self.main)(self)
+  contextRegistry.bind(self.func.coro, self.ctx)
   return self.func
 end
 

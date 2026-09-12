@@ -25,7 +25,7 @@ function GameRoom:gameOver()
   self.gameFinished = true
 
   ktabletop.log.info("GameOver")
-  ktabletop.gamethread:removeRoom(self.id)
+  ktabletop.gamethread:removeContext(self.id)
   self.logic.root:shutdown()
 end
 
