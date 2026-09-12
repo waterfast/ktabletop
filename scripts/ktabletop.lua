@@ -8,9 +8,12 @@
 ktabletop.json = require "3rdparty.json"
 ktabletop.class = require "3rdparty.middleclass"
 ktabletop.inspect = require "3rdparty.inspect"
+ktabletop.rand = require "3rdparty.xoshiro256starstar"
 
 ktabletop.tablib = require "corelib.tablib"
 ktabletop.strlib = require "corelib.strlib"
+
+math.randomseed(os.time())
 
 local BoardGameManager = require "core.boardgame-manager"
 ktabletop.boardgames = BoardGameManager:new()

@@ -6,6 +6,7 @@
 #include <QHash>
 #include <QHostAddress>
 #include <QObject>
+#include <QVariantMap>
 
 class LuaBinding;
 class ClientSocket;
@@ -31,7 +32,7 @@ public:
     GameThread *getAvailableGameThread();
 
     // TODO
-    void startGameRoom(int roomId);
+    void startGameRoom(int roomId, const QVariantMap &data);
 
 private:
     explicit Server(QObject *parent = nullptr);

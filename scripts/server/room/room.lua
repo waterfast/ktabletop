@@ -1,4 +1,5 @@
 local RoomBase = require "server.room.roombase"
+local tablib = ktabletop.tablib
 
 ---@class Room: ServerRoomBase
 ---@field owner ServerUser
@@ -98,8 +99,17 @@ function Room:handleStartGame(user)
   end
 
   self.gameStarted = true
-  -- TODO: impl
-  ktabletop.startGame(self.id)
+
+  local users = tablib.map(self.users, function(u)
+    return { connId = u.connId, id = u.id, username = u.username }
+  end)
+
+  ktabletop.startGame(self.id, {
+    id = self.id,
+    name = self.name,
+    capacity = self.capacity,
+    users = users,
+  })
 end
 
 ---@param user ServerUser

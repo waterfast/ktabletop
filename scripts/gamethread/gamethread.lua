@@ -2,22 +2,21 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local class = ktabletop.class
-local GameRoom = require "gamethread.room"
 
--- Manages all game contexts running in this thread,
 ---@class GameThread: Object
----@field contexts table<integer, GameRoom>
+---@field contexts table<integer, GameContextBase>
 local GameThread = class("GameThread")
 
 function GameThread:initialize()
   self.contexts = {}
 end
 
----@param roomId integer
----@return GameRoom
-function GameThread:registerContext(roomId)
-  local context = GameRoom:new(roomId)
-  self.contexts[roomId] = context
+---@param boardgame BoardGame
+---@param data table
+---@return GameContextBase
+function GameThread:registerContext(boardgame, data)
+  local context = boardgame.serverContextClass:new(data)
+  self.contexts[data.id] = context
   return context
 end
 
@@ -34,7 +33,8 @@ function GameThread:handleRequest(roomId, userId, command, data)
   ktabletop.log.info(("HandleRequest: roomId=%d userId=%d command=%s data=%s"):format(roomId, userId, command, ktabletop.json.encode(data)))
 
   if command == "newroom" then
-    self:registerContext(data.id):run()
+    local boardgame = ktabletop.boardgames:get("chess")
+    self:registerContext(boardgame, data):run()
   end
 end
 

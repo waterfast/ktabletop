@@ -24,7 +24,7 @@ static UserConnection *findConnectionById(lua_State *L, int connId)
     auto role = binding->role();
 
     UserConnection *conn = nullptr;
-    if (role == LuaBinding::Server) {
+    if (role == LuaBinding::Server || role == LuaBinding::GameThread) {
         conn = Server::instance()->findConnection(connId);
     } else {
         conn = Client::instance()->connection();
@@ -224,7 +224,8 @@ static int connectToHost(lua_State *L)
 static int startGame(lua_State *L)
 {
     int roomId = luaL_checkinteger(L, 1);
-    Server::instance()->startGameRoom(roomId);
+    QVariantMap data = LuaVM::readValue(L, 2).toMap();
+    Server::instance()->startGameRoom(roomId, data);
     return 0;
 }
 

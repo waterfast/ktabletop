@@ -83,11 +83,11 @@ GameThread *Server::getAvailableGameThread()
     return createGameThread();
 }
 
-void Server::startGameRoom(int roomId)
+void Server::startGameRoom(int roomId, const QVariantMap &data)
 {
     auto *thread = getAvailableGameThread();
     thread->addRoom(roomId);
-    thread->pushRequest(-1, 0, u"newroom"_s, {{u"id"_s, roomId}});
+    thread->pushRequest(roomId, 0, u"newroom"_s, data);
 }
 
 void Server::processNewConnection(ClientSocket *client)
