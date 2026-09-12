@@ -57,12 +57,6 @@ void MainViewModel::startSinglePlayer(const QString &username)
     Q_EMIT joinServerRequested(QStringLiteral("127.0.0.1"), port, username);
 }
 
-void MainViewModel::hostMultiPlayer(const QString &username, int port)
-{
-    Q_EMIT startServerRequested(static_cast<ushort>(port));
-    Q_EMIT joinServerRequested(QStringLiteral("127.0.0.1"), static_cast<ushort>(port), username);
-}
-
 void MainViewModel::joinMultiPlayer(const QString &address, int port, const QString &username)
 {
     Q_EMIT joinServerRequested(address, static_cast<ushort>(port), username);

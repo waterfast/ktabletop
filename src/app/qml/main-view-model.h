@@ -30,7 +30,6 @@ public:
     void setGameStarted(bool gameStarted);
 
     Q_INVOKABLE void startSinglePlayer(const QString &username);
-    Q_INVOKABLE void hostMultiPlayer(const QString &username, int port);
     Q_INVOKABLE void joinMultiPlayer(const QString &address, int port, const QString &username);
 
 Q_SIGNALS:
