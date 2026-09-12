@@ -38,7 +38,7 @@ end
 
 ---@param connId integer
 function Server:processNewConnection(connId)
-  async.async(function ()
+  async.run(function ()
     local requestFn = async.wrap(ktabletop.requestSocket)
     local ok, ret = async.await(requestFn(connId, "Auth::RequestUsername", json.encode({}), 10, -1))
 
@@ -50,7 +50,7 @@ function Server:processNewConnection(connId)
     local data = json.decode(ret)
     local user = self.userManager:createNewUser(connId, data and data.username)
     self.roomManager.lobby:addUser(user)
-  end)()
+  end)
 end
 
 ---@param connId integer

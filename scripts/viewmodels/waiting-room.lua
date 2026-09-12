@@ -49,28 +49,28 @@ function WaitingRoomViewModel:initialize(room)
 end
 
 function WaitingRoomViewModel:addRobot()
-  async.async(function()
+  async.run(function()
     self.myself:request("Room::AddRobot", {})
-  end)()
+  end)
 end
 
 function WaitingRoomViewModel:startGame()
-  async.async(function()
+  async.run(function()
     self.myself:request("Room::StartGame", {})
-  end)()
+  end)
 end
 
 function WaitingRoomViewModel:quitRoom()
-  async.async(function()
+  async.run(function()
     self.myself:request("Room::Quit", {})
-  end)()
+  end)
 end
 
 
 function WaitingRoomViewModel:sendChatMessage(text)
-  async.async(function()
+  async.run(function()
     self.myself:request("Room::Chat", { text = text })
-  end)()
+  end)
 end
 
 return WaitingRoomViewModel

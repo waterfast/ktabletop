@@ -114,7 +114,7 @@ end
 ---@param port integer
 function Client:connectToHost(host, port, username)
   self.pendingUsername = username or ""
-  async.async(function()
+  async.run(function()
     local wrapped = async.wrap(ktabletop.connectToHost)
     local ok, ret = async.await(wrapped(host, port))
 
@@ -126,7 +126,7 @@ function Client:connectToHost(host, port, username)
     else
       ktabletop.luaEvent("Client::Connected", {})
     end
-  end)()
+  end)
 end
 
 -- TODO: use similar logic of server side

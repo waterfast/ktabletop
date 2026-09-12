@@ -126,7 +126,7 @@ end
 function scheduler:finish(fn)
   self.coroutineMap[fn.coro] = nil
   local a = fn.caller
-  -- calling async function in sync code like async.async(func)()
+  -- calling async function in sync code like async.run(func, ...)
   if not a then
     if fn.state == "done" then
       return unpack(fn.results, 1, fn.results.n)
@@ -255,6 +255,12 @@ local M = {}
 function M.async(fn)
   ---@diagnostic disable-next-line
   return AsyncFunctionFactory.new(fn)
+end
+
+--- start an async function from sync context.
+---@param fn fun(...): any
+function M.run(fn, ...)
+  return M.async(fn)(...)
 end
 
 --- await for another async func, or wrapped awaitable func.

@@ -21,7 +21,7 @@ function Game:main()
 end
 
 function GameLogic:start()
-  async.async(function()
+  async.run(function()
     local root = Game:new(self.ctx)
     self.root = root
     local ok, errmsg = async.await(root:exec())
@@ -35,7 +35,7 @@ function GameLogic:start()
       end
       ctx:gameOver()
     end
-  end)()
+  end)
 end
 
 function GameLogic:run()

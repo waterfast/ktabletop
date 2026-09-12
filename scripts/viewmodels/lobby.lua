@@ -43,31 +43,31 @@ function LobbyViewModel:disconnectFromHost()
 end
 
 function LobbyViewModel:fetchRooms()
-  async.async(function()
+  async.run(function()
     local rooms = self.myself:request("Lobby::FetchRooms", {})
     table.sort(rooms, function(a, b) return a.id < b.id end)
     self.lobby.rooms = rooms
-  end)()
+  end)
 end
 
 function LobbyViewModel:joinRoom(roomId)
-  async.async(function()
+  async.run(function()
     self.myself:request("Room::Join", { id = roomId })
-  end)()
+  end)
 end
 
 function LobbyViewModel:createRoom(data)
-  async.async(function()
+  async.run(function()
     local p = self.myself
     local roomId = p:request("Room::Create", data)
     p:request("Room::Join", { id = roomId })
-  end)()
+  end)
 end
 
 function LobbyViewModel:sendChatMessage(text)
-  async.async(function()
+  async.run(function()
     self.myself:request("Room::Chat", { text = text })
-  end)()
+  end)
 end
 
 return LobbyViewModel
