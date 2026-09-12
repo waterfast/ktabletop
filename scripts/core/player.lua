@@ -44,14 +44,10 @@ function Player:request(command, data, timeout, timestamp, isJson)
 
   local requestFn = async.wrap(self._cpp.requestSocket)
   data = isJson and data or json.encode(data)
-  local ok, err, ret = async.await(requestFn(self.connId, command, data, timeout or 10, timestamp or -1))
+  local ok, ret = async.await(requestFn(self.connId, command, data, timeout or 10, timestamp or -1))
 
-  -- TODO: how to properly handle error messages in request sender...
   if not ok then
     ktabletop.log.critical(("request(%s): error from peer"):format(command), json.decode(ret))
-    return ""
-  elseif err then
-    ktabletop.log.critical("error from the server in Player:request:", ret)
     return ""
   else
     return json.decode(ret)

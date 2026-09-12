@@ -101,13 +101,12 @@ function scheduler:await(fn, ...)
     -- Slot function might be called immediately.
     local yielded = false
     local syncResults
-    local callback = function(err, ...)
-      local ok = not err
+    local callback = function(err, ret)
       if yielded then
         f.callee = nil
-        return self:resume(f, ok, err, ...)
+        return self:resume(f, not err, err or ret)
       else
-        syncResults = pack(ok, err, ...)
+        syncResults = { not err, err or ret }
       end
     end
     -- equals to call C++ function async_something(...args, callback)
@@ -115,7 +114,7 @@ function scheduler:await(fn, ...)
 
     if syncResults ~= nil then
       f.callee = nil
-      return unpack(syncResults, 1, syncResults.n)
+      return unpack(syncResults)
     end
     yielded = true
     -- will be resumed by callback.

@@ -93,12 +93,12 @@ function Client:connectToHost(host, port, username)
   self.pendingUsername = username or ""
   async.async(function()
     local wrapped = async.wrap(ktabletop.connectToHost)
-    local ok, err = async.await(wrapped(host, port))
+    local ok, ret = async.await(wrapped(host, port))
 
-    if not ok or err then
-      ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(err)))
-      ktabletop.luaEvent("Client::ConnectError", { 
-        error = tostring(err or "Unknown error") 
+    if not ok then
+      ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
+      ktabletop.luaEvent("Client::ConnectError", {
+        error = tostring(ret or "Unknown error")
       })
     else
       ktabletop.luaEvent("Client::Connected", {})
@@ -142,7 +142,7 @@ local requestDispatcher = async.async(function(client, connId, requestId, comman
 
   local handler = fn(client, player, data)
   player.handlingRequests[requestId] = handler
-  local ok, reply, err = async.await(handler)
+  local ok, reply = async.await(handler)
 
   -- canceled by the peer: the registry entry has been removed, do not reply
   if player.handlingRequests[requestId] == nil then
@@ -152,8 +152,6 @@ local requestDispatcher = async.async(function(client, connId, requestId, comman
 
   if not ok then
     player:reply(false, requestId, reply)
-  elseif err then
-    player:reply(false, requestId, err)
   else
     player:reply(true, requestId, reply)
   end

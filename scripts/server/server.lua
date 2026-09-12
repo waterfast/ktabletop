@@ -43,10 +43,10 @@ end
 function Server:processNewConnection(connId)
   async.async(function ()
     local requestFn = async.wrap(ktabletop.requestSocket)
-    local ok, err, ret = async.await(requestFn(connId, "Auth::RequestUsername", json.encode({}), 10, -1))
+    local ok, ret = async.await(requestFn(connId, "Auth::RequestUsername", json.encode({}), 10, -1))
 
-    if not ok or err then
-      ktabletop.log.warn(("connId %d: failed to request username or time out"):format(connId))
+    if not ok then
+      ktabletop.log.warn(("connId %d: failed to request username: %s"):format(connId, ret))
       return
     end
 
@@ -117,7 +117,7 @@ local requestDispatcher = async.async(function(server, player, requestId, comman
 
   local handler = fn(arg1, player, data)
   player.handlingRequests[requestId] = handler
-  local ok, reply, err = async.await(handler)
+  local ok, reply = async.await(handler)
 
   -- canceled by the peer: the registry entry has been removed, do not reply
   if player.handlingRequests[requestId] == nil then
@@ -127,8 +127,6 @@ local requestDispatcher = async.async(function(server, player, requestId, comman
 
   if not ok then
     player:reply(false, requestId, reply)
-  elseif err then
-    player:reply(false, requestId, err)
   else
     player:reply(true, requestId, reply)
   end
