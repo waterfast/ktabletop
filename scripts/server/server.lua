@@ -3,6 +3,7 @@
 
 local async = require "corelib.async"
 local class = ktabletop.class
+local json = ktabletop.json
 
 local PlayerManager = require "server.user.player-manager"
 local RoomManager = require "server.room.room-manager"
@@ -40,8 +41,19 @@ end
 
 ---@param connId integer
 function Server:processNewConnection(connId)
-  local player = self.playerManager:createNewPlayer(connId)
-  self.roomManager.lobby:addPlayer(player)
+  async.async(function ()
+    local requestFn = async.wrap(ktabletop.requestSocket)
+    local ok, err, ret = async.await(requestFn(connId, "Auth::RequestUsername", json.encode({}), 10, -1))
+
+    if not ok or err then
+      ktabletop.log.warn(("connId %d: failed to request username or time out"):format(connId))
+      return
+    end
+
+    local data = json.decode(ret)
+    local player = self.playerManager:createNewPlayer(connId, data and data.username)
+    self.roomManager.lobby:addPlayer(player)
+  end)()
 end
 
 ---@param connId integer

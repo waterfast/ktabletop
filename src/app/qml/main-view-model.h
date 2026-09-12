@@ -29,8 +29,9 @@ public:
     bool gameStarted() const;
     void setGameStarted(bool gameStarted);
 
-    Q_INVOKABLE void startSinglePlayer();
-    Q_INVOKABLE void startMultiPlayer();
+    Q_INVOKABLE void startSinglePlayer(const QString &username);
+    Q_INVOKABLE void hostMultiPlayer(const QString &username, int port);
+    Q_INVOKABLE void joinMultiPlayer(const QString &address, int port, const QString &username);
 
 Q_SIGNALS:
     void connectedChanged(bool connected);
@@ -38,7 +39,7 @@ Q_SIGNALS:
     void gameStartedChanged(bool gameStarted);
 
     void startServerRequested(ushort port);
-    void joinServerRequested(const QString &address, ushort port);
+    void joinServerRequested(const QString &address, ushort port, const QString &username);
 
 private:
     bool m_connected = false;

@@ -17,10 +17,10 @@ end
 
 ---@param connId integer
 ---@return ServerPlayer
-function PlayerManager:createNewPlayer(connId)
+function PlayerManager:createNewPlayer(connId, username)
   local player = ServerPlayer:new(connId)
   player.id = connId
-  player.username = "guest" .. connId
+  player.username = (username ~= nil and username ~= "") and username or ("guest" .. connId)
   player.state = "online"
 
   self:addPlayer(player)

@@ -17,6 +17,7 @@ local Client = class("Client")
 function Client:initialize()
   self._notificationHandlers = {}
   self._requestHandlers = {}
+  self.pendingUsername = ""
 
   self.myself = ClientPlayer:new()
   self.lobby = ClientLobby:new()
@@ -26,6 +27,7 @@ function Client:initialize()
   self:setCallback("Lobby::UpdateOnlineInfo", self.updateOnlineInfo)
 
   self:setCallback("Room::Enter", self.enterRoom)
+  self:setRequestHandler("Auth::RequestUsername", self.handleAuthRequest)
 end
 
 ---@param cmd string
@@ -77,19 +79,27 @@ function Client:enterRoom(_, data)
   ktabletop.luaEvent("Client::EnterRoom", data)
 end
 
+function Client:handleAuthRequest(_, _)
+  return { username = self.pendingUsername }
+end
+
 ----------------------------------------------------------
 --- Below methods are called from C++ code.
 ----------------------------------------------------------
 
 ---@param host string
 ---@param port integer
-function Client:connectToHost(host, port)
+function Client:connectToHost(host, port, username)
+  self.pendingUsername = username or ""
   async.async(function()
     local wrapped = async.wrap(ktabletop.connectToHost)
-    local _, err = async.await(wrapped(host, port))
+    local ok, err = async.await(wrapped(host, port))
 
-    if err then
-      ktabletop.luaEvent("Client::ConnectError", { error = err })
+    if not ok or err then
+      ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(err)))
+      ktabletop.luaEvent("Client::ConnectError", { 
+        error = tostring(err or "Unknown error") 
+      })
     else
       ktabletop.luaEvent("Client::Connected", {})
     end
@@ -123,6 +133,7 @@ end
 local requestDispatcher = async.async(function(client, connId, requestId, command, data)
   local player = client.myself
   assert(player, ("cannot find player of connId %d in request #%d"):format(connId, requestId))
+  player.connId = connId
 
   local fn = client._requestHandlers[command]
   if not fn then
