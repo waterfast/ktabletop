@@ -31,7 +31,7 @@ Kirigami.ApplicationWindow {
                 name: "lobby"
                 when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId === 0
                 PropertyChanges {
-                    root.pageStack.items: [root.createLuaPage("org.kde.ktabletop", "LobbyPage", { type: "lobby" })]
+                    root.pageStack.items: [root.createLuaPage("org.kde.ktabletop", "LobbyPage", { objectName: Backend.mainViewModel.lobbyViewModelName })]
                 }
             },
 
@@ -40,7 +40,7 @@ Kirigami.ApplicationWindow {
                 when: Backend.mainViewModel.connected && !Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId !== 0
 
                 PropertyChanges {
-                    root.pageStack.items: [root.createLuaPage("org.kde.ktabletop", "WaitingRoomPage", { type: "waiting-room" })]
+                    root.pageStack.items: [root.createLuaPage("org.kde.ktabletop", "WaitingRoomPage", { objectName: Backend.mainViewModel.roomViewModelName })]
                 }
             },
 

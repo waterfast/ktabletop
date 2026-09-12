@@ -36,6 +36,34 @@ void MainViewModel::setRoomId(int roomId)
     Q_EMIT roomIdChanged(m_roomId);
 }
 
+QString MainViewModel::lobbyViewModelName() const
+{
+    return m_lobbyViewModelName;
+}
+
+void MainViewModel::setLobbyViewModelName(const QString &name)
+{
+    if (m_lobbyViewModelName == name) {
+        return;
+    }
+    m_lobbyViewModelName = name;
+    Q_EMIT lobbyViewModelNameChanged(m_lobbyViewModelName);
+}
+
+QString MainViewModel::roomViewModelName() const
+{
+    return m_roomViewModelName;
+}
+
+void MainViewModel::setRoomViewModelName(const QString &name)
+{
+    if (m_roomViewModelName == name) {
+        return;
+    }
+    m_roomViewModelName = name;
+    Q_EMIT roomViewModelNameChanged(m_roomViewModelName);
+}
+
 bool MainViewModel::gameStarted() const
 {
     return m_gameStarted;

@@ -7,7 +7,7 @@ import org.kde.kirigami as Kirigami
 ColumnLayout {
     id: root
 
-    required property var messages
+    property ListModel messages: ListModel {}
     required property int selfId
     signal sendRequested(string text)
 
@@ -33,7 +33,6 @@ ColumnLayout {
 
             delegate: ColumnLayout {
                 id: msgDelegate
-                required property var modelData
                 width: listView.width
                 spacing: 0
 
@@ -41,15 +40,15 @@ ColumnLayout {
                     spacing: Kirigami.Units.smallSpacing
 
                     QQC2.Label {
-                        text: msgDelegate.modelData.username 
+                        text: model.username
                         font.bold: true
-                        color: msgDelegate.modelData.id === root.selfId
+                        color: model.id === root.selfId
                             ? Kirigami.Theme.linkColor
                             : Kirigami.Theme.textColor
                     }
 
                     QQC2.Label {
-                        text: Qt.formatTime(new Date(msgDelegate.modelData.timestamp * 1000), "hh:mm")
+                        text: Qt.formatTime(new Date(model.timestamp * 1000), "hh:mm")
                         opacity: 0.5
                         font: Kirigami.Theme.smallFont
                     }
@@ -57,7 +56,7 @@ ColumnLayout {
 
                 QQC2.Label {
                     Layout.fillWidth: true
-                    text: msgDelegate.modelData.text
+                    text: model.text
                     wrapMode: Text.Wrap
                 }
             }

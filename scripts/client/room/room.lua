@@ -2,30 +2,33 @@ local RoomBase = require "core.room-base"
 local LObject = require "corelib.lobject"
 local ClientUser = require "client.user"
 
-local tablib = ktabletop.tablib
-
 ---@class ClientRoom: RoomBase, LObject
 ---@field users ClientUser[]
 ---@field observers ClientUser[]
 ---@field owner ClientUser
----@field messages { id: integer, username: string, text: string, timestamp: integer }[]
+---@field vm WaitingRoomViewModel
 ---@field findUserById fun(self, id): ClientUser
 local ClientRoom = RoomBase:subclass("ClientRoom")
 ClientRoom:include(LObject)
 
 ClientRoom:Property("users")
 ClientRoom:Property("owner")
-ClientRoom:Property("messages")
 
 function ClientRoom:initialize()
   RoomBase.initialize(self)
-
-  self.messages = {}
 
   self:setCallback("Room::Owner", self.setOwner)
   self:setCallback("Room::AddUser", self.handleAddUser)
   self:setCallback("Room::RemoveUser", self.handleRemoveUser)
   self:setCallback("Room::ChatMessage", self.handleChatMessage)
+end
+
+function ClientRoom:setupViewModel()
+  ---@diagnostic disable-next-line
+  self.vm = ktabletop.viewModelManager:getViewModel({
+    type = "waiting-room",
+    params = { self },
+  })
 end
 
 ---@param user ClientUser
@@ -62,16 +65,7 @@ function ClientRoom:handleRemoveUser(_, data)
 end
 
 function ClientRoom:handleChatMessage(_, data)
-  local msgs = {}
-  msgs[1] = data
-
-  for i = 1, #self.messages do
-    msgs[i + 1] = self.messages[i]
-  end
-
-  self.messages = msgs
-
-  self:notifyPropertyChanged("messages")
+  self.vm:emitSignal("chatMessage", data)
 end
 
 return ClientRoom

@@ -63,17 +63,24 @@ void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVaria
 {
     auto *vm = m_backend->mainViewModel();
     if (sig == u"Client::EnterLobby"_s) {
+        const QVariantMap map = data.toMap();
+        vm->setLobbyViewModelName(map.value(u"viewModelName"_s).toString());
         vm->setRoomId(0);
         vm->setGameStarted(false);
         vm->setConnected(true);
+        vm->setRoomViewModelName(QString());
         m_backend->enterLobby();
     } else if (sig == u"Client::DisconnectFromHost"_s) {
         vm->setConnected(false);
+        vm->setLobbyViewModelName(QString());
+        vm->setRoomViewModelName(QString());
         vm->setRoomId(0);
         vm->setGameStarted(false);
         Client::instance()->connection()->socket()->socket()->disconnectFromHost();
     } else if (sig == u"Client::EnterRoom"_s) {
-        vm->setRoomId(data.toMap()[u"id"_s].toInt());
+        const QVariantMap map = data.toMap();
+        vm->setRoomViewModelName(map.value(u"viewModelName"_s).toString());
+        vm->setRoomId(map.value(u"id"_s).toInt());
         vm->setGameStarted(false);
     }
 }

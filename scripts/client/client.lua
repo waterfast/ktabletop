@@ -59,7 +59,12 @@ end
 function Client:enterLobby()
   self.myself.roomId = 0
   self.room = nil
-  ktabletop.luaEvent("Client::EnterLobby", nil)
+
+  self.lobby:setupViewModel()
+
+  ktabletop.luaEvent("Client::EnterLobby", {
+    viewModelName = self.lobby.vm._stringId,
+  })
 end
 
 function Client:updateOnlineInfo(_, data)
@@ -75,8 +80,9 @@ function Client:enterRoom(_, data)
   self.room = room
 
   room:addUser(self.myself)
+  room:setupViewModel()
 
-  -- OK let's tell GUI
+  data.viewModelName = room.vm._stringId
   ktabletop.luaEvent("Client::EnterRoom", data)
 end
 

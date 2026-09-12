@@ -25,14 +25,14 @@ end
 --- }
 ---@return LObject?
 function ViewModelManager:getViewModel(opts)
-  assert(type(opts) == "table" and opts.type, "opts must contain a 'type'")
+  assert(type(opts) == "table", "opts must be a table")
 
   local objectName = opts.objectName
   if objectName then
-    local existing = self._instances[objectName]
-    return existing
+    return self._instances[objectName]
   end
 
+  assert(opts.type, "opts must contain a 'type'")
   local klass = self._types[opts.type]
   assert(klass, ("view model type '%s' is not registered"):format(tostring(opts.type)))
 

@@ -165,6 +165,16 @@ Kirigami.ScrollablePage {
         onAccepted: root.d.invoke("disconnectFromHost");
     }
 
+    Connections {
+        target: root.d
+
+        function onSignalEmitted(name, data) {
+            if (name === "chatMessage") {
+                chatPanel.messages.insert(0, data)
+            }
+        }
+    }
+
     Kirigami.OverlayDrawer {
         id: chatDrawer
         edge: Qt.RightEdge
@@ -172,9 +182,9 @@ Kirigami.ScrollablePage {
         width: Kirigami.Units.gridUnit * 18
 
         contentItem: ChatPanel {
+            id: chatPanel
             anchors.fill: parent
             anchors.margins: Kirigami.Units.smallSpacing
-            messages: root.d.messages
             selfId: root.d.selfId
             onSendRequested: text => d.invoke("sendChatMessage", [text])
         }
