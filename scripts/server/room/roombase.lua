@@ -1,6 +1,3 @@
--- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
--- SPDX-License-Identifier: LGPL-2.1-or-later
-
 local RoomBase = require "core.room-base"
 
 local json = ktabletop.json
@@ -10,8 +7,8 @@ local utf8 = require("utf8")
 local MAX_CHAT_LENGTH = 500
 
 ---@class ServerRoomBase: RoomBase
----@field players ServerPlayer[]
----@field observers ServerPlayer[]
+---@field users ServerUser[]
+---@field observers ServerUser[]
 local ServerRoomBase = RoomBase:subclass("ServerRoomBase")
 
 function ServerRoomBase:initialize()
@@ -19,12 +16,12 @@ function ServerRoomBase:initialize()
     self:setRequestHandler("Room::Chat", self.handleChat)
 end
 
----@param players Player[]
+---@param users User[]
 ---@param command string
 ---@param data any
-function ServerRoomBase:broadcastNotify(players, command, data)
+function ServerRoomBase:broadcastNotify(users, command, data)
   local jsonData = json.encode(data)
-  for _, p in ipairs(players) do
+  for _, p in ipairs(users) do
     p:notify(command, jsonData, true)
   end
 end
@@ -32,14 +29,14 @@ end
 ---@param command string
 ---@param data any
 function ServerRoomBase:broadcast(command, data)
-  local players = { table.unpack(self.players) }
-  tablib.push(players, table.unpack(self.observers))
-  self:broadcastNotify(players, command, data)
+  local users = { table.unpack(self.users) }
+  tablib.push(users, table.unpack(self.observers))
+  self:broadcastNotify(users, command, data)
 end
 
----@param player ServerPlayer
+---@param user ServerUser
 ---@param data { text: string }
-function ServerRoomBase:handleChat(player, data)
+function ServerRoomBase:handleChat(user, data)
   local text = data and data.text
 
   if type(text) ~= "string" or text == "" then
@@ -60,8 +57,8 @@ function ServerRoomBase:handleChat(player, data)
   end
 
   self:broadcast("Room::ChatMessage", {
-    id = player.id,
-    username = player.username,
+    id = user.id,
+    username = user.username,
     text = text,
     timestamp = os.time()
   })

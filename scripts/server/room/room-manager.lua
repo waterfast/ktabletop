@@ -16,7 +16,7 @@ function RoomManager:initialize()
   self.lobby = Lobby:new()
 end
 
----@param sender ServerPlayer
+---@param sender ServerUser
 ---@param name string
 ---@param capacity integer
 ---@return Room

@@ -2,18 +2,18 @@ local RoomBase = require "core.room-base"
 local LObject = require "corelib.lobject"
 
 ---@class ClientLobby: RoomBase, LObject
----@field playerCount integer
+---@field userCount integer
 ---@field messages { id: integer, username: string, text: string, timestamp: integer }[]
 local ClientLobby = RoomBase:subclass("ClientLobby")
 ClientLobby:include(LObject)
-ClientLobby:Property("playerCount")
+ClientLobby:Property("userCount")
 ClientLobby:Property("rooms")
 ClientLobby:Property("messages")
 
 function ClientLobby:initialize()
   RoomBase.initialize(self)
 
-  self.playerCount = 0
+  self.userCount = 0
   self.rooms = {}
   self.messages = {}
 

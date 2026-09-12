@@ -1,0 +1,60 @@
+-- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
+-- SPDX-License-Identifier: LGPL-2.1-or-later
+
+local ServerUser = require "server.user"
+
+local class = ktabletop.class
+
+---@class UserManager: Object
+---@field private users table<integer, ServerUser>
+local UserManager = class("UserManager")
+
+---@param server Server
+function UserManager:initialize(server)
+  self.server = server
+  self.users = {}
+end
+
+---@param connId integer
+---@return ServerUser
+function UserManager:createNewUser(connId, username)
+  local user = ServerUser:new(connId)
+  user.id = connId
+  user.username = (username ~= nil and username ~= "") and username or ("guest" .. connId)
+  user.state = "online"
+
+  self:addUser(user)
+  user:notify("User::Setup", { id = user.id, username = user.username })
+  return user
+end
+
+local nextRobotId = -2
+function UserManager:createRobot()
+  local robot = ServerUser:new(0)
+  robot.state = "robot"
+  robot.id = nextRobotId
+  nextRobotId = nextRobotId - 1
+  robot.username = ("COMP%d"):format(robot.id)
+  -- TODO: ready = true
+
+  self:addUser(robot)
+  return robot
+end
+
+---@param user ServerUser
+function UserManager:addUser(user)
+  self.users[user.connId] = user
+end
+
+---@param connId integer
+function UserManager:removeUser(connId)
+  self.users[connId] = nil
+end
+
+---@param connId integer
+---@return ServerUser?
+function UserManager:findUser(connId)
+  return self.users[connId]
+end
+
+return UserManager

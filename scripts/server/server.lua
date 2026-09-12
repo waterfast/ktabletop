@@ -1,15 +1,12 @@
--- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
--- SPDX-License-Identifier: LGPL-2.1-or-later
-
 local async = require "corelib.async"
 local class = ktabletop.class
 local json = ktabletop.json
 
-local PlayerManager = require "server.user.player-manager"
+local UserManager = require "server.user-manager"
 local RoomManager = require "server.room.room-manager"
 
 ---@class Server: Object
----@field playerManager PlayerManager
+---@field userManager UserManager
 ---@field roomManager RoomManager
 local Server = class("Server")
 
@@ -17,19 +14,19 @@ function Server:initialize()
   self._notificationHandlers = {}
   self._requestHandlers = {}
 
-  self.playerManager = PlayerManager:new(self)
+  self.userManager = UserManager:new(self)
   self.roomManager = RoomManager:new()
 end
 
 ---@param cmd string
----@param cb fun(self: Server, player: Player, data: any)
+---@param cb fun(self: Server, user: User, data: any)
 function Server:setCallback(cmd, cb)
   assert(self._notificationHandlers[cmd] == nil)
   self._notificationHandlers[cmd] = cb
 end
 
 ---@param cmd string
----@param cb fun(self: Server, player: Player, data: any): any, string?
+---@param cb fun(self: Server, user: User, data: any): any, string?
 function Server:setRequestHandler(cmd, cb)
   assert(self._requestHandlers[cmd] == nil)
   self._requestHandlers[cmd] = async.async(cb)
@@ -51,58 +48,58 @@ function Server:processNewConnection(connId)
     end
 
     local data = json.decode(ret)
-    local player = self.playerManager:createNewPlayer(connId, data and data.username)
-    self.roomManager.lobby:addPlayer(player)
+    local user = self.userManager:createNewUser(connId, data and data.username)
+    self.roomManager.lobby:addUser(user)
   end)()
 end
 
 ---@param connId integer
 function Server:processDisconnected(connId)
-  local player = self.playerManager:findPlayer(connId)
-  if not player then
+  local user = self.userManager:findUser(connId)
+  if not user then
     return
   end
 
-  ktabletop.log.info(string.format("Player %s disconnected", player.username))
+  ktabletop.log.info(string.format("User %s disconnected", user.username))
 
   -- clear first so resumed dispatchers skip replying on a dead socket
-  local requests = player.handlingRequests
-  player.handlingRequests = {}
+  local requests = user.handlingRequests
+  user.handlingRequests = {}
   for _, f in pairs(requests) do
     async.cancel(f)
   end
 
-  local room = self.roomManager:findRoomOrLobby(player.roomId)
-  if room then room:removePlayer(player) end
-  self.playerManager:removePlayer(connId)
+  local room = self.roomManager:findRoomOrLobby(user.roomId)
+  if room then room:removeUser(user) end
+  self.userManager:removeUser(connId)
 end
 
 ---@param connId integer
 ---@param command string
 ---@param data any
 function Server:processNotification(connId, command, data)
-  local player = self.playerManager:findPlayer(connId)
-  if not player then return end
+  local user = self.userManager:findUser(connId)
+  if not user then return end
 
   local f = self._notificationHandlers[command]
   if f then
-    return f(self, player, data)
+    return f(self, user, data)
   end
 
-  local room = self.roomManager:findRoomOrLobby(player.roomId)
+  local room = self.roomManager:findRoomOrLobby(user.roomId)
   if not room then return end
 
   f = room._notificationHandlers[command]
   if f then
-    return f(room, player, data)
+    return f(room, user, data)
   end
 end
 
-local requestDispatcher = async.async(function(server, player, requestId, command, data)
+local requestDispatcher = async.async(function(server, user, requestId, command, data)
   local fn = server._requestHandlers[command]
   local arg1 = server
   if not fn then
-    local room = server.roomManager:findRoomOrLobby(player.roomId)
+    local room = server.roomManager:findRoomOrLobby(user.roomId)
     if room then
       fn = room._requestHandlers[command]
       arg1 = room
@@ -111,24 +108,24 @@ local requestDispatcher = async.async(function(server, player, requestId, comman
 
   if not fn then
     -- must reply an error message here. the peer is waiting for reply.
-    player:reply(false, requestId, ("no match requestHandler for request '%s'"):format(command))
+    user:reply(false, requestId, ("no match requestHandler for request '%s'"):format(command))
     return
   end
 
-  local handler = fn(arg1, player, data)
-  player.handlingRequests[requestId] = handler
+  local handler = fn(arg1, user, data)
+  user.handlingRequests[requestId] = handler
   local ok, reply = async.await(handler)
 
   -- canceled by the peer: the registry entry has been removed, do not reply
-  if player.handlingRequests[requestId] == nil then
+  if user.handlingRequests[requestId] == nil then
     return
   end
-  player.handlingRequests[requestId] = nil
+  user.handlingRequests[requestId] = nil
 
   if not ok then
-    player:reply(false, requestId, reply)
+    user:reply(false, requestId, reply)
   else
-    player:reply(true, requestId, reply)
+    user:reply(true, requestId, reply)
   end
 end)
 
@@ -137,9 +134,9 @@ end)
 ---@param command string
 ---@param data any
 function Server:processRequest(connId, requestId, command, data)
-  local player = self.playerManager:findPlayer(connId)
-  if not player then return end
-  requestDispatcher(self, player, requestId, command, data)
+  local user = self.userManager:findUser(connId)
+  if not user then return end
+  requestDispatcher(self, user, requestId, command, data)
 end
 
 return Server

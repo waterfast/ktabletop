@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
+-- SPDX-License-Identifier: LGPL-2.1-or-later
+
 local async = require "corelib.async"
 
 local class = ktabletop.class
@@ -5,17 +8,17 @@ local json = ktabletop.json
 
 ---@alias OnlineState "invalid"|"online"|"trust"|"run"|"robot"|"offline"
 
----@class Player: Object
+---@class User: Object
 ---@field connId integer My socket
 ---@field id integer
 ---@field username string
 ---@field roomId integer
 ---@field state OnlineState
 ---@field handlingRequests table<integer, AsyncFunction> requestId -> running handler
-local Player = class("Player")
+local User = class("User")
 
 ---@param connId integer
-function Player:initialize(connId)
+function User:initialize(connId)
   self.connId = connId
   self.id = connId
   self._cpp = ktabletop
@@ -26,7 +29,7 @@ end
 ---@param command string
 ---@param data any
 ---@param isJson? boolean if true, should not json.encode here
-function Player:notify(command, data, isJson)
+function User:notify(command, data, isJson)
   assert(type(data) ~= "table" or data[1] == nil, "do not use array as data!")
   if self.state ~= "online" then return end
   self._cpp.notifySocket(self.connId, command, isJson and data or json.encode(data))
@@ -38,7 +41,7 @@ end
 ---@param timestamp? integer
 ---@param isJson? boolean if true, should not json.encode here
 ---@return any
-function Player:request(command, data, timeout, timestamp, isJson)
+function User:request(command, data, timeout, timestamp, isJson)
   assert(type(data) ~= "table" or data[1] == nil, "do not use array as data!")
   if self.state ~= "online" then return "" end
 
@@ -58,8 +61,8 @@ end
 ---@param requestId integer
 ---@param data any
 ---@param isJson? boolean if true, should not json.encode here
-function Player:reply(ok, requestId, data, isJson)
+function User:reply(ok, requestId, data, isJson)
   self._cpp.replySocket(self.connId, requestId, ok, isJson and data or json.encode(data))
 end
 
-return Player
+return User

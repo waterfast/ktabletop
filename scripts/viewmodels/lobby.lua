@@ -6,11 +6,11 @@ local async = require "corelib.async"
 local tablib = ktabletop.tablib
 
 ---@class LobbyViewModel: Object, LObject
----@field playerCount integer
+---@field userCount integer
 local LobbyViewModel = ktabletop.class("LobbyViewModel")
 LobbyViewModel:include(LObject)
 
-LobbyViewModel:Property("playerCount")
+LobbyViewModel:Property("userCount")
 LobbyViewModel:Property("rooms")
 LobbyViewModel:Property("selfId")
 LobbyViewModel:Property("messages")
@@ -22,8 +22,8 @@ LobbyViewModel:Invokable("createRoom")
 LobbyViewModel:Invokable("sendChatMessage")
 
 function LobbyViewModel:initialize()
-  self:setPropertyBinding("playerCount", function()
-    return ktabletop.client.lobby.playerCount
+  self:setPropertyBinding("userCount", function()
+    return ktabletop.client.lobby.userCount
   end)
   self:setPropertyBinding("rooms", function()
     return ktabletop.client.lobby.rooms

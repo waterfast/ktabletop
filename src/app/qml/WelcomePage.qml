@@ -83,7 +83,7 @@ Kirigami.Page {
             QQC2.TextField {
                 id: spUsername
                 Kirigami.FormData.label: i18n("Username:")
-                text: "Player" + Math.floor(Math.random() * 1000)
+                text: "User" + Math.floor(Math.random() * 1000)
             }
         }
     }

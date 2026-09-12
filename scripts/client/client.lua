@@ -4,16 +4,15 @@
 local async = require "corelib.async"
 local class = ktabletop.class
 
-local ClientPlayer = require "client.user.player"
+local ClientUser = require "client.user"
 local ClientLobby = require "client.room.lobby"
 local ClientRoom = require "client.room.room"
-local ClientGameRoom = require "client.room.game-room"
 
 ---@class Client: Object
----@field myself ClientPlayer
+---@field myself ClientUser
 ---@field lobby ClientLobby
 ---@field room ClientRoom
----@field gameRoom ClientGameRoom?
+---@field gameRoom Object?
 local Client = class("Client")
 
 function Client:initialize()
@@ -21,10 +20,10 @@ function Client:initialize()
   self._requestHandlers = {}
   self.pendingUsername = ""
 
-  self.myself = ClientPlayer:new()
+  self.myself = ClientUser:new()
   self.lobby = ClientLobby:new()
 
-  self:setCallback("Player::Setup", self.setupPlayer)
+  self:setCallback("User::Setup", self.setupUser)
   self:setCallback("Lobby::Enter", self.enterLobby)
   self:setCallback("Lobby::UpdateOnlineInfo", self.updateOnlineInfo)
 
@@ -33,24 +32,24 @@ function Client:initialize()
 end
 
 ---@param cmd string
----@param cb fun(self: Client, player: Player, data: any)
+---@param cb fun(self: Client, user: User, data: any)
 function Client:setCallback(cmd, cb)
   assert(self._notificationHandlers[cmd] == nil)
   self._notificationHandlers[cmd] = cb
 end
 
 ---@param cmd string
----@param cb fun(self: Client, player: Player, data: any): any, string?
+---@param cb fun(self: Client, user: User, data: any): any, string?
 function Client:setRequestHandler(cmd, cb)
   assert(self._requestHandlers[cmd] == nil)
   self._requestHandlers[cmd] = async.async(cb)
 end
 
--- helper functions that does work from playerManager & roomManager
--- since there's only one special player (myself) and my room
+-- helper functions that does work from userManager & roomManager
+-- since there's only one special user (myself) and my room
 
-function Client:setupPlayer(_, data)
-  self.myself = ClientPlayer:new()
+function Client:setupUser(_, data)
+  self.myself = ClientUser:new()
   self.myself.connId = 1001
   self.myself.id = data.id
   self.myself.state = "online"
@@ -64,7 +63,7 @@ function Client:enterLobby()
 end
 
 function Client:updateOnlineInfo(_, data)
-  self.lobby.playerCount = data.onlinePlayers
+  self.lobby.userCount = data.onlineUsers
 end
 
 function Client:enterRoom(_, data)
@@ -75,7 +74,7 @@ function Client:enterRoom(_, data)
 
   self.room = room
 
-  room:addPlayer(self.myself)
+  room:addUser(self.myself)
 
   -- OK let's tell GUI
   ktabletop.luaEvent("Client::EnterRoom", data)
@@ -86,7 +85,8 @@ end
 function Client:enterGame(gameType, data)
   gameType = gameType or "chess"
   local bg = ktabletop.boardgames:get(gameType)
-  local klass = (bg and bg.clientClass) or ClientGameRoom
+  local klass = bg and bg.clientClass
+  assert(klass, ("no clientClass for boardgame '%s'"):format(gameType))
   self.gameRoom = klass:new(gameType, data)
   ktabletop.luaEvent("Client::EnterGame", data)
 end
@@ -130,47 +130,47 @@ end
 ---@param command string
 ---@param data any
 function Client:processNotification(connId, command, data)
-  local player = self.myself
-  if not player then return end
+  local user = self.myself
+  if not user then return end
 
   local f = self._notificationHandlers[command]
   if f then
-    return f(self, player, data)
+    return f(self, user, data)
   end
 
-  local room = player.roomId == 0 and self.lobby or self.room
+  local room = user.roomId == 0 and self.lobby or self.room
   if not room then return end
 
   f = room._notificationHandlers[command]
   if f then
-    return f(room, player, data)
+    return f(room, user, data)
   end
 end
 
 local requestDispatcher = async.async(function(client, connId, requestId, command, data)
-  local player = client.myself
-  assert(player, ("cannot find player of connId %d in request #%d"):format(connId, requestId))
-  player.connId = connId
+  local user = client.myself
+  assert(user, ("cannot find user of connId %d in request #%d"):format(connId, requestId))
+  user.connId = connId
 
   local fn = client._requestHandlers[command]
   if not fn then
     return
   end
 
-  local handler = fn(client, player, data)
-  player.handlingRequests[requestId] = handler
+  local handler = fn(client, user, data)
+  user.handlingRequests[requestId] = handler
   local ok, reply = async.await(handler)
 
   -- canceled by the peer: the registry entry has been removed, do not reply
-  if player.handlingRequests[requestId] == nil then
+  if user.handlingRequests[requestId] == nil then
     return
   end
-  player.handlingRequests[requestId] = nil
+  user.handlingRequests[requestId] = nil
 
   if not ok then
-    player:reply(false, requestId, reply)
+    user:reply(false, requestId, reply)
   else
-    player:reply(true, requestId, reply)
+    user:reply(true, requestId, reply)
   end
 end)
 

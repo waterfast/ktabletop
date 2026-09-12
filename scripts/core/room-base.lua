@@ -6,13 +6,13 @@ local async = require "corelib.async"
 ---@field id integer
 ---@field name string
 ---@field capacity integer
----@field players Player[]
----@field observers Player[]
+---@field users User[]
+---@field observers User[]
 local RoomBase = class("RoomBase")
 
 function RoomBase:initialize()
   self.id = 0
-  self.players = {}
+  self.users = {}
   self.observers = {}
 
   self._notificationHandlers = {}
@@ -33,36 +33,36 @@ function RoomBase:setRequestHandler(cmd, cb)
   self._requestHandlers[cmd] = async.async(cb)
 end
 
--- Peer asked to cancel the running request handler `requestId` of `player`.
----@param player Player
+-- Peer asked to cancel the running request handler `requestId` of `user`.
+---@param user User
 ---@param data { requestId: integer }
-function RoomBase:handleCancelRequest(player, data)
+function RoomBase:handleCancelRequest(user, data)
   local requestId = data and data.requestId
   if not requestId then return end
 
-  local f = player.handlingRequests[requestId]
-  player.handlingRequests[requestId] = nil
+  local f = user.handlingRequests[requestId]
+  user.handlingRequests[requestId] = nil
   if f then async.cancel(f) end
 end
 
----@param player Player
-function RoomBase:addPlayer(player)
-  self.players[#self.players + 1] = player
-  player.roomId = self.id
+---@param user User
+function RoomBase:addUser(user)
+  self.users[#self.users + 1] = user
+  user.roomId = self.id
 end
 
----@param player Player
+---@param user User
 ---@return boolean removed
-function RoomBase:removePlayer(player)
-  return tablib.removeOne(self.players, player)
-  -- note that player.roomId is not set. Please add they to somewhere.
+function RoomBase:removeUser(user)
+  return tablib.removeOne(self.users, user)
+  -- note that user.roomId is not set. Please add they to somewhere.
 end
 
 ---@param id integer
----@return Player
-function RoomBase:findPlayerById(id)
+---@return User
+function RoomBase:findUserById(id)
   ---@diagnostic disable-next-line
-  return tablib.find(self.players, function(p) return p.id == id end)
+  return tablib.find(self.users, function(p) return p.id == id end)
 end
 
 return RoomBase

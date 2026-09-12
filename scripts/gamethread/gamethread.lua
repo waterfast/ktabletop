@@ -27,11 +27,11 @@ function GameThread:removeRoom(roomId)
 end
 
 ---@param roomId integer
----@param playerId integer
+---@param userId integer
 ---@param command string
 ---@param data any
-function GameThread:handleRequest(roomId, playerId, command, data)
-  ktabletop.log.info(("HandleRequest: roomId=%d playerId=%d command=%s data=%s"):format(roomId, playerId, command, ktabletop.json.encode(data)))
+function GameThread:handleRequest(roomId, userId, command, data)
+  ktabletop.log.info(("HandleRequest: roomId=%d userId=%d command=%s data=%s"):format(roomId, userId, command, ktabletop.json.encode(data)))
 
   if command == "newroom" then
     self:registerRoom(data.id):run()

@@ -1,6 +1,3 @@
--- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
--- SPDX-License-Identifier: LGPL-2.1-or-later
-
 local RoomBase = require "server.room.roombase"
 
 ---@class Lobby: ServerRoomBase
@@ -16,22 +13,22 @@ function Lobby:initialize()
   self:setRequestHandler("Room::Join", self.handleJoinRoom)
 end
 
----@param player ServerPlayer
-function Lobby:addPlayer(player)
-  RoomBase.addPlayer(self, player)
-  player:notify("Lobby::Enter", nil)
+---@param user ServerUser
+function Lobby:addUser(user)
+  RoomBase.addUser(self, user)
+  user:notify("Lobby::Enter", nil)
   self:updateOnlineInfo()
 end
 
----@param player ServerPlayer
-function Lobby:removePlayer(player)
-  RoomBase.removePlayer(self, player)
+---@param user ServerUser
+function Lobby:removeUser(user)
+  RoomBase.removeUser(self, user)
   self:updateOnlineInfo()
 end
 
 function Lobby:updateOnlineInfo()
   self:broadcast("Lobby::UpdateOnlineInfo", {
-    onlinePlayers = #self.players,
+    onlineUsers = #self.users,
   })
 end
 
@@ -43,16 +40,16 @@ function Lobby:handleFetchRooms()
       id = room.id,
       name = room.name,
       capacity = room.capacity,
-      playerCount = #room.players,
+      userCount = #room.users,
       ownerId = room.owner and room.owner.id or -1,
     }
   end
   return rooms
 end
 
-function Lobby:handleCreateRoom(player, data)
+function Lobby:handleCreateRoom(user, data)
   local rm = ktabletop.server.roomManager
-  local room = rm:createRoom(player, data.name, data.capacity)
+  local room = rm:createRoom(user, data.name, data.capacity)
   if not room then
     return nil, "createRoom failed!"
   end
@@ -60,7 +57,7 @@ function Lobby:handleCreateRoom(player, data)
   return room.id
 end
 
-function Lobby:handleJoinRoom(player, data)
+function Lobby:handleJoinRoom(user, data)
   local rm = ktabletop.server.roomManager
   local room = rm:findRoom(data.id)
   if not room then
@@ -70,8 +67,8 @@ function Lobby:handleJoinRoom(player, data)
   -- TODO: password check
   -- TODO: isOutdated check
 
-  room:addPlayer(player)
-  self:removePlayer(player)
+  room:addUser(user)
+  self:removeUser(user)
 end
 
 return Lobby

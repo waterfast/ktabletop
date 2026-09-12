@@ -94,7 +94,7 @@ void GameThread::call(QString func, QVariantList args)
         Qt::QueuedConnection);
 }
 
-void GameThread::pushRequest(int roomId, int playerId, const QString &command, const QVariantMap &data)
+void GameThread::pushRequest(int roomId, int userId, const QString &command, const QVariantMap &data)
 {
-    call(u"HandleRequest"_s, {roomId, playerId, command, data});
+    call(u"HandleRequest"_s, {roomId, userId, command, data});
 }

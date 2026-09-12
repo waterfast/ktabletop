@@ -19,14 +19,14 @@ Kirigami.Page {
             text: i18n("Add Robot")
             icon.name: "computer-symbolic"
             visible: root.d.ownerId === root.d.selfId
-            enabled: root.d.players.length < root.d.capacity
+            enabled: root.d.users.length < root.d.capacity
             onTriggered: root.d.invoke("addRobot")
         },
         Kirigami.Action {
             text: i18n("Start Game")
             icon.name: "media-playback-start"
             visible: root.d.ownerId === root.d.selfId
-            enabled: root.d.players.length === root.d.capacity
+            enabled: root.d.users.length === root.d.capacity
             onTriggered: root.d.invoke("startGame")
         },
         Kirigami.Action {
@@ -66,7 +66,7 @@ Kirigami.Page {
 
             QQC2.Label {
                 Layout.alignment: Qt.AlignHCenter
-                text: i18n("%1 / %2 players", root.d.players.length, root.d.capacity)
+                text: i18n("%1 / %2 players", root.d.users.length, root.d.capacity)
                 opacity: 0.7
             }
 
@@ -75,7 +75,7 @@ Kirigami.Page {
                 Layout.alignment: Qt.AlignHCenter
                 from: 0
                 to: root.d.capacity
-                value: root.d.players.length
+                value: root.d.users.length
             }
         }
 
@@ -84,9 +84,9 @@ Kirigami.Page {
             spacing: Kirigami.Units.smallSpacing
 
             Repeater {
-                model: root.d.players
+                model: root.d.users
                 delegate: Kirigami.AbstractCard {
-                    id: playerCard
+                    id: userCard
                     required property var modelData
 
                     contentItem: RowLayout {
@@ -95,13 +95,13 @@ Kirigami.Page {
                         Kirigami.Icon {
                             Layout.preferredWidth: Kirigami.Units.iconSizes.medium
                             Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-                            source: playerCard.modelData.id === root.d.ownerId ? "im-user-star" : "im-user"
+                            source: userCard.modelData.id === root.d.ownerId ? "im-user-star" : "im-user"
                         }
 
                         QQC2.Label {
                             Layout.fillWidth: true
-                            text: playerCard.modelData.username
-                            font.bold: playerCard.modelData.id === root.d.ownerId
+                            text: userCard.modelData.username
+                            font.bold: userCard.modelData.id === root.d.ownerId
                             elide: Text.ElideRight
                         }
 
@@ -109,12 +109,12 @@ Kirigami.Page {
                             spacing: Kirigami.Units.smallSpacing
 
                             Kirigami.Badge {
-                                visible: playerCard.modelData.id === root.d.selfId
+                                visible: userCard.modelData.id === root.d.selfId
                                 text: i18n("You")
                             }
 
                             Kirigami.Badge {
-                                visible: playerCard.modelData.id === root.d.ownerId
+                                visible: userCard.modelData.id === root.d.ownerId
                                 text: i18n("Owner")
                                 customColor: Kirigami.Theme.positiveBackgroundColor
                                 customTextColor: Kirigami.Theme.positiveTextColor
@@ -126,7 +126,7 @@ Kirigami.Page {
         }
 
         Repeater {
-            model: Math.max(0, root.d.capacity - root.d.players.length)
+            model: Math.max(0, root.d.capacity - root.d.users.length)
             delegate: Kirigami.AbstractCard {
                 Layout.fillWidth: true
                 opacity: 0.5

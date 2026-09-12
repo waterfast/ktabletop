@@ -1,10 +1,7 @@
--- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
--- SPDX-License-Identifier: LGPL-2.1-or-later
-
 local RoomBase = require "server.room.roombase"
 
 ---@class Room: ServerRoomBase
----@field owner ServerPlayer
+---@field owner ServerUser
 ---@field gameStarted boolean
 local Room = RoomBase:subclass("Room")
 
@@ -25,37 +22,37 @@ function Room:initialize()
 end
 
 function Room:isFull()
-  return #self.players >= self.capacity
+  return #self.users >= self.capacity
 end
 
----@param player ServerPlayer
-function Room:setOwner(player)
-  self.owner = player
-  self:broadcast("Room::Owner", { id = player.id })
+---@param user ServerUser
+function Room:setOwner(user)
+  self.owner = user
+  self:broadcast("Room::Owner", { id = user.id })
 end
 
----@param player ServerPlayer
-function Room:addPlayer(player)
+---@param user ServerUser
+function Room:addUser(user)
   if self:isFull() or self.gameStarted then
-    player:notify("ErrorMsg", "Room is full or already started")
+    user:notify("ErrorMsg", "Room is full or already started")
     return
   end
 
-  self:broadcast("Room::AddPlayer", {
-    id = player.id,
-    username = player.username,
+  self:broadcast("Room::AddUser", {
+    id = user.id,
+    username = user.username,
   })
 
-  RoomBase.addPlayer(self, player)
-  player:notify("Room::Enter", {
+  RoomBase.addUser(self, user)
+  user:notify("Room::Enter", {
     id = self.id,
     name = self.name,
     capacity = self.capacity,
   })
 
-  for _, p in ipairs(self.players) do
-    if p ~= player then
-      player:notify("Room::AddPlayer", {
+  for _, p in ipairs(self.users) do
+    if p ~= user then
+      user:notify("Room::AddUser", {
         id = p.id,
         username = p.username,
       })
@@ -66,15 +63,15 @@ function Room:addPlayer(player)
 
 
   if self.owner == nil then
-    self:setOwner(player)
+    self:setOwner(user)
   else
-    player:notify("Room::Owner", { id = self.owner.id })
+    user:notify("Room::Owner", { id = self.owner.id })
   end
 end
 
----@param player ServerPlayer
-function Room:handleAddRobot(player)
-  if self.owner ~= player then
+---@param user ServerUser
+function Room:handleAddRobot(user)
+  if self.owner ~= user then
     return nil, "you need to be room owner to add robot!"
   end
 
@@ -82,13 +79,13 @@ function Room:handleAddRobot(player)
     return nil, "room is full!"
   end
 
-  local robot = ktabletop.server.playerManager:createRobot()
-  self:addPlayer(robot)
+  local robot = ktabletop.server.userManager:createRobot()
+  self:addUser(robot)
 end
 
----@param player ServerPlayer
-function Room:handleStartGame(player)
-  if player ~= self.owner then
+---@param user ServerUser
+function Room:handleStartGame(user)
+  if user ~= self.owner then
     return nil, "you need to be room owner to start the game!"
   end
 
@@ -105,28 +102,28 @@ function Room:handleStartGame(player)
   ktabletop.startGame(self.id)
 end
 
----@param player ServerPlayer
-function Room:handleQuitRoom(player)
-  self:removePlayer(player)
+---@param user ServerUser
+function Room:handleQuitRoom(user)
+  self:removeUser(user)
 
   -- TODO: check if is online
   local lobby = ktabletop.server.roomManager.lobby
-  lobby:addPlayer(player)
+  lobby:addUser(user)
 
   -- TODO: isOutdated
 end
 
----@param player ServerPlayer
-function Room:removePlayer(player)
-  if not RoomBase.removePlayer(self, player) then
+---@param user ServerUser
+function Room:removeUser(user)
+  if not RoomBase.removeUser(self, user) then
     return
   end
 
-  self:broadcast("Room::RemovePlayer", { id = player.id })
+  self:broadcast("Room::RemoveUser", { id = user.id })
 
-  if player == self.owner then
-    if #self.players > 0 then
-      self:setOwner(self.players[1])
+  if user == self.owner then
+    if #self.users > 0 then
+      self:setOwner(self.users[1])
     else
       self.owner = nil
     end

@@ -9,6 +9,6 @@ ktabletop.gamethread = GameThread:new()
 
 ktabletop.log.info("GameThread Lua VM started")
 
-function HandleRequest(roomId, playerId, command, data)
-  ktabletop.gamethread:handleRequest(roomId, playerId, command, data)
+function HandleRequest(roomId, userId, command, data)
+  ktabletop.gamethread:handleRequest(roomId, userId, command, data)
 end

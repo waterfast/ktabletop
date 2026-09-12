@@ -34,7 +34,7 @@ public:
     // call something inside this thread.
     void call(QString func, QVariantList args = {});
 
-    void pushRequest(int roomId, int playerId, const QString &command, const QVariantMap &data = {});
+    void pushRequest(int roomId, int userId, const QString &command, const QVariantMap &data = {});
 
 Q_SIGNALS:
     void ready();

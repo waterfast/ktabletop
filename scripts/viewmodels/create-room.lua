@@ -2,11 +2,11 @@ local LObject = require "corelib.lobject"
 local async = require "corelib.async"
 
 ---@class CreateRoomViewModel: Object, LObject
----@field playerCount integer
+---@field userCount integer
 local CreateRoomViewModel = ktabletop.class("CreateRoomViewModel")
 CreateRoomViewModel:include(LObject)
 
-CreateRoomViewModel:Property("username") -- TODO: when this grow bigger, should bind to player or something
+CreateRoomViewModel:Property("username") -- TODO: when this grow bigger, should bind to user or something
 CreateRoomViewModel:Property("name")
 CreateRoomViewModel:Property("capacity")
 

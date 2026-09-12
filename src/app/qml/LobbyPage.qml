@@ -55,7 +55,7 @@ Kirigami.ScrollablePage {
             }
 
             QQC2.Label {
-                text: i18n("%1 players online · %2 rooms", root.d.playerCount, root.d.rooms.length)
+                text: i18n("%1 players online · %2 rooms", root.d.userCount, root.d.rooms.length)
                 opacity: 0.7
                 font: Kirigami.Theme.smallFont
             }
@@ -71,7 +71,7 @@ Kirigami.ScrollablePage {
                     id: roomCard
                     required property var modelData
 
-                    readonly property bool isFull: modelData.playerCount >= modelData.capacity
+                    readonly property bool isFull: modelData.userCount >= modelData.capacity
                     readonly property bool isMine: modelData.ownerId === root.d.selfId
 
                     Layout.maximumWidth: Kirigami.Units.gridUnit * 20
@@ -111,7 +111,7 @@ Kirigami.ScrollablePage {
                         spacing: Kirigami.Units.smallSpacing
 
                         QQC2.Label {
-                            text: i18n("Players: %1/%2", roomCard.modelData.playerCount, roomCard.modelData.capacity)
+                            text: i18n("Players: %1/%2", roomCard.modelData.userCount, roomCard.modelData.capacity)
                             opacity: 0.7
                         }
 
@@ -119,7 +119,7 @@ Kirigami.ScrollablePage {
                             Layout.fillWidth: true
                             from: 0
                             to: roomCard.modelData.capacity
-                            value: roomCard.modelData.playerCount
+                            value: roomCard.modelData.userCount
                         }
                     }
                 }

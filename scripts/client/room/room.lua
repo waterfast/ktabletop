@@ -1,19 +1,19 @@
 local RoomBase = require "core.room-base"
 local LObject = require "corelib.lobject"
-local ClientPlayer = require "client.user.player"
+local ClientUser = require "client.user"
 
 local tablib = ktabletop.tablib
 
 ---@class ClientRoom: RoomBase, LObject
----@field players ClientPlayer[]
----@field observers ClientPlayer[]
----@field owner ClientPlayer
+---@field users ClientUser[]
+---@field observers ClientUser[]
+---@field owner ClientUser
 ---@field messages { id: integer, username: string, text: string, timestamp: integer }[]
----@field findPlayerById fun(self, id): ClientPlayer
+---@field findUserById fun(self, id): ClientUser
 local ClientRoom = RoomBase:subclass("ClientRoom")
 ClientRoom:include(LObject)
 
-ClientRoom:Property("players")
+ClientRoom:Property("users")
 ClientRoom:Property("owner")
 ClientRoom:Property("messages")
 
@@ -23,42 +23,42 @@ function ClientRoom:initialize()
   self.messages = {}
 
   self:setCallback("Room::Owner", self.setOwner)
-  self:setCallback("Room::AddPlayer", self.handleAddPlayer)
-  self:setCallback("Room::RemovePlayer", self.handleRemovePlayer)
+  self:setCallback("Room::AddUser", self.handleAddUser)
+  self:setCallback("Room::RemoveUser", self.handleRemoveUser)
   self:setCallback("Room::ChatMessage", self.handleChatMessage)
 end
 
----@param player ClientPlayer
-function ClientRoom:addPlayer(player)
-  RoomBase.addPlayer(self, player)
-  self:notifyPropertyChanged("players")
+---@param user ClientUser
+function ClientRoom:addUser(user)
+  RoomBase.addUser(self, user)
+  self:notifyPropertyChanged("users")
 end
 
----@param player ClientPlayer
+---@param user ClientUser
 ---@return boolean removed
-function ClientRoom:removePlayer(player)
-  local ret = RoomBase.removePlayer(self, player)
-  self:notifyPropertyChanged("players")
+function ClientRoom:removeUser(user)
+  local ret = RoomBase.removeUser(self, user)
+  self:notifyPropertyChanged("users")
   return ret
 end
 
 function ClientRoom:setOwner(_, data)
-  self.owner = self:findPlayerById(data.id)
+  self.owner = self:findUserById(data.id)
 end
 
-function ClientRoom:handleAddPlayer(_, data)
-  local p = ClientPlayer:new()
+function ClientRoom:handleAddUser(_, data)
+  local p = ClientUser:new()
   p.id = data.id
   p.username = data.username
 
-  self:addPlayer(p)
+  self:addUser(p)
 end
 
-function ClientRoom:handleRemovePlayer(_, data)
+function ClientRoom:handleRemoveUser(_, data)
   local id = data.id
 
-  local p = self:findPlayerById(id)
-  if p then self:removePlayer(p) end
+  local p = self:findUserById(id)
+  if p then self:removeUser(p) end
 end
 
 function ClientRoom:handleChatMessage(_, data)
