@@ -50,8 +50,9 @@ function User:request(command, data, timeout, timestamp, isJson)
   local ok, ret = async.await(requestFn(self.connId, command, data, timeout or 10, timestamp or -1))
 
   if not ok then
-    ktabletop.log.critical(("request(%s): error from peer"):format(command), json.decode(ret))
-    return ""
+    local err = tostring(ret)
+    ktabletop.log.critical(("request(%s): error from peer"):format(command), err)
+    return "", err
   else
     return json.decode(ret)
   end
