@@ -33,8 +33,8 @@ local noCastleFlagOfSquare = {
 ---@field board string[][]
 local GameContext = GameContextBase:subclass("Chess.GameContext")
 
-function GameContext:initialize(...)
-  GameContextBase.initialize(self, ...)
+function GameContext:initialize()
+  GameContextBase.initialize(self)
   self.board = Engine:createBoard()
 end
 

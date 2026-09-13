@@ -15,6 +15,8 @@ local tablib = ktabletop.tablib
 ---@field _rng any
 local ServerGameContextMixin = {}
 
+---@class ServerGameContext: GameContextBase, ServerGameContextMixin
+
 ---@param data table
 function ServerGameContextMixin:initialize(data)
   self.id = data.id
@@ -49,7 +51,7 @@ end
 
 ---@param command string
 ---@param data any
----@param players? Player[]
+---@param players? ServerPlayer[]
 function ServerGameContextMixin:broadcast(command, data, players)
   players = players or self.players
   for _, player in ipairs(players) do
@@ -57,7 +59,7 @@ function ServerGameContextMixin:broadcast(command, data, players)
   end
 end
 
----@param player Player
+---@param player ServerPlayer
 ---@param property string
 ---@param value any
 function ServerGameContextMixin:setPlayerProperty(player, property, value)
@@ -65,13 +67,13 @@ function ServerGameContextMixin:setPlayerProperty(player, property, value)
   self:broadcastProperty(player, property)
 end
 
----@param player Player
+---@param player ServerPlayer
 ---@param property string
 function ServerGameContextMixin:broadcastProperty(player, property)
   self:broadcast("PropertyUpdate", { id = player.id, property = property, value = player[property] })
 end
 
----@param players? Player[]
+---@param players? ServerPlayer[]
 function ServerGameContextMixin:arrangeSeats(players)
   players = players or self.players
   self.players = players

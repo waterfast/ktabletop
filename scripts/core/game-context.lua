@@ -7,7 +7,7 @@ local async = require "corelib.async"
 
 ---@class GameContextBase: Object
 ---@field players Player[]
----@field observers any[]
+---@field observers Player[]
 ---@field current Player
 ---@field capacity integer
 ---@field timeout integer

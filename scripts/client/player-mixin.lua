@@ -4,7 +4,10 @@
 ---@class ClientPlayerMixin
 ---@field user ClientUser
 ---@field username string
+---@field ctx ClientGameContext
 local ClientPlayerMixin = {}
+
+---@class ClientPlayer: Player, ClientPlayerMixin
 
 ---@param user ClientUser
 function ClientPlayerMixin:initialize(user)

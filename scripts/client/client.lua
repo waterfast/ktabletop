@@ -12,7 +12,7 @@ local ClientRoom = require "client.room.room"
 ---@field myself ClientUser
 ---@field lobby ClientLobby
 ---@field room ClientRoom
----@field gameContext Object?
+---@field gameContext ClientGameContext
 local Client = class("Client")
 
 function Client:initialize()

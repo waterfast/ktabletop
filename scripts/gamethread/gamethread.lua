@@ -4,7 +4,7 @@
 local class = ktabletop.class
 
 ---@class GameThread: Object
----@field contexts table<integer, GameContextBase>
+---@field contexts table<integer, ServerGameContext>
 local GameThread = class("GameThread")
 
 function GameThread:initialize()
@@ -13,7 +13,7 @@ end
 
 ---@param boardgame BoardGame
 ---@param data table
----@return GameContextBase
+---@return ServerGameContext
 function GameThread:registerContext(boardgame, data)
   local context = boardgame.serverContextClass:new(data)
   self.contexts[data.id] = context

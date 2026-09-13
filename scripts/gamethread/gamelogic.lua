@@ -6,7 +6,7 @@ local class = ktabletop.class
 local GameEvent = require "gamethread.gameevent"
 
 ---@class GameLogic: Object
----@field ctx GameContextBase
+---@field ctx ServerGameContext
 ---@field root GameEvent
 local GameLogic = class("GameLogic")
 

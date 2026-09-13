@@ -3,8 +3,10 @@
 
 ---@class ServerPlayerMixin
 ---@field user ServerUser
----@field ctx GameContextBase
+---@field ctx ServerGameContext
 local ServerPlayerMixin = {}
+
+---@class ServerPlayer: Player, ServerPlayerMixin
 
 ---@param user ServerUser
 function ServerPlayerMixin:initialize(user)

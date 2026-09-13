@@ -6,12 +6,15 @@
 ---@field playerClass any
 local ClientGameContextMixin = {}
 
+-- pseudo class of actual ClientGameCtx
+---@class ClientGameContext: GameContextBase, ClientGameContextMixin
+
 function ClientGameContextMixin:setupViewModel()
   error("setupViewModel must be implemented")
 end
 
 ---@param user ClientUser
----@return Player
+---@return ClientPlayer
 function ClientGameContextMixin:createPlayer(user)
   return self.playerClass:new(user)
 end
@@ -32,7 +35,7 @@ function ClientGameContextMixin:arrangeSeats(ids)
   self.players = players
 end
 
----@param player Player
+---@param player ClientPlayer
 ---@param property string
 ---@param value any
 function ClientGameContextMixin:setPlayerProperty(player, property, value)

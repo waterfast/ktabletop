@@ -4,7 +4,7 @@
 local class = ktabletop.class
 
 ---@class InteractiveRequest: Object
----@field players Player[]
+---@field players ServerPlayer[]
 ---@field n integer
 ---@field command string
 ---@field data table<integer, any>

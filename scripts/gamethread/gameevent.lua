@@ -8,7 +8,7 @@ local contextRegistry = require "core.context-registry"
 -- TODO: event stack, recorder, cleaner, etc....
 
 ---@class GameEvent: Object
----@field ctx GameContextBase
+---@field ctx ServerGameContext
 ---@field data any
 ---@field func AsyncFunction?
 local GameEvent = class("GameEvent")
