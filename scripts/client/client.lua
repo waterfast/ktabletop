@@ -174,22 +174,32 @@ function Client:processNotification(connId, command, data)
   end
 end
 
-local requestDispatcher = async.async(function(client, connId, requestId, command, data)
+local requestDispatcher = async.async(function(client, connId, requestId, command, data, timeout)
   local user = client.myself
   assert(user, ("cannot find user of connId %d in request #%d"):format(connId, requestId))
   user.connId = connId
 
-  local target = client
+  local arg1 = client
   local fn = client._requestHandlers[command]
-  if not fn and client.gameContext then
-    fn = client.gameContext._requestHandlers[command]
-    target = client.gameContext
+  if not fn then
+    if client.gameContext then
+      fn = client.gameContext._requestHandlers[command]
+      arg1 = client.gameContext
+    end
   end
+  if not fn then
+    local room = user.roomId == 0 and client.lobby or client.room
+    if room then
+      fn = room._requestHandlers[command]
+      arg1 = room
+    end
+  end
+
   if not fn then
     return
   end
 
-  local handler = fn(target, user, data)
+  local handler = fn(arg1, user, data, timeout)
   user.handlingRequests[requestId] = handler
   local ok, reply = async.await(handler)
 
@@ -210,8 +220,8 @@ end)
 ---@param requestId integer
 ---@param command string
 ---@param data any
-function Client:processRequest(connId, requestId, command, data)
-  requestDispatcher(self, connId, requestId, command, data)
+function Client:processRequest(connId, requestId, command, data, timeout)
+  requestDispatcher(self, connId, requestId, command, data, timeout)
 end
 
 ---@param message string

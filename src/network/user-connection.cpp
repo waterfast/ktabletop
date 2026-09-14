@@ -12,6 +12,8 @@
 
 #include <atomic>
 
+using namespace Qt::StringLiterals;
+
 class PendingRequest : public QObject
 {
 public:
@@ -25,7 +27,9 @@ public:
         if (m_callback && timeout > 0) {
             m_timer = new QTimer(this);
             m_timer->setSingleShot(true);
-            connect(m_timer, &QTimer::timeout, this, [this]() {
+            connect(m_timer, &QTimer::timeout, this, [this] {
+                QJsonObject payload{{u"requestId"_s, m_id}};
+                m_conn->notify("Socket::CancelRequest", QJsonDocument(payload).toJson(QJsonDocument::Compact));
                 finish(QByteArray{}, std::make_error_code(std::errc::timed_out));
             });
             m_timer->start(timeout * 1000);
@@ -41,14 +45,10 @@ public:
             type |= UserConnection::DataCompressed;
         }
 
-        QCborArray body{
-            m_id,
-            type,
-            command,
-            data,
-            m_timeout,
-            (timestamp <= 0 ? QDateTime::currentDateTime().toMSecsSinceEpoch() : timestamp),
-        };
+        if (timestamp <= 0) {
+            timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch();
+        }
+        QCborArray body{m_id, type, command, data, m_timeout, timestamp};
 
         m_conn->sendMessage(body.toCborValue().toCbor());
     }
@@ -182,12 +182,7 @@ void UserConnection::reply(int requestId, bool ok, const QByteArray &jsonData)
         type |= ReplyError;
     }
 
-    QCborArray body{
-        requestId,
-        type,
-        QByteArray(),
-        data,
-    };
+    QCborArray body{requestId, type, QByteArray(), data};
 
     sendMessage(body.toCborValue().toCbor());
     m_receivedRequests.remove(requestId);
@@ -202,12 +197,7 @@ void UserConnection::notify(const QByteArray &command, const QByteArray &jsonDat
         type |= DataCompressed;
     }
 
-    QCborArray body{
-        -2,
-        type,
-        command,
-        data,
-    };
+    QCborArray body{-2, type, command, data};
 
     sendMessage(body.toCborValue().toCbor());
 }
@@ -221,8 +211,7 @@ UserConnection::ReceivedRequest UserConnection::receivedRequest(int requestId) c
 // local pending request without invoking its callback.
 void UserConnection::cancelRequest(int requestId)
 {
-    QJsonObject payload;
-    payload.insert(QStringLiteral("requestId"), requestId);
+    QJsonObject payload{{u"requestId"_s, requestId}};
     notify("Socket::CancelRequest", QJsonDocument(payload).toJson(QJsonDocument::Compact));
 
     if (auto *req = m_pendingRequests.take(requestId)) {
@@ -242,17 +231,11 @@ void UserConnection::handlePacket(const QCborArray &packet)
     }
 
     if (type & TypeNotification) {
-        notificationGot(command, jsonData);
+        Q_EMIT notificationGot(command, jsonData);
     } else if (type & TypeRequest) {
-        ReceivedRequest rr{
-            requestId,
-            command,
-            jsonData,
-            int(packet[4].toInteger()),
-            packet[5].toInteger(),
-        };
+        ReceivedRequest rr{requestId, command, jsonData, int(packet[4].toInteger()), packet[5].toInteger()};
         m_receivedRequests.insert(requestId, rr);
-        requestGot(requestId);
+        Q_EMIT requestGot(requestId);
     } else if (type & TypeReply) {
         auto *req = m_pendingRequests.value(requestId, nullptr);
         if (!req)
@@ -270,5 +253,5 @@ void UserConnection::handlePacket(const QCborArray &packet)
 
 void UserConnection::sendMessage(const QByteArray &msg)
 {
-    messageReady(msg);
+    Q_EMIT messageReady(msg);
 }

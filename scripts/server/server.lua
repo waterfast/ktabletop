@@ -95,7 +95,7 @@ function Server:processNotification(connId, command, data)
   end
 end
 
-local requestDispatcher = async.async(function(server, user, requestId, command, data)
+local requestDispatcher = async.async(function(server, user, requestId, command, data, timeout)
   local fn = server._requestHandlers[command]
   local arg1 = server
   if not fn then
@@ -112,7 +112,7 @@ local requestDispatcher = async.async(function(server, user, requestId, command,
     return
   end
 
-  local handler = fn(arg1, user, data)
+  local handler = fn(arg1, user, data, timeout)
   user.handlingRequests[requestId] = handler
   local ok, reply = async.await(handler)
 
@@ -133,10 +133,10 @@ end)
 ---@param requestId integer
 ---@param command string
 ---@param data any
-function Server:processRequest(connId, requestId, command, data)
+function Server:processRequest(connId, requestId, command, data, timeout)
   local user = self.userManager:findUser(connId)
   if not user then return end
-  requestDispatcher(self, user, requestId, command, data)
+  requestDispatcher(self, user, requestId, command, data, timeout)
 end
 
 return Server
