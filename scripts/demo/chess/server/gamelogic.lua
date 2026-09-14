@@ -72,7 +72,7 @@ function ChessGameLogic:run()
     turn = turn + 1
 
     local req = InteractiveRequest:new(current, "Chess.PlayChess")
-    req.timeout = 30
+    req.timeout = 90
     req:setData(current, { role = current.role })
     req:setDefaultReply(current, randomMove(ctx, current.role))
     local result = req:getResult(current)
