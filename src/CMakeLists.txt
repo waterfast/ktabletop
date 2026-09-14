@@ -5,4 +5,8 @@ add_subdirectory(core)
 add_subdirectory(lua)
 add_subdirectory(network)
 
-add_subdirectory(app)
+if (BUILD_KTABLETOP_APP)
+    add_subdirectory(app)
+endif()
+
+add_subdirectory(server)

@@ -19,10 +19,12 @@ class Server : public QObject
     Q_OBJECT
 
 public:
+    static constexpr ushort DefaultPort = 17943u;
+
     static Server *instance();
     ~Server();
 
-    bool listen(const QHostAddress &address = QHostAddress::Any, ushort port = 9527u);
+    bool listen(const QHostAddress &address = QHostAddress::Any, ushort port = DefaultPort);
 
     UserConnection *findConnection(int connId) const;
 

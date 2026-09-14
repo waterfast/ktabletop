@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.24)
 
 project(KTabletop VERSION 0.0.1)
 
+option(BUILD_KTABLETOP_APP "Build the KTabletop application" ON)
+
 set(QT6_MIN_VERSION 6.10.0)
 set(KF6_MIN_VERSION 6.22.0)
 set(KIRIGAMI_ADDONS_MIN_VERSION 1.8.0)
@@ -33,8 +35,11 @@ if (NOT ANDROID)
 endif()
 
 set(QT_EXTRA_COMPONENTS)
-if (NOT ANDROID)
-    list(APPEND QT_EXTRA_COMPONENTS Widgets)
+if (BUILD_KTABLETOP_APP)
+    list(APPEND QT_EXTRA_COMPONENTS Qml)
+    if (NOT ANDROID)
+        list(APPEND QT_EXTRA_COMPONENTS Widgets)
+    endif()
 endif()
 
 find_package(Lua ${LUA_EXACT_VERSION} REQUIRED EXACT)
@@ -42,16 +47,18 @@ find_package(OpenSSL REQUIRED)
 find_package(LibGit2 ${GIT2_MIN_VERSION} REQUIRED)
 find_package(spdlog REQUIRED)
 
-find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS Qml ${QT_EXTRA_COMPONENTS})
-find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS Kirigami CoreAddons Config I18n)
+find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS Core Network ${QT_EXTRA_COMPONENTS})
 
-find_package(KF6KirigamiAddons ${KIRIGAMI_ADDONS_MIN_VERSION} REQUIRED)
-set_package_properties(KF6KirigamiAddons PROPERTIES
-    TYPE REQUIRED
-    PURPOSE "Required application components and runtime dependency"
-)
+if (BUILD_KTABLETOP_APP)
+    find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS Kirigami CoreAddons Config I18n)
+    find_package(KF6KirigamiAddons ${KIRIGAMI_ADDONS_MIN_VERSION} REQUIRED)
+    set_package_properties(KF6KirigamiAddons PROPERTIES
+        TYPE REQUIRED
+        PURPOSE "Required application components and runtime dependency"
+    )
 
-ecm_find_qmlmodule(org.kde.kirigamiaddons.formcard)
+    ecm_find_qmlmodule(org.kde.kirigamiaddons.formcard)
+endif()
 
 set(QT_QML_NO_CACHEGEN ON)
 add_definitions(-DQT_NO_CONTEXTLESS_CONNECT)
