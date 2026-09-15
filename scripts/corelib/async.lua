@@ -15,7 +15,7 @@ local pack = table.pack
 local ASYNC = { "ASYNC" }
 local AWAIT = { "AWAIT" }
 
-local CANCELED = "Operation canceled"
+local CANCELLED = "Operation canceled"
 
 -- AsyncScheduler handles results yielded from an async function.
 -- async functions should be started from main coroutine.
@@ -42,7 +42,7 @@ function scheduler:resume(fn, ...)
 
   -- when trying to resume a canceled function, finish it immediately
   if fn.cancelled then
-    fn.state, fn.errmsg = "error", CANCELED
+    fn.state, fn.errmsg = "error", CANCELLED
     local status = co.status(coro)
     if status == "dead" then
       return
@@ -84,7 +84,7 @@ function scheduler:await(fn, ...)
   local f = self.coroutineMap[current]
   assert(f, "cannot await outside async function")
   if f.cancelled then
-    return false, CANCELED
+    return false, CANCELLED
   end
   if not (type(fn) == "table" and (fn[ASYNC] or fn[AWAIT])) then
     -- accidentally await on normal functions; return
@@ -166,11 +166,11 @@ function scheduler:cancel(fn)
 
   if fn[ASYNC] then
     if co.running() == fn.coro then
-      -- will make co.resume return false, CANCELED
-      error(CANCELED)
+      -- will make co.resume return false, CANCELLED
+      error(CANCELLED)
     end
   elseif fn[AWAIT] and type(fn.cancelFunc) == "function" then
-    fn.cancelFunc(CANCELED)
+    fn.cancelFunc(CANCELLED)
   end
 end
 
@@ -246,7 +246,9 @@ end
 
 --------------------------------------------------------------
 
-local M = {}
+local M = {
+  CANCELLED = CANCELLED,
+}
 
 -- usage: async(function() ... end)
 -- creates an asyncFunctionFactory.
