@@ -28,6 +28,7 @@ include(ECMSetupVersion)
 include(ECMFindQmlModule)
 include(ECMQmlModule)
 include(ECMAddAndroidApk)
+include(ECMAddAppIcon)
 
 if (NOT ANDROID)
     include(KDEGitCommitHooks)

@@ -10,6 +10,8 @@ import org.kde.ktabletop
 Kirigami.Page {
     id: root
 
+    globalToolBarStyle: Kirigami.ApplicationHeaderStyle.None
+
     ColumnLayout {
         anchors.centerIn: parent
         spacing: Kirigami.Units.largeSpacing * 2
@@ -21,21 +23,21 @@ Kirigami.Page {
             source: "org.kde.ktabletop"
         }
 
-        ColumnLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: Kirigami.Units.smallSpacing
+        //ColumnLayout {
+        //    Layout.alignment: Qt.AlignHCenter
+        //    spacing: Kirigami.Units.smallSpacing
             Kirigami.Heading {
                 Layout.alignment: Qt.AlignHCenter
                 level: 1
                 text: i18n("KTabletop")
             }
 
-            QQC2.Label {
-                Layout.alignment: Qt.AlignHCenter
-                text: i18n("Your board game platform")
-                opacity: 0.7
-            }
-        }
+            // QQC2.Label {
+            //     Layout.alignment: Qt.AlignHCenter
+            //     text: i18n("Your board game platform")
+            //     opacity: 0.7
+            // }
+        //}
 
         ColumnLayout {
             Layout.alignment: Qt.AlignHCenter

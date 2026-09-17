@@ -8,6 +8,10 @@ add_executable(ktabletop-app
     main.cpp
 )
 
+ecm_add_app_icon(KTABLETOP_ICON ICONS ${CMAKE_SOURCE_DIR}/128-logo.png)
+
+target_sources(ktabletop-app PRIVATE ${KTABLETOP_ICON})
+
 target_link_libraries(ktabletop-app PRIVATE
     ktabletop_qmlplugin
 )
