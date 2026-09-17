@@ -37,7 +37,6 @@ function UserManager:createRobot()
   robot.username = ("COMP%d"):format(robot.id)
   -- TODO: ready = true
 
-  self:addUser(robot)
   return robot
 end
 

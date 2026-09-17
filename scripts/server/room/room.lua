@@ -131,11 +131,34 @@ function Room:removeUser(user)
 
   self:broadcast("Room::RemoveUser", { id = user.id })
 
-  if user == self.owner then
+  if self:isAbandoned() then
+    self:destroy()
+  elseif user == self.owner then
     if #self.users > 0 then
       self:setOwner(self.users[1])
     else
       self.owner = nil
+    end
+  end
+end
+
+function Room:isAbandoned()
+  return not tablib.find(self.users, function(p)
+    return p.state == "online" or p.state == "trust"
+  end)
+end
+
+function Room:destroy()
+  local rm = ktabletop.server.roomManager
+  local um = ktabletop.server.userManager
+
+  rm:removeRoom(self.id)
+  for _, p in ipairs(self.users) do
+    if p.state == "online" or p.state == "trust" then
+      self:removeUser(p)
+      rm.lobby:addUser(p)
+    else
+      um:removeUser(p.connId)
     end
   end
 end
