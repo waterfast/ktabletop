@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
-// SPDX-License-Identifier: LGPL-2.1-or-later
-
 import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
@@ -11,27 +8,20 @@ import org.kde.ktabletop
 Kirigami.ScrollablePage {
     id: root
 
-    title: i18n("Lobby")
+    objectName: "Rooms"
+    title: i18n("Rooms")
 
     required property LuaObject d
+
+    readonly property var rooms: (root.d && root.d.rooms) ? root.d.rooms : []
+    readonly property int userCount: (root.d && root.d.userCount !== undefined) ? root.d.userCount : 0
+    readonly property int selfId: (root.d && root.d.selfId !== undefined) ? root.d.selfId : -1
+
     actions: [
         Kirigami.Action {
             text: i18n("Create room")
             icon.name: "list-add"
             onTriggered: createRoomDialog.open()
-        },
-        Kirigami.Action {
-            text: i18n("Chat")
-            icon.name: "dialog-messages"
-            checkable: true
-            checked: chatDrawer.opened
-            onTriggered: {
-                if (chatDrawer.opened) {
-                    chatDrawer.close();
-                } else {
-                    chatDrawer.open();
-                }
-            }
         },
         Kirigami.Action {
             text: i18n("Exit lobby")
@@ -45,7 +35,7 @@ Kirigami.ScrollablePage {
 
         RowLayout {
             Layout.fillWidth: true
-            visible: root.d.rooms.length > 0
+            visible: root.rooms.length > 0
 
             Kirigami.Icon {
                 Layout.preferredWidth: Kirigami.Units.iconSizes.small
@@ -55,7 +45,7 @@ Kirigami.ScrollablePage {
             }
 
             QQC2.Label {
-                text: i18n("%1 players online · %2 rooms", root.d.userCount, root.d.rooms.length)
+                text: i18n("%1 players online · %2 rooms", root.userCount, root.rooms.length)
                 opacity: 0.7
                 font: Kirigami.Theme.smallFont
             }
@@ -64,15 +54,15 @@ Kirigami.ScrollablePage {
         }
 
         Kirigami.CardsLayout {
-            visible: root.d.rooms.length > 0
+            visible: root.rooms.length > 0
             Repeater {
-                model: root.d.rooms
+                model: root.rooms
                 delegate: Kirigami.Card {
                     id: roomCard
                     required property var modelData
 
                     readonly property bool isFull: modelData.userCount >= modelData.capacity
-                    readonly property bool isMine: modelData.ownerId === root.d.selfId
+                    readonly property bool isMine: modelData.ownerId === root.selfId
 
                     Layout.maximumWidth: Kirigami.Units.gridUnit * 20
 
@@ -81,7 +71,7 @@ Kirigami.ScrollablePage {
                             text: roomCard.isFull ? i18n("Room full") : i18n("join")
                             icon.name: "list-add"
                             enabled: !roomCard.isFull
-                            onTriggered: d.invoke("joinRoom", [roomCard.modelData.id])
+                            onTriggered: root.d.invoke("joinRoom", [roomCard.modelData.id])
                         }
                     ]
 
@@ -130,7 +120,7 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.topMargin: Kirigami.Units.gridUnit * 3
-            visible: root.d.rooms.length === 0
+            visible: root.rooms.length === 0
             icon.name: "list-add"
             text: i18n("There aren't room yet")
             explanation: i18n("Create a room to start playing with friends")
@@ -165,32 +155,7 @@ Kirigami.ScrollablePage {
         onAccepted: root.d.invoke("disconnectFromHost");
     }
 
-    Connections {
-        target: root.d
-
-        function onSignalEmitted(name, data) {
-            if (name === "chatMessage") {
-                chatPanel.messages.insert(0, data)
-            }
-        }
-    }
-
-    Kirigami.OverlayDrawer {
-        id: chatDrawer
-        edge: Qt.RightEdge
-        parent: QQC2.Overlay.overlay
-        width: Kirigami.Units.gridUnit * 18
-
-        contentItem: ChatPanel {
-            id: chatPanel
-            anchors.fill: parent
-            anchors.margins: Kirigami.Units.smallSpacing
-            selfId: root.d.selfId
-            onSendRequested: text => d.invoke("sendChatMessage", [text])
-        }
-    }
-
     Component.onCompleted: {
-        d.invoke("fetchRooms")
+        root.d.invoke("fetchRooms")
     }
 }

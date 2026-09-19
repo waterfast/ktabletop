@@ -8,8 +8,12 @@ ecm_add_qml_module(ktabletop_qml
     QML_FILES
         Main.qml
         WelcomePage.qml
-        LobbyPage.qml
-        CreateRoomDialog.qml
+        lobby/Sidebar.qml
+        lobby/BottomToolbar.qml
+        lobby/RoomsPage.qml
+        lobby/ChatPage.qml
+        lobby/TodoPage.qml
+        lobby/CreateRoomDialog.qml
         WaitingRoomPage.qml
         BusyDialog.qml
         ErrorDialog.qml
