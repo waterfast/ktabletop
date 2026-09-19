@@ -9,6 +9,9 @@ Kirigami.Page {
     objectName: "Chat"
     title: i18n("Chat")
 
+    Kirigami.Theme.inherit: false
+    Kirigami.Theme.colorSet: Kirigami.Theme.View
+
     required property LuaObject d
 
     contentItem: ChatPanel {

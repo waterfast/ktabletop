@@ -14,40 +14,59 @@ Kirigami.Page {
     title: root.d.name !== "" ? root.d.name : i18n("Waiting Room")
 
     required property LuaObject d
+    readonly property bool isOwner: d.ownerId === d.selfId
+    readonly property bool isFull: d.users.length >= d.capacity
+
+    Kirigami.Theme.inherit: false
+    Kirigami.Theme.colorSet: Kirigami.Theme.View
+
     actions: [
-        Kirigami.Action {
-            text: i18n("Add Robot")
-            icon.name: "computer-symbolic"
-            visible: root.d.ownerId === root.d.selfId
-            enabled: root.d.users.length < root.d.capacity
-            onTriggered: root.d.invoke("addRobot")
-        },
-        Kirigami.Action {
-            text: i18n("Start Game")
-            icon.name: "media-playback-start"
-            visible: root.d.ownerId === root.d.selfId
-            enabled: root.d.users.length === root.d.capacity
-            onTriggered: root.d.invoke("startGame")
-        },
-        Kirigami.Action {
-            text: i18n("Chat")
-            icon.name: "dialog-messages"
-            checkable: true
-            checked: chatDrawer.opened
-            onTriggered: {
-                if (chatDrawer.opened) {
-                    chatDrawer.close();
-                } else {
-                    chatDrawer.open();
-                }
-            }
-        },
         Kirigami.Action {
             text: i18n("Quit Room")
             icon.name: "application-exit"
             onTriggered: root.d.invoke("quitRoom")
         }
     ]
+
+    footer: Kirigami.ActionToolBar {
+        alignment: Qt.AlignHCenter
+        heightMode: Kirigami.ToolBarLayout.AlwaysFill
+        height: Kirigami.Units.iconSizes.large + Kirigami.Units.smallSpacing * 2
+
+        actions: [
+            Kirigami.Action {
+                id: startGameAction
+                displayComponent: QQC2.Button {
+                    text: i18n("Start Game")
+                    visible: root.isOwner
+                    enabled: root.isFull
+                    icon.name: "media-playback-start"
+                    onClicked: root.d.invoke("startGame")
+                }
+            },
+            Kirigami.Action {
+                text: i18n("Add Robot")
+                icon.name: "computer-symbolic"
+                visible: root.isOwner
+                enabled: !root.isFull
+                onTriggered: root.d.invoke("addRobot")
+            },
+
+            Kirigami.Action {
+                text: i18n("Chat")
+                icon.name: "dialog-messages"
+                checkable: true
+                checked: chatDrawer.opened
+                onTriggered: {
+                    if (chatDrawer.opened) {
+                        chatDrawer.close();
+                    } else {
+                        chatDrawer.open();
+                    }
+                }
+            },
+        ]
+    }
 
     ColumnLayout {
         Layout.alignment: Qt.AlignHCenter

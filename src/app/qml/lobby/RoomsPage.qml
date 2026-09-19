@@ -17,6 +17,9 @@ Kirigami.ScrollablePage {
     readonly property int userCount: (root.d && root.d.userCount !== undefined) ? root.d.userCount : 0
     readonly property int selfId: (root.d && root.d.selfId !== undefined) ? root.d.selfId : -1
 
+    Kirigami.Theme.inherit: false
+    Kirigami.Theme.colorSet: Kirigami.Theme.View
+
     actions: [
         Kirigami.Action {
             text: i18n("Create room")
@@ -30,106 +33,86 @@ Kirigami.ScrollablePage {
         }
     ]
 
-    ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+    titleDelegate: Kirigami.IconTitleSubtitle {
+        icon.name: "view-list-details"
+        title: root.title
+        subtitle: i18n("%1 player(s) online · %2 room(s)", root.userCount, root.rooms.length)
+    }
 
-        RowLayout {
-            Layout.fillWidth: true
-            visible: root.rooms.length > 0
+    Kirigami.CardsLayout {
+        visible: root.rooms.length > 0
+        Repeater {
+            model: root.rooms
+            delegate: Kirigami.Card {
+                id: roomCard
+                required property var modelData
 
-            Kirigami.Icon {
-                Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                Layout.preferredHeight: Kirigami.Units.iconSizes.small
-                source: "system-users-symbolic"
-                opacity: 0.7
-            }
+                readonly property bool isFull: modelData.userCount >= modelData.capacity
+                readonly property bool isMine: modelData.ownerId === root.selfId
 
-            QQC2.Label {
-                text: i18n("%1 players online · %2 rooms", root.userCount, root.rooms.length)
-                opacity: 0.7
-                font: Kirigami.Theme.smallFont
-            }
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 20
 
-            Item { Layout.fillWidth: true }
-        }
+                actions: [
+                    Kirigami.Action {
+                        text: roomCard.isFull ? i18n("Room full") : i18n("join")
+                        icon.name: "list-add"
+                        enabled: !roomCard.isFull
+                        onTriggered: root.d.invoke("joinRoom", [roomCard.modelData.id])
+                    }
+                ]
 
-        Kirigami.CardsLayout {
-            visible: root.rooms.length > 0
-            Repeater {
-                model: root.rooms
-                delegate: Kirigami.Card {
-                    id: roomCard
-                    required property var modelData
+                header: RowLayout {
+                    spacing: Kirigami.Units.smallSpacing
 
-                    readonly property bool isFull: modelData.userCount >= modelData.capacity
-                    readonly property bool isMine: modelData.ownerId === root.selfId
-
-                    Layout.maximumWidth: Kirigami.Units.gridUnit * 20
-
-                    actions: [
-                        Kirigami.Action {
-                            text: roomCard.isFull ? i18n("Room full") : i18n("join")
-                            icon.name: "list-add"
-                            enabled: !roomCard.isFull
-                            onTriggered: root.d.invoke("joinRoom", [roomCard.modelData.id])
-                        }
-                    ]
-
-                    header: RowLayout {
-                        spacing: Kirigami.Units.smallSpacing
-
-                        Kirigami.Heading {
-                            Layout.fillWidth: true
-                            level: 2
-                            text: roomCard.modelData.name
-                            elide: Text.ElideRight
-                        }
-
-                        Kirigami.Badge {
-                            visible: roomCard.isMine
-                            text: i18n("Your room")
-                        }
-
-                        Kirigami.Badge {
-                            visible: roomCard.isFull
-                            text: i18n("Full")
-                            Kirigami.Theme.colorSet: Kirigami.Theme.Complementary
-                        }
+                    Kirigami.Heading {
+                        Layout.fillWidth: true
+                        level: 2
+                        text: roomCard.modelData.name
+                        elide: Text.ElideRight
                     }
 
-                    contentItem: ColumnLayout {
-                        spacing: Kirigami.Units.smallSpacing
+                    Kirigami.Badge {
+                        visible: roomCard.isMine
+                        text: i18n("Your room")
+                    }
 
-                        QQC2.Label {
-                            text: i18n("Players: %1/%2", roomCard.modelData.userCount, roomCard.modelData.capacity)
-                            opacity: 0.7
-                        }
+                    Kirigami.Badge {
+                        visible: roomCard.isFull
+                        text: i18n("Full")
+                        Kirigami.Theme.colorSet: Kirigami.Theme.Complementary
+                    }
+                }
 
-                        QQC2.ProgressBar {
-                            Layout.fillWidth: true
-                            from: 0
-                            to: roomCard.modelData.capacity
-                            value: roomCard.modelData.userCount
-                        }
+                contentItem: ColumnLayout {
+                    spacing: Kirigami.Units.smallSpacing
+
+                    QQC2.Label {
+                        text: i18n("Players: %1/%2", roomCard.modelData.userCount, roomCard.modelData.capacity)
+                        opacity: 0.7
+                    }
+
+                    QQC2.ProgressBar {
+                        Layout.fillWidth: true
+                        from: 0
+                        to: roomCard.modelData.capacity
+                        value: roomCard.modelData.userCount
                     }
                 }
             }
         }
+    }
 
-        Kirigami.PlaceholderMessage {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            Layout.topMargin: Kirigami.Units.gridUnit * 3
-            visible: root.rooms.length === 0
+    Kirigami.PlaceholderMessage {
+        anchors.centerIn: parent
+        visible: root.rooms.length === 0
+        icon.name: "list-add"
+        text: i18n("There isn't any room yet")
+        explanation: i18n("Create a room to start playing with friends")
+
+        helpfulAction: Kirigami.Action {
+            text: i18n("Create room")
             icon.name: "list-add"
-            text: i18n("There aren't room yet")
-            explanation: i18n("Create a room to start playing with friends")
-
-            helpfulAction: Kirigami.Action {
-                text: i18n("Create room")
-                icon.name: "list-add"
-                onTriggered: createRoomDialog.open()
-            }
+            onTriggered: createRoomDialog.open()
         }
     }
 
