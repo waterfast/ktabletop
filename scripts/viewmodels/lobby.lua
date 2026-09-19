@@ -12,6 +12,7 @@ local LobbyViewModel = ktabletop.class("LobbyViewModel")
 LobbyViewModel:include(LObject)
 
 LobbyViewModel:Property("userCount")
+LobbyViewModel:Property("lobbyUsers")
 LobbyViewModel:Property("rooms")
 LobbyViewModel:Property("selfId")
 LobbyViewModel:Signal("chatMessage")
@@ -29,6 +30,9 @@ function LobbyViewModel:initialize(lobby)
 
   self:setPropertyBinding("userCount", function()
     return self.lobby.userCount
+  end)
+  self:setPropertyBinding("lobbyUsers", function()
+    return self.lobby.lobbyUsers
   end)
   self:setPropertyBinding("rooms", function()
     return self.lobby.rooms

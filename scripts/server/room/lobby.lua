@@ -1,4 +1,5 @@
 local RoomBase = require "server.room.roombase"
+local tablib = ktabletop.tablib
 
 ---@class Lobby: ServerRoomBase
 local Lobby = RoomBase:subclass("Lobby")
@@ -27,8 +28,15 @@ function Lobby:removeUser(user)
 end
 
 function Lobby:updateOnlineInfo()
+  local onlineUsers = 0
+  for _ in pairs(ktabletop.server.userManager.users) do
+    onlineUsers = onlineUsers + 1
+  end
   self:broadcast("Lobby::UpdateOnlineInfo", {
-    onlineUsers = #self.users,
+    onlineUsers = onlineUsers,
+    lobbyUsers = tablib.map(self.users, function(u)
+      return { name = u.username }
+    end),
   })
 end
 

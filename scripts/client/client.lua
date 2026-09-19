@@ -25,7 +25,6 @@ function Client:initialize()
 
   self:setCallback("User::Setup", self.setupUser)
   self:setCallback("Lobby::Enter", self.enterLobby)
-  self:setCallback("Lobby::UpdateOnlineInfo", self.updateOnlineInfo)
 
   self:setCallback("Room::Enter", self.enterRoom)
   self:setCallback("Room::StartGame", self.startGame)
@@ -66,10 +65,6 @@ function Client:enterLobby()
   ktabletop.luaEvent("Client::EnterLobby", {
     viewModelName = self.lobby.vm._stringId,
   })
-end
-
-function Client:updateOnlineInfo(_, data)
-  self.lobby.userCount = data.onlineUsers
 end
 
 function Client:enterRoom(_, data)

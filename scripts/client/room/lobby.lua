@@ -7,6 +7,7 @@ local LObject = require "corelib.lobject"
 local ClientLobby = RoomBase:subclass("ClientLobby")
 ClientLobby:include(LObject)
 ClientLobby:Property("userCount")
+ClientLobby:Property("lobbyUsers")
 ClientLobby:Property("rooms")
 
 function ClientLobby:initialize()
@@ -15,6 +16,7 @@ function ClientLobby:initialize()
   self.userCount = 0
   self.rooms = {}
 
+  self:setCallback("Lobby::UpdateOnlineInfo", self.updateOnlineInfo)
   self:setCallback("Room::ChatMessage", self.handleChatMessage)
 end
 
@@ -24,6 +26,11 @@ function ClientLobby:setupViewModel()
     type = "lobby",
     params = { self },
   })
+end
+
+function ClientLobby:updateOnlineInfo(_, data)
+  self.userCount = data.onlineUsers
+  self.lobbyUsers = data.lobbyUsers
 end
 
 function ClientLobby:handleChatMessage(_, data)

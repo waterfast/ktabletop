@@ -16,6 +16,12 @@ Kirigami.ScrollablePage {
 
     required property LuaObject d
 
+    titleDelegate: Kirigami.IconTitleSubtitle {
+        icon.name: "dialog-messages"
+        title: root.title
+        subtitle: i18n("%1 player(s) in lobby", root.d.lobbyUsers.length)
+    }
+
     ChatPanel {
         id: chatPanel
         selfId: root.d ? root.d.selfId : -1

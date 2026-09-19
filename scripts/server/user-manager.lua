@@ -6,7 +6,7 @@ local ServerUser = require "server.user"
 local class = ktabletop.class
 
 ---@class UserManager: Object
----@field private users table<integer, ServerUser>
+---@field users table<integer, ServerUser>
 local UserManager = class("UserManager")
 
 ---@param server Server
