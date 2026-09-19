@@ -52,6 +52,7 @@ Kirigami.Page {
                 onTriggered: root.d.invoke("addRobot")
             },
 
+            /*
             Kirigami.Action {
                 text: i18n("Chat")
                 icon.name: "dialog-messages"
@@ -65,6 +66,7 @@ Kirigami.Page {
                     }
                 }
             },
+            */
         ]
     }
 
@@ -167,6 +169,7 @@ Kirigami.Page {
         }
     }
 
+    /*
     Connections {
         target: root.d
 
@@ -191,4 +194,5 @@ Kirigami.Page {
             onSendRequested: text => root.d.invoke("sendChatMessage", [text])
         }
     }
+    */
 }
