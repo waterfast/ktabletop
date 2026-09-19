@@ -59,6 +59,7 @@ if (BUILD_KTABLETOP_APP)
     )
 
     ecm_find_qmlmodule(org.kde.kirigamiaddons.formcard)
+    ecm_find_qmlmodule(org.kde.kirigamiaddons.components REQUIRED)
 endif()
 
 set(QT_QML_NO_CACHEGEN ON)

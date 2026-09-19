@@ -6,6 +6,7 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
+import org.kde.kirigamiaddons.components as KC
 import org.kde.ktabletop
 
 Kirigami.Page {
@@ -22,53 +23,35 @@ Kirigami.Page {
 
     actions: [
         Kirigami.Action {
+            text: i18n("Add Robot")
+            icon.name: "computer-symbolic"
+            visible: root.isOwner
+            enabled: !root.isFull
+            onTriggered: root.d.invoke("addRobot")
+        },
+
+        /*
+        Kirigami.Action {
+            text: i18n("Chat")
+            icon.name: "dialog-messages"
+            checkable: true
+            checked: chatDrawer.opened
+            onTriggered: {
+                if (chatDrawer.opened) {
+                    chatDrawer.close();
+                } else {
+                    chatDrawer.open();
+                }
+            }
+        },
+        */
+
+        Kirigami.Action {
             text: i18n("Quit Room")
             icon.name: "application-exit"
             onTriggered: root.d.invoke("quitRoom")
         }
     ]
-
-    footer: Kirigami.ActionToolBar {
-        alignment: Qt.AlignHCenter
-        heightMode: Kirigami.ToolBarLayout.AlwaysFill
-        height: Kirigami.Units.iconSizes.large + Kirigami.Units.smallSpacing * 2
-
-        actions: [
-            Kirigami.Action {
-                id: startGameAction
-                displayComponent: QQC2.Button {
-                    text: i18n("Start Game")
-                    visible: root.isOwner
-                    enabled: root.isFull
-                    icon.name: "media-playback-start"
-                    onClicked: root.d.invoke("startGame")
-                }
-            },
-            Kirigami.Action {
-                text: i18n("Add Robot")
-                icon.name: "computer-symbolic"
-                visible: root.isOwner
-                enabled: !root.isFull
-                onTriggered: root.d.invoke("addRobot")
-            },
-
-            /*
-            Kirigami.Action {
-                text: i18n("Chat")
-                icon.name: "dialog-messages"
-                checkable: true
-                checked: chatDrawer.opened
-                onTriggered: {
-                    if (chatDrawer.opened) {
-                        chatDrawer.close();
-                    } else {
-                        chatDrawer.open();
-                    }
-                }
-            },
-            */
-        ]
-    }
 
     ColumnLayout {
         Layout.alignment: Qt.AlignHCenter
@@ -168,6 +151,29 @@ Kirigami.Page {
             }
         }
     }
+
+    KC.FloatingToolBar {
+        anchors.bottom: parent.bottom
+        // anchors.bottomMargin: Kirigami.Units.largeSpacing
+        anchors.horizontalCenter: parent.horizontalCenter
+        height: Kirigami.Units.iconSizes.large + Kirigami.Units.smallSpacing * 2
+        contentItem: Kirigami.ActionToolBar {
+            alignment: Qt.AlignHCenter
+            heightMode: Kirigami.ToolBarLayout.AlwaysFill
+
+            actions: [
+                Kirigami.Action {
+                    id: startGameAction
+                    text: i18n("Start Game")
+                    visible: root.isOwner
+                    enabled: root.isFull
+                    icon.name: "media-playback-start"
+                    onTriggered: root.d.invoke("startGame")
+                },
+            ]
+        }
+    }
+
 
     /*
     Connections {
