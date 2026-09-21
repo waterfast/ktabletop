@@ -31,15 +31,14 @@ LuaBinding::~LuaBinding()
 
 void LuaBinding::run()
 {
-    QDir::setCurrent(u"scripts"_s);
+    L->eval(u"package.path = './scripts/?.lua;./scripts/?/init.lua;' .. package.path"_s);
     if (m_role == Server) {
-        L->dofile(u"server/entry.lua"_s);
+        L->dofile(u"scripts/server/entry.lua"_s);
     } else if (m_role == GameThread) {
-        L->dofile(u"gamethread/entry.lua"_s);
+        L->dofile(u"scripts/gamethread/entry.lua"_s);
     } else {
-        L->dofile(u"client/entry.lua"_s);
+        L->dofile(u"scripts/client/entry.lua"_s);
     }
-    QDir::setCurrent(u".."_s);
 }
 
 LuaBinding::Role LuaBinding::role() const
