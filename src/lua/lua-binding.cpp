@@ -31,7 +31,9 @@ LuaBinding::~LuaBinding()
 
 void LuaBinding::run()
 {
-    L->eval(u"package.path = './scripts/?.lua;./scripts/?/init.lua;' .. package.path"_s);
+    L->eval(
+        u"package.path = './scripts/?.lua;./scripts/?/init.lua;"
+        "./plugins/?.lua;./plugins/?/init.lua;' .. package.path"_s);
     if (m_role == Server) {
         L->dofile(u"scripts/server/entry.lua"_s);
     } else if (m_role == GameThread) {
