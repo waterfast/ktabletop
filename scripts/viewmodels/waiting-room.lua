@@ -18,6 +18,7 @@ WaitingRoomViewModel:Signal("chatMessage")
 WaitingRoomViewModel:Invokable("addRobot")
 WaitingRoomViewModel:Invokable("startGame")
 WaitingRoomViewModel:Invokable("quitRoom")
+WaitingRoomViewModel:Invokable("toggleReady")
 WaitingRoomViewModel:Invokable("sendChatMessage")
 
 ---@param room ClientRoom
@@ -36,7 +37,7 @@ function WaitingRoomViewModel:initialize(room)
   end)
   self:setPropertyBinding("users", function()
     return tablib.map(self.room.users, function(p)
-      return { id = p.id, username = p.username }
+      return { id = p.id, username = p.username, ready = p.ready }
     end)
   end)
   self:setPropertyBinding("selfId", function()
@@ -63,6 +64,12 @@ end
 function WaitingRoomViewModel:quitRoom()
   async.run(function()
     self.myself:request("Room::Quit", {})
+  end)
+end
+
+function WaitingRoomViewModel:toggleReady()
+  async.run(function()
+    self.myself:request("Room::Ready", {})
   end)
 end
 

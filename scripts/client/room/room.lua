@@ -21,6 +21,7 @@ function ClientRoom:initialize()
   self:setCallback("Room::AddUser", self.handleAddUser)
   self:setCallback("Room::RemoveUser", self.handleRemoveUser)
   self:setCallback("Room::ChatMessage", self.handleChatMessage)
+  self:setCallback("Room::ReadyChanged", self.handleReadyChanged)
 end
 
 function ClientRoom:setupViewModel()
@@ -53,8 +54,17 @@ function ClientRoom:handleAddUser(_, data)
   local p = ClientUser:new()
   p.id = data.id
   p.username = data.username
+  p.ready = data.ready or false
 
   self:addUser(p)
+end
+
+function ClientRoom:handleReadyChanged(_, data)
+  local p = self:findUserById(data.id)
+  if not p then return end
+
+  p.ready = data.ready
+  self:notifyPropertyChanged("users")
 end
 
 function ClientRoom:handleRemoveUser(_, data)

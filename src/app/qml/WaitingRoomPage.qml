@@ -17,6 +17,9 @@ Kirigami.Page {
     required property LuaObject d
     readonly property bool isOwner: d.ownerId === d.selfId
     readonly property bool isFull: d.users.length >= d.capacity
+    readonly property var selfUser: d.users.find(user => user.id === d.selfId)
+    readonly property bool isReady: !!(root.selfUser && root.selfUser.ready)
+    readonly property bool allReady: d.users.every(user => user.id === d.ownerId || user.ready)
 
     Kirigami.Theme.inherit: false
     Kirigami.Theme.colorSet: Kirigami.Theme.View
@@ -123,6 +126,13 @@ Kirigami.Page {
                                 customColor: Kirigami.Theme.positiveBackgroundColor
                                 customTextColor: Kirigami.Theme.positiveTextColor
                             }
+
+                            Kirigami.Badge {
+                                visible: userCard.modelData.id !== root.d.ownerId
+                                text: userCard.modelData.ready ? i18n("Ready") : i18n("Not Ready")
+                                customColor: userCard.modelData.ready ? Kirigami.Theme.positiveBackgroundColor : Kirigami.Theme.neutralBackgroundColor
+                                customTextColor: userCard.modelData.ready ? Kirigami.Theme.positiveTextColor : Kirigami.Theme.textColor
+                            }
                         }
                     }
                 }
@@ -166,10 +176,17 @@ Kirigami.Page {
                     id: startGameAction
                     text: i18n("Start Game")
                     visible: root.isOwner
-                    enabled: root.isFull
+                    enabled: root.isFull && root.allReady
                     icon.name: "media-playback-start"
                     onTriggered: root.d.invoke("startGame")
                 },
+                Kirigami.Action {
+                    text: root.isReady ? i18n("Cancel Ready") : i18n("Ready")
+                    icon.name: root.isReady ? "dialog-cancel" : "dialog-ok-apply"
+                    visible: !root.isOwner
+                    onTriggered: root.d.invoke("toggleReady")
+                },
+
             ]
         }
     }

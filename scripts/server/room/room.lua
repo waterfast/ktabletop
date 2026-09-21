@@ -20,10 +20,21 @@ function Room:initialize()
   self:setRequestHandler("Room::AddRobot", self.handleAddRobot)
   self:setRequestHandler("Room::Quit", self.handleQuitRoom)
   self:setRequestHandler("Room::StartGame", self.handleStartGame)
+  self:setRequestHandler("Room::Ready", self.handleReady)
 end
 
 function Room:isFull()
   return #self.users >= self.capacity
+end
+
+---@return boolean
+function Room:allReady()
+  for _, p in ipairs(self.users) do
+    if p ~= self.owner and not p.ready then
+      return false
+    end
+  end
+  return true
 end
 
 ---@param user ServerUser
@@ -39,9 +50,11 @@ function Room:addUser(user)
     return
   end
 
+  user.ready = false
   self:broadcast("Room::AddUser", {
     id = user.id,
     username = user.username,
+    ready = user.ready,
   })
 
   RoomBase.addUser(self, user)
@@ -56,6 +69,7 @@ function Room:addUser(user)
       user:notify("Room::AddUser", {
         id = p.id,
         username = p.username,
+        ready = p.ready,
       })
     end
   end
@@ -85,6 +99,15 @@ function Room:handleAddRobot(user)
 end
 
 ---@param user ServerUser
+function Room:handleReady(user)
+  user.ready = not user.ready
+  self:broadcast("Room::ReadyChanged", {
+    id = user.id,
+    ready = user.ready,
+  })
+end
+
+---@param user ServerUser
 function Room:handleStartGame(user)
   if user ~= self.owner then
     return nil, "you need to be room owner to start the game!"
@@ -98,7 +121,15 @@ function Room:handleStartGame(user)
     return nil, "room is not full!"
   end
 
+  if not self:allReady() then
+    return nil, "not all players are ready!"
+  end
+
   self.gameStarted = true
+
+  for _, p in ipairs(self.users) do
+    p.ready = (p == self.owner) or (p.state == "robot")
+  end
 
   local users = tablib.map(self.users, function(u)
     return { connId = u.connId, id = u.id, username = u.username, state = u.state }

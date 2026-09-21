@@ -14,6 +14,7 @@ local json = ktabletop.json
 ---@field username string
 ---@field roomId integer
 ---@field state OnlineState
+---@field ready boolean
 ---@field handlingRequests table<integer, AsyncFunction> requestId -> running handler
 local User = class("User")
 
@@ -23,6 +24,7 @@ function User:initialize(connId)
   self.id = connId
   self._cpp = ktabletop
   self.state = "invalid"
+  self.ready = false
   self.handlingRequests = {}
 end
 

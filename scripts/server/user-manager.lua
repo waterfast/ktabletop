@@ -35,7 +35,7 @@ function UserManager:createRobot()
   robot.id = nextRobotId
   nextRobotId = nextRobotId - 1
   robot.username = ("COMP%d"):format(robot.id)
-  -- TODO: ready = true
+  robot.ready = true
 
   return robot
 end
