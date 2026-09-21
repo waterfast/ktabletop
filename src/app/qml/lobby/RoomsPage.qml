@@ -22,6 +22,11 @@ Kirigami.ScrollablePage {
 
     actions: [
         Kirigami.Action {
+            text: i18n("Refresh rooms")
+            icon.name: "view-refresh"
+            onTriggered: root.d.invoke("fetchRooms")
+        },
+        Kirigami.Action {
             text: i18n("Create room")
             icon.name: "list-add"
             onTriggered: createRoomDialog.open()
