@@ -5,10 +5,15 @@ add_library(ktabletop_core STATIC
     logger.cpp
     ktabletop-lua.cpp
     game-thread.cpp
+
+    packman.cpp
 )
 
 target_link_libraries(ktabletop_core PUBLIC
     spdlog::spdlog
+    LibGit2::LibGit2
+
+    Qt6::Sql
 
     ktabletop_network
     ktabletop_lua
