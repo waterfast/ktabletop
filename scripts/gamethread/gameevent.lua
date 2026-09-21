@@ -23,7 +23,7 @@ function GameEvent:main() end
 
 ---@return AsyncFunction
 function GameEvent:exec()
-  self.func = async.run(self.main, self)
+  self.func = async.async(self.main)(self)
   contextRegistry.bind(self.func.coro, self.ctx)
   return self.func
 end
