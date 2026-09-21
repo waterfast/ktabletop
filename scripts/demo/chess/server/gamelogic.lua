@@ -86,7 +86,10 @@ function ChessGameLogic:run()
     req.timeout = 90
     req:setData(current, { role = current.role })
     req:setDefaultReply(current, randomMove(ctx, current.role))
+
+    ctx:broadcast("Chess.TurnStart", { id = current.id, duration = req.timeout })
     local result = req:getResult(current)
+    ctx:broadcast("Chess.TurnStop", { id = current.id })
 
     if not result then
       ctx:gameOver()

@@ -22,6 +22,10 @@ Kirigami.Page {
         return (players && players.length > index) ? players[index] : null;
     }
 
+    function isTurnPlayer(p) {
+        return !!p && root.d.turnPlayerId === p.id;
+    }
+
     function isSelected(bx, by) {
         const s = root.d.selected;
         return !!s && s.x === bx && s.y === by;
@@ -136,6 +140,8 @@ Kirigami.Page {
         PlayerCard {
             Layout.alignment: Qt.AlignHCenter
             player: root.topPlayer
+            turnActive: root.isTurnPlayer(root.topPlayer)
+            turnDuration: root.isTurnPlayer(root.topPlayer) ? root.d.turnDuration : 0
         }
 
         Item {
@@ -229,6 +235,8 @@ Kirigami.Page {
             Layout.alignment: Qt.AlignHCenter
             player: root.bottomPlayer
             isSelf: true
+            turnActive: root.isTurnPlayer(root.bottomPlayer)
+            turnDuration: root.isTurnPlayer(root.bottomPlayer) ? root.d.turnDuration : 0
         }
     }
 

@@ -19,6 +19,8 @@ ChessMainViewModel:Property("movablePoints")
 ChessMainViewModel:Property("lastMove")
 ChessMainViewModel:Property("promotion")
 ChessMainViewModel:Property("gameOver")
+ChessMainViewModel:Property("turnPlayerId")
+ChessMainViewModel:Property("turnDuration")
 
 ChessMainViewModel:Signal("SyncBoard")
 ChessMainViewModel:Signal("MovePieceTo")
@@ -56,6 +58,12 @@ function ChessMainViewModel:initialize(context)
   end)
   self:setPropertyBinding("gameOver", function()
     return self.context.gameOver
+  end)
+  self:setPropertyBinding("turnPlayerId", function()
+    return self.context.turnPlayerId
+  end)
+  self:setPropertyBinding("turnDuration", function()
+    return self.context.turnDuration
   end)
 end
 

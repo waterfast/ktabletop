@@ -50,7 +50,9 @@ function Room:addUser(user)
     return
   end
 
-  user.ready = false
+  if user.state ~= "robot" then
+    user.ready = false
+  end
   self:broadcast("Room::AddUser", {
     id = user.id,
     username = user.username,

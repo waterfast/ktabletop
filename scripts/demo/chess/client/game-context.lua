@@ -19,6 +19,8 @@ ClientGameContext:include(LObject)
 ClientGameContext:Property("players")
 ClientGameContext:Property("myTurn")
 ClientGameContext:Property("gameOver")
+ClientGameContext:Property("turnPlayerId")
+ClientGameContext:Property("turnDuration")
 
 ---@param gameType string
 ---@param data table
@@ -27,6 +29,8 @@ function ClientGameContext:initialize(gameType, data)
 
   self.playerClass = ClientPlayer
   self.myTurn = false
+  self.turnPlayerId = -1
+  self.turnDuration = 0
   self.players = tablib.map(data.users or {}, function(u)
     local player = self.playerClass:new(u)
     player.ctx = self
@@ -38,6 +42,8 @@ function ClientGameContext:initialize(gameType, data)
   self:setCallback("PropertyUpdate", self.handlePropertyUpdate)
   self:setCallback("ArrangeSeats", self.handleArrangeSeats)
   self:setCallback("Room::GameOver", self.handleGameOver)
+  self:setCallback("Chess.TurnStart", self.handleTurnStart)
+  self:setCallback("Chess.TurnStop", self.handleTurnStop)
   self:setRequestHandler("Chess.PlayChess", self.handlePlayChess)
 end
 
@@ -110,6 +116,17 @@ function ClientGameContext:handleGameOver(_, data)
     result = (#winners == 0) and "draw" or (selfWon and "win" or "lose"),
     winners = names,
   }
+end
+
+function ClientGameContext:handleTurnStart(_, data)
+  self.turnPlayerId = data.id or -1
+  self.turnDuration = data.duration or 0
+end
+
+function ClientGameContext:handleTurnStop(_, data)
+  if data.id ~= self.turnPlayerId then return end
+  self.turnPlayerId = -1
+  self.turnDuration = 0
 end
 
 ---@param user ClientUser
