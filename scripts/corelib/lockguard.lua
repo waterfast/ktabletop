@@ -49,9 +49,11 @@ local function unlock(mu)
   end
 end
 
+local mt = { __close = unlock }
+
 do return function(mutex)
   lock(mutex)
-  return setmetatable({ mutex = mutex }, { __close = function(g) return unlock(g.mutex) end })
+  return setmetatable(mutex, mt)
 end end
 
 ------------------------------------------------------------------------------------

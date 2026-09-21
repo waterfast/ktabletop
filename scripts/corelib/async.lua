@@ -14,8 +14,12 @@ local pack = table.pack
 -- private markers
 local ASYNC = { "ASYNC" }
 local AWAIT = { "AWAIT" }
+local AWAIT_GROUP = { "AWAIT_GROUP" }
 
 local CANCELLED = "Operation canceled"
+
+---@alias Awaitable AsyncFunction|CppAsyncFunction
+---@alias Resumable AsyncFunction|AwaitGroup
 
 -- AsyncScheduler handles results yielded from an async function.
 -- async functions should be started from main coroutine.
@@ -23,61 +27,41 @@ local scheduler = {
   coroutineMap = setmetatable({}, { __mode = "k" }),
 }
 
----@param fn AsyncFunction
-function scheduler:add(fn)
-  self.coroutineMap[fn.coro] = fn
+---@param fn Awaitable
+---@param awaiter (AsyncFunction|AwaitGroup)?
+function scheduler:startAwaitee(fn, awaiter)
+  if fn[ASYNC] then
+    ---@cast fn AsyncFunction
+    self.coroutineMap[fn.coro] = fn
+    fn.state = "running"
+    return self:resume(fn, unpack(fn.args, 1, fn.args.n))
+  elseif fn[AWAIT] then
+    ---@cast fn CppAsyncFunction
+    assert(awaiter ~= nil)
+    fn(function(err, v)
+      awaiter.callee = nil
+      return self:resume(awaiter, not err, err or v)
+    end)
+  end
 end
 
----@param fn AsyncFunction
-function scheduler:start(fn)
-  assert(type(fn) == "table" and fn[ASYNC], "must be AsyncFunction")
-  self:add(fn)
-  fn.state = "running"
-  return self:resume(fn, unpack(fn.args, 1, fn.args.n))
-end
-
----@param fn AsyncFunction
+---@param fn Resumable
 function scheduler:resume(fn, ...)
-  local coro = fn.coro
+  local _, ret = fn:step(...)
+  if ret == nil then return end
 
-  -- when trying to resume a canceled function, finish it immediately
-  if fn.cancelled then
-    fn.state, fn.errmsg = "error", CANCELLED
-    local status = co.status(coro)
-    if status == "dead" then
-      return
-    elseif status == "suspended" then
-      co.close(coro)
-    end
-    return self:finish(fn)
-  end
-
-  -- fn usually call async.await inside it.
-  -- awaiting something or finishing exection will make co.resume return.
-  local packed = pack(co.resume(coro, ...))
-  local status = co.status(coro)
-  local ok = packed[1]
-  local ret = packed[2]
-
-  if status == "dead" then
-    if not ok then
-      fn.state, fn.errmsg = "error", packed[2]
-    else
-      fn.state = "done"
-      fn.results = pack(unpack(packed, 2, packed.n))
-    end
-    return self:finish(fn)
-  end
-
-  assert(ret[ASYNC] or ret == AWAIT, "unexpected yield result " .. tostring(ret))
-  if ret[ASYNC] then
-    return self:start(ret)
+  assert(ret[ASYNC] or ret[AWAIT] or ret[AWAIT_GROUP], "unexpected yield result " .. tostring(ret))
+  if ret[ASYNC] or ret[AWAIT] then
+    return self:startAwaitee(ret, fn)
+  elseif ret[AWAIT_GROUP] then
+    ---@cast ret AwaitGroup
+    return self:resume(ret)
   end
 end
 
--- await on an AsyncFunction or Awaitable
+-- await on an Awaitable
 -- return true and callback results, or false plus error message
----@param fn AsyncFunction|CppAsyncFunction
+---@param fn Awaitable
 ---@return boolean, ...
 function scheduler:await(fn, ...)
   local current = co.running()
@@ -93,33 +77,8 @@ function scheduler:await(fn, ...)
 
   f.callee = fn
 
-  -- they will yield to scheduler:resume().
-  if fn[ASYNC] then
-    -- will be resumed by scheduler:finish(fn).
-    return co.yield(fn)
-  else
-    -- Slot function might be called immediately.
-    local yielded = false
-    local syncResults
-    local callback = function(err, ret)
-      if yielded then
-        f.callee = nil
-        return self:resume(f, not err, err or ret)
-      else
-        syncResults = { not err, err or ret }
-      end
-    end
-    -- equals to call C++ function async_something(...args, callback)
-    fn(callback)
-
-    if syncResults ~= nil then
-      f.callee = nil
-      return unpack(syncResults)
-    end
-    yielded = true
-    -- will be resumed by callback.
-    return co.yield(AWAIT)
-  end
+  -- will be resumed by scheduler:finish or a callback, and return to caller of await.
+  return co.yield(fn)
 end
 
 ---@param fn AsyncFunction
@@ -202,7 +161,42 @@ function AsyncFunction.new(fn, args)
 end
 
 function AsyncFunction:__call()
-  return scheduler:start(self)
+  return scheduler:startAwaitee(self)
+end
+
+function AsyncFunction:step(...)
+  local coro = self.coro
+
+  -- when trying to resume a canceled function, finish it immediately
+  if self.cancelled then
+    self.state, self.errmsg = "error", CANCELLED
+    local status = co.status(coro)
+    if status == "dead" then
+      return
+    elseif status == "suspended" then
+      co.close(coro)
+    end
+    return scheduler:finish(self)
+  end
+
+  -- fn usually call async.await inside it.
+  -- awaiting something or finishing exection will make co.resume return.
+  local packed = pack(co.resume(coro, ...))
+  local status = co.status(coro)
+  local ok = packed[1]
+  local ret = packed[2]
+
+  if status == "dead" then
+    if not ok then
+      self.state, self.errmsg = "error", ret
+    else
+      self.state = "done"
+      self.results = pack(unpack(packed, 2, packed.n))
+    end
+    return scheduler:finish(self)
+  end
+
+  return ok, ret
 end
 
 ---@class AsyncFunctionFactory
@@ -243,6 +237,77 @@ function CppAsyncFunction:__call(cb)
   local packed = pack(fn(unpack(args, 1, args.n)))
   self.cancelFunc = packed[1]
 end
+
+---@class AwaitGroup
+---@field awaiter AsyncFunction
+---@field running Awaitable[]
+---@field finished Awaitable[]
+---@field pendings Awaitable[]
+---@field all Awaitable[]
+---@field cancelled boolean
+---@field shouldCancel fun(self: AwaitGroup): boolean?
+local AwaitGroup = {}
+AwaitGroup.__index = AwaitGroup
+
+---@return AwaitGroup
+function AwaitGroup.new(cancelFn, tasks)
+  return setmetatable({
+    [AWAIT_GROUP] = true,
+
+    running = {},
+    finished = {},
+    pendings = {unpack(tasks)},
+    all = tasks,
+
+    cancelled = false,
+    shouldCancel = cancelFn,
+  }, AwaitGroup)
+end
+
+function AwaitGroup:step()
+  for i = #self.pendings, 1, -1 do
+    local task = self.pendings[i]
+    table.remove(self.pendings, i)
+    self.running[#self.running+1] = task
+
+    scheduler:startAwaitee(task, self.awaiter)
+  end
+end
+
+function AwaitGroup:cancelAll()
+  self.cancelled = true
+  for i = #self.running, 1, -1 do
+    local task = self.running[i]
+    scheduler:cancel(task)
+    table.remove(self.running, i)
+    self.finished[#self.finished+1] = task
+  end
+end
+
+---@param cancelFn fun(group: AwaitGroup): boolean?
+---@param ... AsyncFunction|CppAsyncFunction
+---@return AwaitGroup
+function scheduler:awaitGroup(cancelFn, ...)
+  local current = co.running()
+  local f = self.coroutineMap[current]
+  assert(f, "cannot await outside async function")
+
+  local wg = AwaitGroup.new(cancelFn, pack(...))
+  wg.awaiter = f
+  while true do
+    local ok, ret = co.yield(wg)
+    if wg:shouldCancel() then
+      wg:cancelAll()
+      break
+    end
+
+    if #wg.finished == #wg.all then
+      break
+    end
+  end
+  return wg
+end
+
 
 --------------------------------------------------------------
 
