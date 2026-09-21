@@ -65,7 +65,7 @@ Kirigami.ApplicationWindow {
 
             State {
                 name: "inGame"
-                when: Backend.mainViewModel.gameStarted
+                when: Backend.mainViewModel.connected && Backend.mainViewModel.gameStarted && Backend.mainViewModel.roomId !== 0
 
                 PropertyChanges {
                     root.pageStack.items: [root.createLuaPageByUrl(Backend.mainViewModel.gamePageUrl, { objectName: Backend.mainViewModel.gameViewModelName })]

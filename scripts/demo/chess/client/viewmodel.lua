@@ -2,6 +2,7 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local LObject = require "corelib.lobject"
+local async = require "corelib.async"
 local tablib = ktabletop.tablib
 
 ---@class Chess.MainViewModel: Object, LObject
@@ -26,6 +27,8 @@ ChessMainViewModel:Signal("MovePieceOut")
 ChessMainViewModel:Invokable("clickCell")
 ChessMainViewModel:Invokable("accepted")
 ChessMainViewModel:Invokable("leaveGame")
+ChessMainViewModel:Invokable("leaveToRoom")
+ChessMainViewModel:Invokable("leaveToLobby")
 ChessMainViewModel:Invokable("requestSync")
 
 ---@param context Chess.ClientGameContext
@@ -112,6 +115,31 @@ end
 
 function ChessMainViewModel:leaveGame()
   ktabletop.client:leaveGame()
+end
+
+function ChessMainViewModel:leaveToRoom()
+  local client = ktabletop.client
+
+  local room = client.room
+  if not room then return end
+
+  client.gameContext = nil
+
+  ktabletop.luaEvent("Client::EnterRoom", {
+    id = room.id,
+    name = room.name,
+    capacity = room.capacity,
+    viewModelName = room.vm._stringId,
+  })
+end
+
+function ChessMainViewModel:leaveToLobby()
+  local client = ktabletop.client
+  client.gameContext = nil
+
+  async.run(function()
+    client.myself:request("Room::Quit", {})
+  end)
 end
 
 function ChessMainViewModel:requestSync()

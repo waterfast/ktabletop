@@ -114,13 +114,7 @@ QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVarian
 
 void LuaBinding::releaseLObject(int ref)
 {
-    auto *vm = this->L;
-    lua_State *L = vm->state();
-
-    // TODO: maybe viewModelManager shouldn't hold a reference to that viewModel.
-    LuaVM::pushLibFunc(L, "ktabletop", "viewModelManager");
-    vm->callMethod(u"removeViewModel"_s, {QVariant::fromValue(LuaRef{ref})});
-    lua_pop(L, 1);
+    lua_State *L = this->L->state();
 
     luaL_unref(L, LUA_REGISTRYINDEX, ref);
 }

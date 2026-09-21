@@ -37,7 +37,7 @@ function ClientGameContext:initialize(gameType, data)
   self:setCallback("Chess.MovePieceTo", self.handleMovePieceTo)
   self:setCallback("PropertyUpdate", self.handlePropertyUpdate)
   self:setCallback("ArrangeSeats", self.handleArrangeSeats)
-  self:setCallback("GameOver", self.handleGameOver)
+  self:setCallback("Room::GameOver", self.handleGameOver)
   self:setRequestHandler("Chess.PlayChess", self.handlePlayChess)
 end
 
@@ -96,7 +96,20 @@ function ClientGameContext:handleArrangeSeats(_, data)
 end
 
 function ClientGameContext:handleGameOver(_, data)
-  self.gameOver = data
+  local winners = (data and data.winners) or {}
+  local selfId = ktabletop.client.myself.id
+  local selfWon = false
+  local names = {}
+  for _, id in ipairs(winners) do
+    if id == selfId then selfWon = true end
+    local p = self:getPlayerById(id)
+    names[#names + 1] = p and p.username or tostring(id)
+  end
+
+  self.gameOver = {
+    result = (#winners == 0) and "draw" or (selfWon and "win" or "lose"),
+    winners = names,
+  }
 end
 
 ---@param user ClientUser

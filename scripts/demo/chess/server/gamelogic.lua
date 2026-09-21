@@ -58,6 +58,17 @@ local function randomMove(ctx, color)
   return move
 end
 
+---@param ctx Chess.ServerGameContext
+---@param role string
+---@return integer[]
+local function winningPlayerIds(ctx, role)
+  local ids = {}
+  for _, p in ipairs(ctx.players) do
+    if p.role == role then ids[#ids + 1] = p.id end
+  end
+  return ids
+end
+
 function ChessGameLogic:run()
   local ctx = self.ctx
 
@@ -95,11 +106,10 @@ function ChessGameLogic:run()
     if not hasLegalMove(ctx, current.role) then
       if Engine:isChecking(ctx.board, current.role) then
         local winner = current.role == "white" and "black" or "white"
-        ctx:broadcast("GameOver", winner)
+        ctx:gameOver({ winners = winningPlayerIds(ctx, winner) })
       else
-        ctx:broadcast("GameOver", "")
+        ctx:gameOver()
       end
-      ctx:gameOver()
       return
     end
   end

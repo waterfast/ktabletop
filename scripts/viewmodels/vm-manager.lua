@@ -5,7 +5,7 @@ local ViewModelManager = class("ViewModelManager")
 
 function ViewModelManager:initialize()
   self._types = {}
-  self._instances = {}
+  self._instances = setmetatable({}, { __mode = "v" })
   self._nextId = 1
 end
 
@@ -43,11 +43,6 @@ function ViewModelManager:getViewModel(opts)
   obj._stringId = objectName
   self._instances[objectName] = obj
   return obj
-end
-
----@param obj LObject
-function ViewModelManager:removeViewModel(obj)
-  self._instances[obj._stringId] = nil
 end
 
 return ViewModelManager

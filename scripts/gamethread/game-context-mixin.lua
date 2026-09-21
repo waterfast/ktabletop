@@ -39,9 +39,15 @@ function ServerGameContextMixin:run()
   self.logic:start()
 end
 
-function ServerGameContextMixin:gameOver()
+---@class GameOverResult
+---@field winners integer[]? winning player ids, empty or nil means a draw
+
+---@param result? GameOverResult
+function ServerGameContextMixin:gameOver(result)
   if self.gameFinished then return end
   self.gameFinished = true
+
+  self:broadcast("Room::GameOver", result or {})
 
   ktabletop.gamethread:removeContext(self.id)
   if self.logic and self.logic.root then

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 import QtQuick
-import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
@@ -244,27 +243,15 @@ Kirigami.Page {
         onLoaded: item.open()
     }
 
-    Rectangle {
-        anchors.fill: parent
-        color: "#80000000"
-        visible: root.d.gameOver !== null && root.d.gameOver !== undefined
-        z: 100
-
-        QQC2.Label {
-            anchors.centerIn: parent
-            color: "white"
-            font.pixelSize: 32
-            text: {
-                const result = root.d.gameOver;
-                if (result === "white") {
-                    return i18n("White wins");
-                }
-                if (result === "black") {
-                    return i18n("Black wins");
-                }
-                return i18n("Draw");
-            }
+    Loader {
+        id: gameOverLoader
+        active: root.d.gameOver !== null && root.d.gameOver !== undefined
+        sourceComponent: GameOverDialog {
+            gameOverResult: root.d.gameOver
+            onBackToRoom: root.d.invoke("leaveToRoom")
+            onBackToLobby: root.d.invoke("leaveToLobby")
         }
+        onLoaded: item.open()
     }
 
     Component.onCompleted: root.d.invoke("requestSync")

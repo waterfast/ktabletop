@@ -17,6 +17,7 @@ ecm_add_qml_module(ktabletop_qml
         WaitingRoomPage.qml
         BusyDialog.qml
         ErrorDialog.qml
+        GameOverDialog.qml
         ChatPanel.qml
     SOURCES
         qml-backend.cpp
