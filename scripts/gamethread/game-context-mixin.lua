@@ -47,6 +47,7 @@ function ServerGameContextMixin:gameOver(result)
   if self.gameFinished then return end
   self.gameFinished = true
 
+  ktabletop.luaEvent("gameOver", { roomId = self.id })
   self:broadcast("Room::GameOver", result or {})
 
   ktabletop.gamethread:removeContext(self.id)

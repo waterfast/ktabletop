@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "game-thread.h"
+#include "server.h"
 
 #include "ktabletop-lua.h"
 #include "lua/c-wrapper.h"
@@ -41,6 +42,9 @@ void GameThread::run()
     L = new LuaBinding(nullptr, LuaBinding::GameThread);
     luaopen_ktabletop(L->state());
     L->run();
+
+    // TODO: seems overused luaEvent. maybe should give this a new name to post some events to main thread Lua
+    connect(L, &LuaBinding::luaEvent, Server::instance(), &Server::dispatchLuaEvent, Qt::UniqueConnection);
 
     Q_EMIT ready();
     exec();

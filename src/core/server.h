@@ -36,6 +36,8 @@ public:
     // TODO
     void startGameRoom(int roomId, const QVariantMap &data);
 
+    void dispatchLuaEvent(const QString &type, const QVariant &data);
+
 private:
     explicit Server(QObject *parent = nullptr);
 

@@ -90,6 +90,11 @@ void Server::startGameRoom(int roomId, const QVariantMap &data)
     thread->pushRequest(roomId, 0, u"newroom"_s, data);
 }
 
+void Server::dispatchLuaEvent(const QString &type, const QVariant &data)
+{
+    L->callKTabletopMethod(u"server"_s, u"dispatchLuaEvent"_s, {type, data});
+}
+
 void Server::processNewConnection(ClientSocket *client)
 {
     auto *socket = client->socket();

@@ -139,4 +139,21 @@ function Server:processRequest(connId, requestId, command, data, timeout)
   requestDispatcher(self, user, requestId, command, data, timeout)
 end
 
+---@type table<string, fun(self: Server, data: any)>
+local eventHandlers = {}
+eventHandlers["gameOver"] = function(self, data)
+  local roomId = data.roomId
+  local rm = self.roomManager
+  local room = rm:findRoom(roomId)
+  if not room then return end
+  room.gameStarted = false
+end
+
+function Server:dispatchLuaEvent(type, data)
+  local f = eventHandlers[type]
+  if f then
+    f(self, data)
+  end
+end
+
 return Server
