@@ -1,0 +1,4 @@
+# server/ is used to store ED25519 key pair and SQLITE3 database files
+
+*
+!.gitignore
