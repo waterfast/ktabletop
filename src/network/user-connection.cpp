@@ -6,6 +6,7 @@
 
 #include <QCborArray>
 #include <QCborValue>
+#include <QFuture>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTimer>
@@ -13,73 +14,6 @@
 #include <atomic>
 
 using namespace Qt::StringLiterals;
-
-class PendingRequest : public QObject
-{
-public:
-    PendingRequest(UserConnection *conn, int id, UserConnection::ReplyCallback callback, int timeout)
-        : QObject(conn)
-        , m_conn(conn)
-        , m_id(id)
-        , m_callback(std::move(callback))
-        , m_timeout(timeout)
-    {
-        if (m_callback && timeout > 0) {
-            m_timer = new QTimer(this);
-            m_timer->setSingleShot(true);
-            connect(m_timer, &QTimer::timeout, this, [this] {
-                QJsonObject payload{{u"requestId"_s, m_id}};
-                m_conn->notify("Socket::CancelRequest", QJsonDocument(payload).toJson(QJsonDocument::Compact));
-                finish(QByteArray{}, std::make_error_code(std::errc::timed_out));
-            });
-            m_timer->start(timeout * 1000);
-        }
-    }
-
-    void send(const QByteArray &command, const QByteArray &jsonData, qint64 timestamp)
-    {
-        auto data = jsonData;
-        int type = UserConnection::TypeRequest;
-        if (jsonData.size() > UserConnection::COMPRESSION_THRESHOLD) {
-            data = qCompress(jsonData);
-            type |= UserConnection::DataCompressed;
-        }
-
-        if (timestamp <= 0) {
-            timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch();
-        }
-        QCborArray body{m_id, type, command, data, m_timeout, timestamp};
-
-        m_conn->sendMessage(body.toCborValue().toCbor());
-    }
-
-    void finish(const QByteArray &reply, std::error_code err)
-    {
-        m_conn->m_pendingRequests.remove(m_id);
-        if (m_timer)
-            m_timer->stop();
-        if (m_callback) {
-            auto cb = std::move(m_callback);
-            cb(err, reply);
-        }
-        deleteLater();
-    }
-
-    // drop the request without invoking the callback
-    void cancel()
-    {
-        if (m_timer)
-            m_timer->stop();
-        deleteLater();
-    }
-
-private:
-    UserConnection *m_conn;
-    int m_id;
-    UserConnection::ReplyCallback m_callback;
-    int m_timeout;
-    QTimer *m_timer = nullptr;
-};
 
 UserConnection::UserConnection(QObject *parent, ClientSocket *socket)
     : QObject(parent)
@@ -150,14 +84,47 @@ int UserConnection::nextRequestId()
 
 void UserConnection::startRequest(int id, const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
 {
-    const bool tracked = static_cast<bool>(callback);
-    auto *req = new PendingRequest(this, id, std::move(callback), timeout);
-    if (tracked) {
-        m_pendingRequests.insert(id, req);
+    auto data = jsonData;
+    int type = UserConnection::TypeRequest;
+    if (jsonData.size() > COMPRESSION_THRESHOLD) {
+        data = qCompress(jsonData);
+        type |= UserConnection::DataCompressed;
     }
-    req->send(command, jsonData, timestamp);
-    if (!tracked)
-        req->deleteLater();
+    if (timestamp <= 0) {
+        timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch();
+    }
+    QCborArray body{id, type, command, data, timeout, timestamp};
+    auto msg = body.toCborValue().toCbor();
+
+    if (!callback) {
+        sendMessage(msg);
+        return;
+    }
+
+    auto promise = std::make_shared<QPromise<RequestResult>>();
+    promise->start();
+    promise->future().then(this, [cb = std::move(callback)](RequestResult result) {
+        cb(result.first, result.second);
+    });
+
+    m_pendingRequests.insert(id, promise);
+    sendMessage(msg);
+
+    if (timeout <= 0) {
+        return;
+    }
+
+    QTimer::singleShot(timeout * 1000, this, [this, id, promise] {
+        auto it = m_pendingRequests.find(id);
+        if (it == m_pendingRequests.end() || *it != promise)
+            return;
+
+        m_pendingRequests.erase(it);
+        QJsonObject payload{{u"requestId"_s, id}};
+        notify("Socket::CancelRequest", QJsonDocument(payload).toJson(QJsonDocument::Compact));
+        promise->emplaceResult(std::make_error_code(std::errc::timed_out), QByteArray{});
+        promise->finish();
+    });
 }
 
 int UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
@@ -214,9 +181,7 @@ void UserConnection::cancelRequest(int requestId)
     QJsonObject payload{{u"requestId"_s, requestId}};
     notify("Socket::CancelRequest", QJsonDocument(payload).toJson(QJsonDocument::Compact));
 
-    if (auto *req = m_pendingRequests.take(requestId)) {
-        req->cancel();
-    }
+    m_pendingRequests.remove(requestId);
 }
 
 void UserConnection::handlePacket(const QCborArray &packet)
@@ -237,8 +202,8 @@ void UserConnection::handlePacket(const QCborArray &packet)
         m_receivedRequests.insert(requestId, rr);
         Q_EMIT requestGot(requestId);
     } else if (type & TypeReply) {
-        auto *req = m_pendingRequests.value(requestId, nullptr);
-        if (!req)
+        auto promise = m_pendingRequests.take(requestId);
+        if (!promise)
             return;
 
         bool ok = type & ReplyOk;
@@ -247,7 +212,8 @@ void UserConnection::handlePacket(const QCborArray &packet)
             error = std::make_error_code(std::errc::bad_message);
         }
 
-        req->finish(jsonData, error);
+        promise->emplaceResult(error, jsonData);
+        promise->finish();
     }
 }
 

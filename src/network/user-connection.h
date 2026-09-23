@@ -6,12 +6,12 @@
 #include <QDateTime>
 #include <QHash>
 #include <QObject>
+#include <QPromise>
 
 #include <functional>
 #include <system_error>
 
 class ClientSocket;
-class PendingRequest;
 
 class UserConnection : public QObject
 {
@@ -71,8 +71,8 @@ protected:
 
 private:
     // Sending side
-    friend class PendingRequest;
-    QHash<int, PendingRequest *> m_pendingRequests;
+    using RequestResult = std::pair<std::error_code, QByteArray>;
+    QHash<int, std::shared_ptr<QPromise<RequestResult>>> m_pendingRequests;
 
     // Receiving side
     QHash<int, ReceivedRequest> m_receivedRequests;
