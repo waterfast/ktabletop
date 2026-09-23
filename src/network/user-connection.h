@@ -64,8 +64,6 @@ Q_SIGNALS:
     void socketError(const QString &msg);
     void disconnected();
 
-    void requestReady(int id, QByteArray command, QByteArray jsonData, int timeout, qint64 timestamp, ReplyCallback callback);
-
 protected:
     void handlePacket(const QCborArray &packet);
 
@@ -73,6 +71,7 @@ private:
     // Sending side
     using RequestResult = std::pair<std::error_code, QByteArray>;
     QHash<int, std::shared_ptr<QPromise<RequestResult>>> m_pendingRequests;
+    QMutex m_pendingRequestLock;
 
     // Receiving side
     QHash<int, ReceivedRequest> m_receivedRequests;
@@ -87,7 +86,6 @@ private:
     void sendMessage(const QByteArray &msg);
 
     static int nextRequestId();
-    void startRequest(int id, const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback);
 };
 
 Q_DECLARE_METATYPE(UserConnection::ReplyCallback)
