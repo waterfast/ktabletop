@@ -18,6 +18,7 @@
 
 using namespace Qt::Literals::StringLiterals;
 using namespace KTabletopCrypto;
+using str = const char *;
 
 static UserConnection *findConnectionById(lua_State *L, int connId)
 {
@@ -45,13 +46,7 @@ static UserConnection *findConnectionById(lua_State *L, int connId)
 // args: int connId, string command, string jsonData
 static int notifySocket(lua_State *L)
 {
-    int nargs = lua_gettop(L);
-    if (nargs != 3) {
-        return luaL_error(L, "expected 3 arguments, got %d", nargs);
-    }
-    int connId = luaL_checkinteger(L, 1);
-    const char *command = luaL_checkstring(L, 2);
-    const char *jsonData = luaL_checkstring(L, 3);
+    auto [connId, command, jsonData] = LuaVM::readArgs<int, str, str>(L);
 
     auto *conn = findConnectionById(L, connId);
     if (!conn) {
@@ -63,31 +58,28 @@ static int notifySocket(lua_State *L)
     return 0;
 }
 
-static int cancelContext(lua_State *L)
+static int pushAsyncCancelToken(lua_State *L, AsyncContext *ctx)
 {
-    // ctx must be alive when calling this function from Lua
+    // ctx is certainly alive when calling this function from Lua
     // because this will only be triggered by async.cancel,
     // and if ctx->complete has been called,
-    // corresponding awaitable must be done and removed from calling chain
-    auto *ctx = static_cast<AsyncContext *>(lua_touserdata(L, lua_upvalueindex(1)));
-    ctx->cancel();
-    return 0;
+    // corresponding awaitable should have done and removed from calling chain
+    constexpr auto f = [](lua_State *L) {
+        auto *ctx = static_cast<AsyncContext *>(lua_touserdata(L, lua_upvalueindex(1)));
+        ctx->cancel();
+        return 0;
+    };
+
+    lua_pushlightuserdata(L, ctx);
+    lua_pushcclosure(L, f, 1);
+    return 1;
 }
 
 // args: int connId, string command, string jsonData, int time, int64 timestamp,
 //       callback: fun(result: string?, err: string?)
 static int requestSocket(lua_State *L)
 {
-    int nargs = lua_gettop(L);
-    if (nargs != 6) {
-        return luaL_error(L, "expected 6 arguments, got %d", nargs);
-    }
-    int connId = luaL_checkinteger(L, 1);
-    const char *command = luaL_checkstring(L, 2);
-    const char *jsonData = luaL_checkstring(L, 3);
-    int time = luaL_checkinteger(L, 4);
-    qint64 timestamp = luaL_checkinteger(L, 5);
-    luaL_checktype(L, 6, LUA_TFUNCTION);
+    auto [connId, command, jsonData, time, timestamp, cb] = LuaVM::readArgs<int, str, str, int, qint64, LuaStk<LUA_TFUNCTION>>(L);
 
     auto *binding = LuaBinding::forState(L);
     auto *conn = findConnectionById(L, connId);
@@ -95,10 +87,9 @@ static int requestSocket(lua_State *L)
         return luaL_error(L, "cannot find socket of connId %d", connId);
     }
 
-    lua_pushvalue(L, 6);
+    lua_pushvalue(L, cb.index);
     int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
-    // TODO: conn->request is more complex than this
     auto *ctx = new AsyncContext(binding, fnRef);
     int requestId = conn->request(command, jsonData, time, timestamp, [ctx](std::error_code err, QByteArray reply) {
         ctx->complete(err, reply);
@@ -107,23 +98,13 @@ static int requestSocket(lua_State *L)
         conn->cancelRequest(requestId);
     });
 
-    lua_pushlightuserdata(L, ctx);
-    lua_pushcclosure(L, cancelContext, 1);
-    return 1;
+    return pushAsyncCancelToken(L, ctx);
 }
 
 // args: int connId, int requestId, bool ok, string jsonData
 static int replySocket(lua_State *L)
 {
-    int nargs = lua_gettop(L);
-    if (nargs != 4) {
-        return luaL_error(L, "expected 4 arguments, got %d", nargs);
-    }
-    int connId = luaL_checkinteger(L, 1);
-    int requestId = luaL_checkinteger(L, 2);
-    luaL_checktype(L, 3, LUA_TBOOLEAN);
-    bool ok = lua_toboolean(L, 3);
-    const char *jsonData = luaL_checkstring(L, 4);
+    auto [connId, requestId, ok, jsonData] = LuaVM::readArgs<int, int, bool, str>(L);
 
     auto *conn = findConnectionById(L, connId);
     if (!conn) {
@@ -138,23 +119,13 @@ static int replySocket(lua_State *L)
 // void delay(ms, callback)
 static int delay(lua_State *L)
 {
+    auto [ms, cb] = LuaVM::readArgs<int, LuaStk<LUA_TFUNCTION>>(L);
     auto *binding = LuaBinding::forState(L);
     if (!binding) {
         return luaL_error(L, "No LuaBinding found for this Lua VM");
     }
 
-    int nargs = lua_gettop(L);
-    if (nargs != 2) {
-        return luaL_error(L, "expected 2 arguments (ms, callback), got %d", nargs);
-    }
-
-    int ms = luaL_checkinteger(L, 1);
-    if (ms < 0) {
-        return luaL_error(L, "delay time must be non-negative, got %d", ms);
-    }
-    luaL_checktype(L, 2, LUA_TFUNCTION);
-
-    lua_pushvalue(L, 2);
+    lua_pushvalue(L, cb.index);
     int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
     auto *ctx = new AsyncContext(binding, fnRef);
@@ -163,9 +134,7 @@ static int delay(lua_State *L)
     timer->connect(timer, &QTimer::timeout, ctx, &AsyncContext::completeVoid);
     timer->start(ms);
 
-    lua_pushlightuserdata(L, ctx);
-    lua_pushcclosure(L, cancelContext, 1);
-    return 1;
+    return pushAsyncCancelToken(L, ctx);
 }
 
 // args: string type, var data
@@ -191,18 +160,13 @@ static int luaEvent(lua_State *L)
 // client-only: args: string host, int port, callback: fun(err: string?)
 static int connectToHost(lua_State *L)
 {
+    auto [host, port, cb] = LuaVM::readArgs<str, int, LuaStk<LUA_TFUNCTION>>(L);
     auto *binding = LuaBinding::forState(L);
     if (!binding) {
         return luaL_error(L, "No LuaBinding found for this Lua VM");
     }
 
-    if (lua_gettop(L) != 3)
-        return luaL_error(L, "expected 3 arguments");
-    const char *host = luaL_checkstring(L, 1);
-    int port = luaL_checkinteger(L, 2);
-    luaL_checktype(L, 3, LUA_TFUNCTION);
-
-    lua_pushvalue(L, 3);
+    lua_pushvalue(L, cb.index);
     int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
     auto *sock = Client::instance()->connection()->socket()->socket();
@@ -235,10 +199,6 @@ static int startGame(lua_State *L)
 
 static int disconnectSocket(lua_State *L)
 {
-    int nargs = lua_gettop(L);
-    if (nargs != 1) {
-        return luaL_error(L, "expected 1 argument (connId), got %d", nargs);
-    }
     int connId = luaL_checkinteger(L, 1);
 
     auto *conn = findConnectionById(L, connId);
@@ -264,13 +224,9 @@ static int getClientNonce(lua_State *L)
 
 static int verifyAuthChallenge(lua_State *L)
 {
-    int nargs = lua_gettop(L);
-    if (nargs != 3) {
-        return luaL_error(L, "expected 3 arguments (idPub, serverPub, sig), got %d", nargs);
-    }
-    const QByteArray idPub = luaL_checkstring(L, 1);
-    const QByteArray serverPub = QByteArray::fromBase64(luaL_checkstring(L, 2));
-    const QByteArray sig = QByteArray::fromBase64(luaL_checkstring(L, 3));
+    auto [idPub, serverPubBase64, sigBase64] = LuaVM::readArgs<str, str, str>(L);
+    const QByteArray serverPub = QByteArray::fromBase64(serverPubBase64);
+    const QByteArray sig = QByteArray::fromBase64(sigBase64);
 
     auto *conn = Client::instance()->connection();
     const QByteArray nonce = conn->authNonce();
@@ -313,12 +269,8 @@ static int getServerPublicKey(lua_State *L)
 
 static int makeAuthChallenge(lua_State *L)
 {
-    int nargs = lua_gettop(L);
-    if (nargs != 2) {
-        return luaL_error(L, "expected 2 arguments (connId, nonce), got %d", nargs);
-    }
-    int connId = luaL_checkinteger(L, 1);
-    const QByteArray nonce = QByteArray::fromBase64(luaL_checkstring(L, 2));
+    auto [connId, nonceBase64] = LuaVM::readArgs<int, str>(L);
+    const QByteArray nonce = QByteArray::fromBase64(nonceBase64);
 
     auto *server = Server::instance();
     auto *conn = server->findConnection(connId);
@@ -348,12 +300,8 @@ static int makeAuthChallenge(lua_State *L)
 
 static int acceptClientKey(lua_State *L)
 {
-    int nargs = lua_gettop(L);
-    if (nargs != 2) {
-        return luaL_error(L, "expected 2 arguments (connId, clientPub), got %d", nargs);
-    }
-    int connId = luaL_checkinteger(L, 1);
-    const QByteArray clientPub = QByteArray::fromBase64(luaL_checkstring(L, 2));
+    auto [connId, keyBase64] = LuaVM::readArgs<int, str>(L);
+    const QByteArray clientPub = QByteArray::fromBase64(keyBase64);
 
     auto *conn = Server::instance()->findConnection(connId);
     if (!conn) {

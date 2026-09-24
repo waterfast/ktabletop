@@ -15,6 +15,12 @@ struct LuaRef {
     int index = LUA_NOREF;
 };
 
+template<uint8_t Expected>
+struct LuaStk {
+    int index = 0;
+    static constexpr uint8_t luaType = Expected;
+};
+
 class LuaVM
 {
 public:
@@ -42,8 +48,45 @@ public:
 
     static int pushLibFunc(lua_State *L, const char *libName, const char *funcName);
 
+    template<class... Ts>
+    static std::tuple<Ts...> readArgs(lua_State *L)
+    {
+        int nargs = lua_gettop(L);
+        int expectedArgs = sizeof...(Ts);
+        if (nargs != expectedArgs) {
+            luaL_error(L, "expected %d arguments, got %d", expectedArgs, nargs);
+            std::unreachable();
+        }
+
+        int i = 1;
+        auto next = [&i] {
+            return i++;
+        }; // to supress GCC warnings...
+        return std::tuple<Ts...>{readArg<Ts>(L, next())...};
+    }
+
 private:
     lua_State *L;
+
+    template<class T>
+    static T readArg(lua_State *L, int i)
+    {
+        if constexpr (std::same_as<T, bool>) {
+            luaL_checktype(L, i, LUA_TBOOLEAN);
+            return lua_toboolean(L, i) != 0;
+        } else if constexpr (std::same_as<T, const char *>) {
+            return luaL_checkstring(L, i);
+        } else if constexpr (std::integral<T>) {
+            return static_cast<T>(luaL_checkinteger(L, i));
+        } else if constexpr (std::floating_point<T>) {
+            return static_cast<T>(luaL_checknumber(L, i));
+        } else if constexpr (requires { T::luaType; }) {
+            luaL_checktype(L, i, static_cast<int>(T::luaType));
+            return T{i};
+        } else {
+            static_assert(!std::same_as<T, T>, "unsupported Lua arg type");
+        }
+    }
 };
 
 Q_DECLARE_METATYPE(LuaRef);
