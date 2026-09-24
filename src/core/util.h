@@ -18,4 +18,6 @@ QSqlQuery execQuery(const QSqlDatabase &db, const QString &sql, const Args &...a
     return query;
 }
 
+QString readWholeFile(const QString &path);
+
 } // namespace KTabletopUtils

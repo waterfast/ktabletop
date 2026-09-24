@@ -23,12 +23,18 @@ function Client:initialize()
   self.myself = ClientUser:new()
   self.lobby = ClientLobby:new()
 
+  ---- Handshake and auth stuff ----
+  self:setRequestHandler("Auth::RequestNonce", self.handleNonceRequest)
+  self:setRequestHandler("Auth::ExchangeKey", self.handleExchangeKey)
+  self:setCallback("Auth::StartEncryption", self.startEncryption)
+  self:setRequestHandler("Auth::RequestUsername", self.handleAuthRequest)
   self:setCallback("User::Setup", self.setupUser)
+
   self:setCallback("Lobby::Enter", self.enterLobby)
 
   self:setCallback("Room::Enter", self.enterRoom)
   self:setCallback("Room::StartGame", self.startGame)
-  self:setRequestHandler("Auth::RequestUsername", self.handleAuthRequest)
+
 end
 
 ---@param cmd string
@@ -113,6 +119,25 @@ end
 
 function Client:handleAuthRequest(_, _)
   return { username = self.pendingUsername }
+end
+
+function Client:handleNonceRequest(_, _)
+  return ktabletop.getClientNonce()
+end
+
+function Client:handleExchangeKey(user, data)
+  local clientPub = ktabletop.verifyAuthChallenge(data.idPub, data.serverPub, data.sig)
+  if clientPub == "" then
+    ktabletop.disconnect(user.connId)
+    return ""
+  end
+  return clientPub
+end
+
+function Client:startEncryption(_, _)
+  if not ktabletop.acceptServerKey() then
+    ktabletop.disconnect(0)
+  end
 end
 
 ----------------------------------------------------------

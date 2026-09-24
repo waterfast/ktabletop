@@ -3,6 +3,7 @@
 
 #include "user-connection.h"
 #include "client-socket.h"
+#include "crypto-util.h"
 
 #include <QCborArray>
 #include <QCborValue>
@@ -14,6 +15,7 @@
 #include <atomic>
 
 using namespace Qt::StringLiterals;
+using namespace KTabletopCrypto;
 
 UserConnection::UserConnection(QObject *parent, ClientSocket *socket)
     : QObject(parent)
@@ -30,6 +32,53 @@ UserConnection::UserConnection(QObject *parent, ClientSocket *socket)
 
 UserConnection::~UserConnection()
 {
+    EVP_PKEY_free(m_authEphemeralKey);
+}
+
+void UserConnection::setAuthEphemeralKey(EVP_PKEY *key)
+{
+    EVP_PKEY_free(m_authEphemeralKey);
+    m_authEphemeralKey = key;
+}
+
+EVP_PKEY *UserConnection::takeAuthEphemeralKey()
+{
+    EVP_PKEY *key = m_authEphemeralKey;
+    m_authEphemeralKey = nullptr;
+    return key;
+}
+
+void UserConnection::setAuthNonce(const QByteArray &nonce)
+{
+    m_authNonce = nonce;
+}
+
+QByteArray UserConnection::authNonce() const
+{
+    return m_authNonce;
+}
+
+void UserConnection::setPeerEphPublicKey(const QByteArray &key)
+{
+    m_peerEphPublicKey = key;
+}
+
+QByteArray UserConnection::peerEphPublicKey() const
+{
+    return m_peerEphPublicKey;
+}
+
+void UserConnection::setClientSide(bool clientSide)
+{
+    m_clientSide = clientSide;
+}
+
+void UserConnection::enableEncryption(const QByteArray &key)
+{
+    m_aesKey = key;
+    m_sendCounter = 0;
+    m_recvCounter = 0;
+    m_encrypted = true;
 }
 
 int UserConnection::connId() const
@@ -81,6 +130,29 @@ int UserConnection::nextRequestId()
     return id;
 }
 
+QByteArray UserConnection::makeIv(bool fromClient, quint64 counter)
+{
+    QByteArray iv(12, '\0');
+    iv[0] = fromClient ? 0x00 : 0x01;
+    for (int i = 0; i < 8; i++) {
+        iv[11 - i] = static_cast<char>((counter >> (8 * i)) & 0xFF);
+    }
+    return iv;
+}
+
+QByteArray UserConnection::encryptData(const QByteArray &data, int &type)
+{
+    const QByteArray iv = makeIv(m_clientSide, m_sendCounter++);
+    type |= DataEncrypted;
+    return aesGcmEncrypt(m_aesKey, iv, data);
+}
+
+QByteArray UserConnection::decryptData(const QByteArray &data)
+{
+    const QByteArray iv = makeIv(!m_clientSide, m_recvCounter++);
+    return aesGcmDecrypt(m_aesKey, iv, data);
+}
+
 int UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
 {
     const int id = nextRequestId();
@@ -89,6 +161,9 @@ int UserConnection::request(const QByteArray &command, const QByteArray &jsonDat
     if (jsonData.size() > COMPRESSION_THRESHOLD) {
         data = qCompress(jsonData);
         type |= UserConnection::DataCompressed;
+    }
+    if (m_encrypted) {
+        data = encryptData(data, type);
     }
     if (timestamp <= 0) {
         timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch();
@@ -141,6 +216,9 @@ void UserConnection::reply(int requestId, bool ok, const QByteArray &jsonData)
         data = qCompress(jsonData);
         type |= DataCompressed;
     }
+    if (m_encrypted) {
+        data = encryptData(data, type);
+    }
 
     if (ok) {
         type |= ReplyOk;
@@ -161,6 +239,9 @@ void UserConnection::notify(const QByteArray &command, const QByteArray &jsonDat
     if (jsonData.size() > COMPRESSION_THRESHOLD) {
         data = qCompress(jsonData);
         type |= DataCompressed;
+    }
+    if (m_encrypted) {
+        data = encryptData(data, type);
     }
 
     QCborArray body{-2, type, command, data};
@@ -190,6 +271,16 @@ void UserConnection::handlePacket(const QCborArray &packet)
     int type = packet[1].toInteger();
     auto command = packet[2].toByteArray();
     auto jsonData = packet[3].toByteArray();
+
+    if (type & DataEncrypted) {
+        jsonData = decryptData(jsonData);
+        if (jsonData.isEmpty()) {
+            if (m_socket && m_socket->socket()) {
+                m_socket->socket()->disconnectFromHost();
+            }
+            return;
+        }
+    }
 
     if (type & DataCompressed) {
         jsonData = qUncompress(jsonData);

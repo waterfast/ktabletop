@@ -36,17 +36,37 @@ end
 --- Below methods are called from C++ code.
 ----------------------------------------------------------
 
+local handshake = async.async(function(connId)
+  local requestFn = async.wrap(ktabletop.requestSocket)
+
+  local ok, ret = async.await(requestFn(connId, "Auth::RequestNonce", json.encode({}), 10, -1))
+  if not ok then return false end
+  local nonce = json.decode(ret)
+
+  local challenge = ktabletop.makeAuthChallenge(connId, nonce)
+  ok, ret = async.await(requestFn(connId, "Auth::ExchangeKey", json.encode(challenge), 10, -1))
+  if not ok then return false end
+  local clientPub = json.decode(ret)
+
+  ktabletop.notifySocket(connId, "Auth::StartEncryption", "{}")
+  return ktabletop.acceptClientKey(connId, clientPub)
+end)
+
 ---@param connId integer
 function Server:processNewConnection(connId)
   async.run(function ()
     local requestFn = async.wrap(ktabletop.requestSocket)
-    local ok, ret = async.await(requestFn(connId, "Auth::RequestUsername", json.encode({}), 10, -1))
-
-    if not ok then
-      ktabletop.log.warn(("connId %d: failed to request username: %s"):format(connId, ret))
+    local ok, ret = async.await(handshake(connId))
+    if not ok or not ret then
+      ktabletop.disconnect(connId)
       return
     end
 
+    ok, ret = async.await(requestFn(connId, "Auth::RequestUsername", json.encode({}), 10, -1))
+    if not ok then
+      ktabletop.disconnect(connId)
+      return
+    end
     local data = json.decode(ret)
     local user = self.userManager:createNewUser(connId, data and data.username)
     self.roomManager.lobby:addUser(user)

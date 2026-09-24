@@ -8,6 +8,8 @@
 #include <QObject>
 #include <QVariantMap>
 
+#include <openssl/evp.h>
+
 class LuaBinding;
 class ClientSocket;
 class ServerSocket;
@@ -39,6 +41,9 @@ public:
 
     void dispatchLuaEvent(const QString &type, const QVariant &data);
 
+    QString authPublicKey() const;
+    EVP_PKEY *authPrivateKey() const;
+
 private:
     explicit Server(QObject *parent = nullptr);
 
@@ -49,5 +54,9 @@ private:
 
     DbThread *usersDb;
 
+    QString m_authPublicKey;
+    EVP_PKEY *m_authPrivateKey = nullptr;
+
+    void initAuthKeys();
     void processNewConnection(ClientSocket *client);
 };

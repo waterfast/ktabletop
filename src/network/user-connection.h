@@ -11,6 +11,8 @@
 #include <functional>
 #include <system_error>
 
+#include <openssl/evp.h>
+
 class ClientSocket;
 
 class UserConnection : public QObject
@@ -20,6 +22,7 @@ class UserConnection : public QObject
 public:
     enum PacketType {
         DataCompressed = 0x1000,
+        DataEncrypted = 0x2000,
 
         TypeRequest = 0x100,
         TypeReply = 0x200,
@@ -56,6 +59,18 @@ public:
 
     void cancelRequest(int requestId);
 
+    void setAuthEphemeralKey(EVP_PKEY *key);
+    EVP_PKEY *takeAuthEphemeralKey();
+
+    void setAuthNonce(const QByteArray &nonce);
+    QByteArray authNonce() const;
+
+    void setPeerEphPublicKey(const QByteArray &key);
+    QByteArray peerEphPublicKey() const;
+
+    void setClientSide(bool clientSide);
+    void enableEncryption(const QByteArray &key);
+
 Q_SIGNALS:
     void messageReady(const QByteArray &msg);
 
@@ -79,11 +94,24 @@ private:
     ClientSocket *m_socket = nullptr;
     int m_connId;
 
+    EVP_PKEY *m_authEphemeralKey = nullptr;
+    QByteArray m_authNonce;
+    QByteArray m_peerEphPublicKey;
+    QByteArray m_aesKey;
+    bool m_encrypted = false;
+    bool m_clientSide = false;
+    quint64 m_sendCounter = 0;
+    quint64 m_recvCounter = 0;
+
     enum {
         COMPRESSION_THRESHOLD = 2048
     };
 
     void sendMessage(const QByteArray &msg);
+
+    static QByteArray makeIv(bool fromClient, quint64 counter);
+    QByteArray encryptData(const QByteArray &data, int &type);
+    QByteArray decryptData(const QByteArray &data);
 
     static int nextRequestId();
 };

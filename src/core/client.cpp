@@ -30,6 +30,7 @@ Client::Client(QObject *parent)
     L->run();
 
     m_connection = new UserConnection(this, new ClientSocket);
+    m_connection->setClientSide(true);
 
     connect(m_connection, &UserConnection::notificationGot, this, [this](const QByteArray &command, const QByteArray &jsonData) {
         L->callKTabletopMethod(u"client"_s,

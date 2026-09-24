@@ -7,6 +7,7 @@
 #include "lua/c-wrapper.h" // for LuaVM::readValue
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
+#include "network/crypto-util.h"
 #include "network/user-connection.h"
 #include "server.h"
 
@@ -14,6 +15,9 @@
 #include <QTimer>
 
 #include <lua.hpp>
+
+using namespace Qt::Literals::StringLiterals;
+using namespace KTabletopCrypto;
 
 static UserConnection *findConnectionById(lua_State *L, int connId)
 {
@@ -229,6 +233,185 @@ static int startGame(lua_State *L)
     return 0;
 }
 
+static int disconnectSocket(lua_State *L)
+{
+    int nargs = lua_gettop(L);
+    if (nargs != 1) {
+        return luaL_error(L, "expected 1 argument (connId), got %d", nargs);
+    }
+    int connId = luaL_checkinteger(L, 1);
+
+    auto *conn = findConnectionById(L, connId);
+    if (!conn) {
+        qWarning() << "[auth] disconnect: cannot find connection" << connId;
+        return 0;
+    }
+    if (auto *tcp = conn->socket()->socket()) {
+        tcp->disconnectFromHost();
+    }
+    return 0;
+}
+
+static int getClientNonce(lua_State *L)
+{
+    const QByteArray nonce = generateNonce();
+    Client::instance()->connection()->setAuthNonce(nonce);
+
+    const QByteArray b64 = nonce.toBase64();
+    lua_pushlstring(L, b64.constData(), b64.size());
+    return 1;
+}
+
+static int verifyAuthChallenge(lua_State *L)
+{
+    int nargs = lua_gettop(L);
+    if (nargs != 3) {
+        return luaL_error(L, "expected 3 arguments (idPub, serverPub, sig), got %d", nargs);
+    }
+    const QByteArray idPub = luaL_checkstring(L, 1);
+    const QByteArray serverPub = QByteArray::fromBase64(luaL_checkstring(L, 2));
+    const QByteArray sig = QByteArray::fromBase64(luaL_checkstring(L, 3));
+
+    auto *conn = Client::instance()->connection();
+    const QByteArray nonce = conn->authNonce();
+
+    EVP_PKEY *idKey = loadPublicKeyPem(idPub);
+    if (!idKey) {
+        lua_pushstring(L, "");
+        return 1;
+    }
+
+    const QByteArray transcript = QByteArrayLiteral("ktabletop-handshake-v1") + nonce + serverPub;
+    const bool verified = ed25519Verify(idKey, transcript, sig);
+    EVP_PKEY_free(idKey);
+
+    if (!verified) {
+        lua_pushstring(L, "");
+        return 1;
+    }
+
+    EVP_PKEY *ephemeral = generateX25519KeyPairs();
+    if (!ephemeral) {
+        lua_pushstring(L, "");
+        return 1;
+    }
+
+    const QByteArray clientPub = x25519RawPublicKey(ephemeral);
+    conn->setAuthEphemeralKey(ephemeral);
+    conn->setPeerEphPublicKey(serverPub);
+
+    const QByteArray b64 = clientPub.toBase64();
+    lua_pushlstring(L, b64.constData(), b64.size());
+    return 1;
+}
+
+static int getServerPublicKey(lua_State *L)
+{
+    lua_pushstring(L, Server::instance()->authPublicKey().toUtf8().constData());
+    return 1;
+}
+
+static int makeAuthChallenge(lua_State *L)
+{
+    int nargs = lua_gettop(L);
+    if (nargs != 2) {
+        return luaL_error(L, "expected 2 arguments (connId, nonce), got %d", nargs);
+    }
+    int connId = luaL_checkinteger(L, 1);
+    const QByteArray nonce = QByteArray::fromBase64(luaL_checkstring(L, 2));
+
+    auto *server = Server::instance();
+    auto *conn = server->findConnection(connId);
+    if (!conn) {
+        return luaL_error(L, "cannot find connection of connId %d", connId);
+    }
+
+    EVP_PKEY *ephemeral = generateX25519KeyPairs();
+    if (!ephemeral) {
+        return luaL_error(L, "failed to generate X25519 key pair");
+    }
+
+    const QByteArray serverPub = x25519RawPublicKey(ephemeral);
+    conn->setAuthEphemeralKey(ephemeral);
+
+    const QByteArray transcript = QByteArrayLiteral("ktabletop-handshake-v1") + nonce + serverPub;
+    const QByteArray sig = ed25519Sign(server->authPrivateKey(), transcript);
+
+    LuaVM::pushValue(L,
+                     QVariantMap{
+                         {u"idPub"_s, server->authPublicKey()},
+                         {u"serverPub"_s, QString::fromLatin1(serverPub.toBase64())},
+                         {u"sig"_s, QString::fromLatin1(sig.toBase64())},
+                     });
+    return 1;
+}
+
+static int acceptClientKey(lua_State *L)
+{
+    int nargs = lua_gettop(L);
+    if (nargs != 2) {
+        return luaL_error(L, "expected 2 arguments (connId, clientPub), got %d", nargs);
+    }
+    int connId = luaL_checkinteger(L, 1);
+    const QByteArray clientPub = QByteArray::fromBase64(luaL_checkstring(L, 2));
+
+    auto *conn = Server::instance()->findConnection(connId);
+    if (!conn) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    EVP_PKEY *ephemeral = conn->takeAuthEphemeralKey();
+    if (!ephemeral) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    const QByteArray shared = x25519DeriveShared(ephemeral, clientPub);
+    EVP_PKEY_free(ephemeral);
+    if (shared.isEmpty()) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    const QByteArray key = hkdfSha256(shared, QByteArray(), QByteArrayLiteral("ktabletop-handshake-v1"), 32);
+    conn->setPeerEphPublicKey(clientPub);
+    conn->enableEncryption(key);
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+static int acceptServerKey(lua_State *L)
+{
+    auto *conn = Client::instance()->connection();
+    if (!conn) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    EVP_PKEY *ephemeral = conn->takeAuthEphemeralKey();
+    const QByteArray peerKey = conn->peerEphPublicKey();
+    if (!ephemeral || peerKey.isEmpty()) {
+        EVP_PKEY_free(ephemeral);
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    const QByteArray shared = x25519DeriveShared(ephemeral, peerKey);
+    EVP_PKEY_free(ephemeral);
+    if (shared.isEmpty()) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    const QByteArray key = hkdfSha256(shared, QByteArray(), QByteArrayLiteral("ktabletop-handshake-v1"), 32);
+    conn->enableEncryption(key);
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
 static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
@@ -237,16 +420,28 @@ static luaL_Reg commonFuncTable[] = {
     {"delay", delay},
     {"luaEvent", luaEvent},
 
+    {"disconnect", disconnectSocket},
+
     {NULL, NULL},
 };
 
 static luaL_Reg clientFuncTable[] = {
     {"connectToHost", connectToHost},
+
+    {"getClientNonce", getClientNonce},
+    {"verifyAuthChallenge", verifyAuthChallenge},
+    {"acceptServerKey", acceptServerKey},
+
     {NULL, NULL},
 };
 
 static luaL_Reg serverFuncTable[] = {
     {"startGame", startGame},
+
+    {"getServerPublicKey", getServerPublicKey},
+    {"makeAuthChallenge", makeAuthChallenge},
+    {"acceptClientKey", acceptClientKey},
+
     {NULL, NULL},
 };
 

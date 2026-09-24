@@ -6,6 +6,7 @@ add_library(ktabletop_core STATIC
     ktabletop-lua.cpp
     game-thread.cpp
     db-thread.cpp
+    util.cpp
 
     packman.cpp
 )
@@ -13,6 +14,7 @@ add_library(ktabletop_core STATIC
 target_link_libraries(ktabletop_core PUBLIC
     spdlog::spdlog
     LibGit2::LibGit2
+    OpenSSL::Crypto
 
     Qt6::Sql
 

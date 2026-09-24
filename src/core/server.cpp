@@ -7,13 +7,19 @@
 #include "ktabletop-lua.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
+#include "network/crypto-util.h"
 #include "network/server-socket.h"
 #include "network/user-connection.h"
+#include "util.h"
 
 #include <QJsonDocument>
 #include <QJsonValue>
 
+#include <QFile>
+
 using namespace Qt::Literals::StringLiterals;
+using namespace KTabletopCrypto;
+using namespace KTabletopUtils;
 
 static Server *serverInstance = nullptr;
 
@@ -39,6 +45,8 @@ Server::Server(QObject *parent)
     luaopen_ktabletop(L->state());
     L->run();
 
+    initAuthKeys();
+
     server = new ServerSocket(this);
     connect(server, &ServerSocket::newConnection, this, &Server::processNewConnection);
 
@@ -48,7 +56,47 @@ Server::Server(QObject *parent)
 
 Server::~Server()
 {
+    EVP_PKEY_free(m_authPrivateKey);
     serverInstance = nullptr;
+}
+
+void Server::initAuthKeys()
+{
+    static const QString privPath = u"./server/ed25519.key"_s;
+    static const QString pubPath = u"./server/ed25519.key.pub"_s;
+
+    if (!QFile::exists(privPath) || !QFile::exists(pubPath)) {
+        EVP_PKEY *pkey = generateEd25519KeyPairs();
+        if (!pkey) {
+            qFatal("Failed to generate Ed25519 key pair");
+        }
+        if (!writeKeyPair(privPath, pubPath, pkey)) {
+            EVP_PKEY_free(pkey);
+            qFatal("Failed to write Ed25519 key pair to server/");
+        }
+        EVP_PKEY_free(pkey);
+        qInfo() << "Generated Ed25519 key pair at" << privPath;
+    }
+
+    m_authPrivateKey = loadPrivateKey(privPath);
+    if (!m_authPrivateKey) {
+        qFatal("Failed to load private key %s", qPrintable(privPath));
+    }
+
+    m_authPublicKey = readWholeFile(pubPath);
+    if (m_authPublicKey.isEmpty()) {
+        qFatal("Failed to load public key %s", qPrintable(pubPath));
+    }
+}
+
+QString Server::authPublicKey() const
+{
+    return m_authPublicKey;
+}
+
+EVP_PKEY *Server::authPrivateKey() const
+{
+    return m_authPrivateKey;
 }
 
 bool Server::listen(const QHostAddress &address, ushort port)
