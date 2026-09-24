@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "server.h"
+#include "db-thread.h"
 #include "game-thread.h"
 #include "ktabletop-lua.h"
 #include "lua/lua-binding.h"
@@ -24,6 +25,13 @@ Server *Server::instance()
     return serverInstance;
 }
 
+static constexpr char usersDbSql[] = {
+#embed "users-init.sql"
+};
+
+// NOTE: DO NOT contain any ';' in comments of .sql file
+static const auto usersDbSchema = QString::fromUtf8(usersDbSql);
+
 Server::Server(QObject *parent)
     : QObject(parent)
 {
@@ -33,6 +41,9 @@ Server::Server(QObject *parent)
 
     server = new ServerSocket(this);
     connect(server, &ServerSocket::newConnection, this, &Server::processNewConnection);
+
+    usersDb = new DbThread(this, u"usersDb"_s, u"./server/users.db"_s);
+    usersDb->execMultiSql(usersDbSchema);
 }
 
 Server::~Server()

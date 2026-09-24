@@ -5,15 +5,15 @@
 #include <QSqlError>
 #include <QThread>
 
-class DbWorkerThread : public QThread
+class DbThread : public QThread
 {
     Q_OBJECT
 
 public:
     using DbResult = std::pair<QSqlError, QList<QVariantList>>;
 
-    DbWorkerThread(QObject *parent, const QString &connectionName, const QString &dbFilePath);
-    ~DbWorkerThread();
+    DbThread(QObject *parent, const QString &connectionName, const QString &dbFilePath);
+    ~DbThread();
 
     template<typename... Args>
     QFuture<DbResult> execQuery(const QString &sql, const Args &...args)
@@ -26,6 +26,16 @@ public:
         return future;
     }
 
+    template<typename... Args>
+    DbResult execQuerySync(const QString &sql, const Args &...args)
+    {
+        auto future = execQuery(sql, args...);
+        future.waitForFinished();
+        return future.result();
+    }
+
+    void execMultiSql(const QString &sql);
+
 Q_SIGNALS:
     void queryReady(std::shared_ptr<QPromise<DbResult>> promise, const QString sql, const QVariantList values);
 
@@ -35,4 +45,6 @@ protected:
 private:
     QString m_connectionName;
     QString m_dbFilePath;
+
+    Q_SIGNAL void ready();
 };

@@ -5,7 +5,7 @@ add_library(ktabletop_core STATIC
     logger.cpp
     ktabletop-lua.cpp
     game-thread.cpp
-    db-worker-thread.cpp
+    db-thread.cpp
 
     packman.cpp
 )

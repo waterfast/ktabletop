@@ -13,6 +13,7 @@ class ClientSocket;
 class ServerSocket;
 class UserConnection;
 class GameThread;
+class DbThread;
 
 class Server : public QObject
 {
@@ -45,6 +46,8 @@ private:
     ServerSocket *server;
     QHash<int, UserConnection *> connections;
     QHash<int, GameThread *> gameThreads;
+
+    DbThread *usersDb;
 
     void processNewConnection(ClientSocket *client);
 };

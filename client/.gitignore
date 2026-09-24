@@ -1,0 +1,6 @@
+# client/ is used to store something like known_hosts and SQLITE3 database files
+# Relevant Db files:
+#   Some of configurations will be stored in Sqlite DB.
+
+*
+!.gitignore
