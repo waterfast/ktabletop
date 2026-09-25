@@ -19,7 +19,7 @@ public:
     LuaBinding *luaBinding() const;
     UserConnection *connection() const;
 
-    void connectToHost(const QString &server, ushort port = 17943, const QString &username = QString());
+    void connectToHost(const QString &server, ushort port = 17943, const QString &username = QString(), const QString &password = QString());
 
 private:
     explicit Client(QObject *parent = nullptr);

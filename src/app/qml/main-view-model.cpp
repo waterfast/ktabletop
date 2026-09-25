@@ -106,14 +106,14 @@ void MainViewModel::setGameStarted(bool gameStarted)
     Q_EMIT gameStartedChanged(m_gameStarted);
 }
 
-void MainViewModel::startSinglePlayer(const QString &username)
+void MainViewModel::startSinglePlayer(const QString &username, const QString &password)
 {
     const ushort port = 17943;
     Q_EMIT startServerRequested(port);
-    Q_EMIT joinServerRequested(QStringLiteral("127.0.0.1"), port, username);
+    Q_EMIT joinServerRequested(QStringLiteral("127.0.0.1"), port, username, password);
 }
 
-void MainViewModel::joinMultiPlayer(const QString &address, int port, const QString &username)
+void MainViewModel::joinMultiPlayer(const QString &address, int port, const QString &username, const QString &password)
 {
-    Q_EMIT joinServerRequested(address, static_cast<ushort>(port), username);
+    Q_EMIT joinServerRequested(address, static_cast<ushort>(port), username, password);
 }

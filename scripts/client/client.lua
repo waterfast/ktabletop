@@ -19,6 +19,7 @@ function Client:initialize()
   self._notificationHandlers = {}
   self._requestHandlers = {}
   self.pendingUsername = ""
+  self.pendingPassword = ""
 
   self.myself = ClientUser:new()
   self.lobby = ClientLobby:new()
@@ -118,7 +119,7 @@ function Client:leaveGame()
 end
 
 function Client:handleAuthRequest(_, _)
-  return { username = self.pendingUsername }
+  return { username = self.pendingUsername, password = self.pendingPassword }
 end
 
 function Client:handleNonceRequest(_, _)
@@ -146,8 +147,9 @@ end
 
 ---@param host string
 ---@param port integer
-function Client:connectToHost(host, port, username)
+function Client:connectToHost(host, port, username, password)
   self.pendingUsername = username or ""
+  self.pendingPassword = password or ""
   async.run(function()
     local wrapped = async.wrap(ktabletop.connectToHost)
     local ok, ret = async.await(wrapped(host, port))

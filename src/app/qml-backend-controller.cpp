@@ -53,12 +53,12 @@ void QmlBackendController::onStartServerRequested(ushort port)
     }
 }
 
-void QmlBackendController::onJoinServerRequested(const QString &address, ushort port, const QString &username)
+void QmlBackendController::onJoinServerRequested(const QString &address, ushort port, const QString &username, const QString &password)
 {
     auto *client = Client::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
     connect(client->luaBinding(), &LuaBinding::luaEvent, this, &QmlBackendController::handleCommonLuaEvent, Qt::UniqueConnection);
-    client->connectToHost(address, port, username);
+    client->connectToHost(address, port, username, password);
 }
 
 void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVariant &data)

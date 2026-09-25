@@ -78,7 +78,7 @@ Kirigami.Page {
         id: singlePlayerDialog
         title: i18n("Single Player")
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
-        onAccepted: Backend.mainViewModel.startSinglePlayer(spUsername.text)
+        onAccepted: Backend.mainViewModel.startSinglePlayer(spUsername.text, spPassword.text)
         padding: Kirigami.Units.largeSpacing
 
         Kirigami.FormLayout {
@@ -86,6 +86,10 @@ Kirigami.Page {
                 id: spUsername
                 Kirigami.FormData.label: i18n("Username:")
                 text: "User" + Math.floor(Math.random() * 1000)
+            }
+            Kirigami.PasswordField {
+                id: spPassword
+                Kirigami.FormData.label: i18n("Password:")
             }
         }
     }
@@ -100,8 +104,8 @@ Kirigami.Page {
                 icon.name: "media-playback-start"
                 enabled: joinAddress.text.length > 0
                 onTriggered: {
-                    Backend.mainViewModel.joinMultiPlayer(joinAddress.text, joinPort.value, joinUsername.text);
-                    multiplayerDialog.close();
+                    Backend.mainViewModel.joinMultiPlayer(joinAddress.text, joinPort.value, joinUsername.text, joinPassword.text);
+                    multiplayerDialog.accepted();
                 }
             },
             Kirigami.Action {
@@ -126,6 +130,10 @@ Kirigami.Page {
             QQC2.TextField {
                 id: joinUsername
                 Kirigami.FormData.label: i18n("Username:")
+            }
+            Kirigami.PasswordField {
+                id: joinPassword
+                Kirigami.FormData.label: i18n("Password:")
             }
         }
     }

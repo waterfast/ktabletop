@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS userInfo (
     banned BOOLEAN
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_userInfo_username ON userInfo(username);
+
 CREATE TABLE IF NOT EXISTS userAuditInfo (
     id INTEGER PRIMARY KEY,
     registeredAt INTEGER NOT NULL DEFAULT(unixepoch()),

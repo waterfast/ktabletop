@@ -75,7 +75,7 @@ UserConnection *Client::connection() const
     return m_connection;
 }
 
-void Client::connectToHost(const QString &server, ushort port, const QString &username)
+void Client::connectToHost(const QString &server, ushort port, const QString &username, const QString &password)
 {
-    L->callKTabletopMethod(u"client"_s, u"connectToHost"_s, {server, port, username});
+    L->callKTabletopMethod(u"client"_s, u"connectToHost"_s, {server, port, username, password});
 }

@@ -52,6 +52,38 @@ local handshake = async.async(function(connId)
   return ktabletop.acceptClientKey(connId, clientPub)
 end)
 
+local function isValidUsernameChar(b)
+  return (b >= 128)
+    or (b == 0x5F)                -- _
+    or (b >= 0x30 and b <= 0x39)  -- 0-9
+    or (b >= 0x41 and b <= 0x5A)  -- A-Z
+    or (b >= 0x61 and b <= 0x7A)  -- a-z
+end
+
+local function validateUsername(username)
+  if type(username) ~= "string" then
+    return false
+  end
+  local len = utf8.len(username)
+  if not len or len < 3 or len > 32 then
+    return false
+  end
+  for i = 1, #username do
+    if not isValidUsernameChar(username:byte(i)) then
+      return false
+    end
+  end
+  return true
+end
+
+local function validatePassword(password)
+  if type(password) ~= "string" then
+    return false
+  end
+  local len = utf8.len(password)
+  return len ~= nil and len >= 4 and len <= 32
+end
+
 ---@param connId integer
 function Server:processNewConnection(connId)
   async.run(function ()
@@ -68,7 +100,42 @@ function Server:processNewConnection(connId)
       return
     end
     local data = json.decode(ret)
-    local user = self.userManager:createNewUser(connId, data and data.username)
+    local username = data and data.username
+    local password = data and data.password
+    if not validateUsername(username) or not validatePassword(password) then
+      ktabletop.log.warn("Rejecting connection: invalid username or password")
+      ktabletop.disconnect(connId)
+      return
+    end
+
+    local row
+    ok, row = ktabletop.findUserByUsername(username)
+    if not ok then
+      -- err branch: database lookup failed
+      ktabletop.log.warn(("findUserByUsername failed: %s"):format(tostring(row)))
+      ktabletop.disconnect(connId)
+      return
+    end
+    if row == nil then
+      -- TODO: request the user to re-enter the password before registering
+      local errReg
+      ok, errReg = ktabletop.registerUser(username, password)
+      if not ok then
+        ktabletop.log.warn(("registerUser failed: %s"):format(tostring(errReg)))
+        ktabletop.disconnect(connId)
+        return
+      end
+    else
+      local salt = row.salt or ""
+      local hash = ktabletop.sha256(password .. salt)
+      if hash ~= row.password then
+        ktabletop.log.warn("Rejecting connection: wrong password")
+        ktabletop.disconnect(connId)
+        return
+      end
+    end
+
+    local user = self.userManager:createNewUser(connId, username)
     self.roomManager.lobby:addUser(user)
   end)
 end

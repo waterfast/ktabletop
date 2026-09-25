@@ -44,6 +44,11 @@ public:
     QString authPublicKey() const;
     EVP_PKEY *authPrivateKey() const;
 
+    DbThread *usersDb() const
+    {
+        return m_usersDb;
+    }
+
 private:
     explicit Server(QObject *parent = nullptr);
 
@@ -52,7 +57,7 @@ private:
     QHash<int, UserConnection *> connections;
     QHash<int, GameThread *> gameThreads;
 
-    DbThread *usersDb;
+    DbThread *m_usersDb;
 
     QString m_authPublicKey;
     EVP_PKEY *m_authPrivateKey = nullptr;

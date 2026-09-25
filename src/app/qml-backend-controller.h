@@ -17,7 +17,7 @@ public:
 
 private Q_SLOTS:
     void onStartServerRequested(ushort port);
-    void onJoinServerRequested(const QString &address, ushort port, const QString &username);
+    void onJoinServerRequested(const QString &address, ushort port, const QString &username, const QString &password);
 
 private:
     QmlBackend *const m_backend;

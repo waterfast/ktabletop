@@ -50,8 +50,8 @@ Server::Server(QObject *parent)
     server = new ServerSocket(this);
     connect(server, &ServerSocket::newConnection, this, &Server::processNewConnection);
 
-    usersDb = new DbThread(this, u"usersDb"_s, u"./server/users.db"_s);
-    usersDb->execMultiSql(usersDbSchema);
+    m_usersDb = new DbThread(this, u"usersDb"_s, u"./server/users.db"_s);
+    m_usersDb->execMultiSql(usersDbSchema);
 }
 
 Server::~Server()

@@ -4,6 +4,7 @@
 #include "ktabletop-lua.h"
 #include "async-context.h"
 #include "client.h"
+#include "db-thread.h"
 #include "lua/c-wrapper.h" // for LuaVM::readValue
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
@@ -12,6 +13,8 @@
 #include "server.h"
 
 #include <QAbstractSocket>
+#include <QCryptographicHash>
+#include <QRandomGenerator>
 #include <QTimer>
 
 #include <lua.hpp>
@@ -360,6 +363,77 @@ static int acceptServerKey(lua_State *L)
     return 1;
 }
 
+static int findUserByUsername(lua_State *L)
+{
+    auto [username] = LuaVM::readArgs<str>(L);
+
+    const auto [err, rows] =
+        Server::instance()->usersDb()->execQuerySync(u"SELECT id, username, displayName, password, salt, banned FROM userInfo WHERE username = ?"_s,
+                                                     QString::fromUtf8(username));
+
+    if (err.isValid()) {
+        qWarning().noquote() << "findUserByUsername failed:" << err.text();
+        lua_pushboolean(L, false);
+        lua_pushstring(L, qPrintable(err.text()));
+        return 2;
+    }
+    if (rows.isEmpty()) {
+        lua_pushboolean(L, true);
+        lua_pushnil(L);
+        return 2;
+    }
+
+    const auto &row = rows.first();
+    lua_pushboolean(L, true);
+    LuaVM::pushValue(L,
+                     QVariantMap{
+                         {u"id"_s, row.at(0)},
+                         {u"username"_s, row.at(1)},
+                         {u"displayName"_s, row.at(2)},
+                         {u"password"_s, row.at(3)},
+                         {u"salt"_s, row.at(4)},
+                         {u"banned"_s, row.at(5)},
+                     });
+    return 2;
+}
+
+static int sha256(lua_State *L)
+{
+    auto [data] = LuaVM::readArgs<str>(L);
+    const QByteArray hash = QCryptographicHash::hash(data, QCryptographicHash::Sha256);
+    const QByteArray hex = hash.toHex();
+    lua_pushlstring(L, hex.constData(), hex.size());
+    return 1;
+}
+
+static int registerUser(lua_State *L)
+{
+    auto [username, password] = LuaVM::readArgs<str, str>(L);
+
+    auto saltGen = QRandomGenerator::securelySeeded();
+    const QByteArray salt = QByteArray::number(saltGen(), 16);
+
+    QByteArray pw(password);
+    pw.append(salt);
+    const QByteArray passwordHash = QCryptographicHash::hash(pw, QCryptographicHash::Sha256).toHex();
+
+    const auto result =
+        Server::instance()->usersDb()->execQuerySync(u"INSERT INTO userInfo (username, displayName, password, salt, banned) VALUES (?, ?, ?, ?, 0)"_s,
+                                                     QString::fromUtf8(username),
+                                                     QString::fromUtf8(username),
+                                                     QString::fromLatin1(passwordHash),
+                                                     QString::fromLatin1(salt));
+
+    if (result.first.isValid()) {
+        qWarning().noquote() << "registerUser failed:" << result.first.text();
+        lua_pushboolean(L, false);
+        lua_pushstring(L, qPrintable(result.first.text()));
+        return 2;
+    }
+    lua_pushboolean(L, true);
+    return 1;
+}
+
 static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
@@ -369,6 +443,8 @@ static luaL_Reg commonFuncTable[] = {
     {"luaEvent", luaEvent},
 
     {"disconnect", disconnectSocket},
+
+    {"sha256", sha256},
 
     {NULL, NULL},
 };
@@ -389,6 +465,9 @@ static luaL_Reg serverFuncTable[] = {
     {"getServerPublicKey", getServerPublicKey},
     {"makeAuthChallenge", makeAuthChallenge},
     {"acceptClientKey", acceptClientKey},
+
+    {"findUserByUsername", findUserByUsername},
+    {"registerUser", registerUser},
 
     {NULL, NULL},
 };
