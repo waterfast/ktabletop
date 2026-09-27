@@ -7,6 +7,7 @@ add_library(ktabletop_core STATIC
     game-thread.cpp
     db-thread.cpp
     util.cpp
+    stdin-adapter.cpp
 
     packman.cpp
 )

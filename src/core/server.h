@@ -17,6 +17,14 @@ class UserConnection;
 class GameThread;
 class DbThread;
 
+// TODO: Handle command from UserConnection::request. most times that user should be OP
+class UserRequestAdapter;
+// TODO: Handle command from http API, should have bearer TOKEN
+class HttpApiAdapter;
+
+class StdinAdapter;
+class CommandHandler;
+
 class Server : public QObject
 {
     Q_OBJECT
@@ -25,6 +33,7 @@ public:
     static constexpr ushort DefaultPort = 17943u;
 
     static Server *instance();
+    static bool initialized();
     ~Server();
 
     bool listen(const QHostAddress &address = QHostAddress::Any, ushort port = DefaultPort);
@@ -44,10 +53,8 @@ public:
     QString authPublicKey() const;
     EVP_PKEY *authPrivateKey() const;
 
-    DbThread *usersDb() const
-    {
-        return m_usersDb;
-    }
+    DbThread *usersDb() const;
+    StdinAdapter *shell() const;
 
 private:
     explicit Server(QObject *parent = nullptr);
@@ -58,6 +65,8 @@ private:
     QHash<int, GameThread *> gameThreads;
 
     DbThread *m_usersDb;
+
+    StdinAdapter *m_shell;
 
     QString m_authPublicKey;
     EVP_PKEY *m_authPrivateKey = nullptr;

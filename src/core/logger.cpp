@@ -3,7 +3,11 @@
 
 #include "logger.h"
 
+#include "server.h"
+#include "stdin-adapter.h"
+
 #include <spdlog/pattern_formatter.h>
+#include <spdlog/sinks/callback_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -40,6 +44,14 @@ void initLogger()
 
     std::vector<spdlog::sink_ptr> sinks;
 
+    auto clearline_sink = std::make_shared<spdlog::sinks::callback_sink_mt>([](const spdlog::details::log_msg &) {
+        if (!Server::initialized())
+            return;
+        auto *shell = Server::instance()->shell();
+        shell->editHide();
+    });
+    sinks.push_back(clearline_sink);
+
     auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     auto formatter = std::make_unique<spdlog::pattern_formatter>();
     formatter->add_flag<thread_name_flag>('t').set_pattern("%C-%m-%d %H:%M:%S.%e %t[%^%L%$] %v");
@@ -52,6 +64,14 @@ void initLogger()
     formatter->add_flag<thread_name_flag>('t').set_pattern("%C-%m-%d %H:%M:%S.%e %t[%L] %v");
     rotate_sink->set_formatter(std::move(formatter));
     sinks.push_back(rotate_sink);
+
+    auto redisplay_sink = std::make_shared<spdlog::sinks::callback_sink_mt>([](const spdlog::details::log_msg &) {
+        if (!Server::initialized())
+            return;
+        auto *shell = Server::instance()->shell();
+        shell->editShow();
+    });
+    sinks.push_back(redisplay_sink);
 
     auto logger = std::make_shared<spdlog::logger>("ktabletop", sinks.begin(), sinks.end());
     spdlog::register_logger(logger);

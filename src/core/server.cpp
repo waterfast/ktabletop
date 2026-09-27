@@ -10,6 +10,7 @@
 #include "network/crypto-util.h"
 #include "network/server-socket.h"
 #include "network/user-connection.h"
+#include "stdin-adapter.h"
 #include "util.h"
 
 #include <QJsonDocument>
@@ -29,6 +30,11 @@ Server *Server::instance()
         serverInstance = new Server;
     }
     return serverInstance;
+}
+
+bool Server::initialized()
+{
+    return serverInstance != nullptr;
 }
 
 static constexpr char usersDbSql[] = {
@@ -52,6 +58,8 @@ Server::Server(QObject *parent)
 
     m_usersDb = new DbThread(this, u"usersDb"_s, u"./server/users.db"_s);
     m_usersDb->execMultiSql(usersDbSchema);
+
+    m_shell = new StdinAdapter(this);
 }
 
 Server::~Server()
@@ -152,6 +160,16 @@ void Server::startGameRoom(int roomId, const QVariantMap &data)
 void Server::dispatchLuaEvent(const QString &type, const QVariant &data)
 {
     L->callKTabletopMethod(u"server"_s, u"dispatchLuaEvent"_s, {type, data});
+}
+
+DbThread *Server::usersDb() const
+{
+    return m_usersDb;
+}
+
+StdinAdapter *Server::shell() const
+{
+    return m_shell;
 }
 
 void Server::processNewConnection(ClientSocket *client)

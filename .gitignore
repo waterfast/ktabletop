@@ -17,6 +17,7 @@ src/res.generated.qrc
 /ktabletop-app
 /ktabletop-server
 *.log
+repl-history.txt
 
 .direnv/
 flake.lock

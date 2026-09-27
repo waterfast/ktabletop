@@ -2572,6 +2572,7 @@ inline EditResult edit_feed(State &l, std::string &result) {
     case CTRL_C: /* ctrl-c */
         /* Unlike upstream, drop the temporary history entry here too, so a
          * canceled line never lingers in the history. */
+        edit_insert(l, "^C", 2);
         edit_drop_history_entry(l);
         return EditResult::Cancel;
     case BACKSPACE: /* backspace */
