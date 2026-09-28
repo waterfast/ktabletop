@@ -16,9 +16,24 @@ struct LuaRef {
 };
 
 struct LuaRefRAII {
+    LuaRefRAII(lua_State *L, int ref)
+        : L(L)
+        , index(ref)
+    {
+    }
+    LuaRefRAII(LuaRefRAII &) = delete;
+    LuaRefRAII(LuaRefRAII &&other)
+        : L(other.L)
+        , index(other.index)
+    {
+        this->index = LUA_NOREF;
+    }
+
     ~LuaRefRAII()
     {
-        luaL_unref(L, LUA_REGISTRYINDEX, index);
+        if (index != LUA_NOREF) {
+            luaL_unref(L, LUA_REGISTRYINDEX, index);
+        }
     }
 
     lua_State *L;

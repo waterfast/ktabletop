@@ -24,7 +24,7 @@ public:
 
     void connectToHost(const QString &server, ushort port = 17943, const QString &username = QString(), const QString &password = QString());
 
-    void startTask(const QString &key, const QString &message, int progress, bool cancelable = false, std::function<void()> cancelFn = {});
+    void startTask(const QString &key, const QString &message, int progress, bool cancelable = false, std::move_only_function<void()> cancelFn = {});
     void updateTask(const QString &key, int progress, const QString &message = QString());
     void cancelTask(const QString &key);
 
@@ -39,5 +39,6 @@ private:
 
     LuaBinding *L;
     UserConnection *m_connection;
-    QHash<QString, std::function<void()>> m_taskCancels;
+    // can't find how to store move-only stuff in QHash. using STL
+    std::unordered_map<QString, std::move_only_function<void()>> m_taskCancels;
 };

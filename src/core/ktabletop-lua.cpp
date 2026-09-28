@@ -457,7 +457,7 @@ static int startTask(lua_State *L)
             LuaVM::call(L);
         };
 
-        client->startTask(QString::fromUtf8(key), QString::fromUtf8(message), progress, cancelable, f);
+        client->startTask(QString::fromUtf8(key), QString::fromUtf8(message), progress, cancelable, std::move(f));
     } else {
         return luaL_error(L, "expected 3 or 5 arguments, got %d", nargs);
     }
