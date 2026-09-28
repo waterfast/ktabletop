@@ -1,8 +1,8 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-local Lobby = require "server.room.lobby"
-local Room = require "server.room.room"
+local Lobby = require "server.lobby"
+local Room = require "server.room"
 
 local class = ktabletop.class
 

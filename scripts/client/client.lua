@@ -5,8 +5,8 @@ local async = require "corelib.async"
 local class = ktabletop.class
 
 local ClientUser = require "client.user"
-local ClientLobby = require "client.room.lobby"
-local ClientRoom = require "client.room.room"
+local ClientLobby = require "client.lobby"
+local ClientRoom = require "client.room"
 
 ---@class Client: Object
 ---@field myself ClientUser

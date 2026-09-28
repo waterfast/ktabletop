@@ -1,4 +1,4 @@
-local RoomBase = require "server.room.roombase"
+local RoomBase = require "server.roombase"
 local tablib = ktabletop.tablib
 
 ---@class Lobby: ServerRoomBase

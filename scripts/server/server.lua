@@ -3,7 +3,7 @@ local class = ktabletop.class
 local json = ktabletop.json
 
 local UserManager = require "server.user-manager"
-local RoomManager = require "server.room.room-manager"
+local RoomManager = require "server.room-manager"
 
 ---@class Server: Object
 ---@field userManager UserManager
