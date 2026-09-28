@@ -67,13 +67,18 @@ function scheduler:resume(fn, ...)
   end
 end
 
+---@return AsyncFunction?
+function scheduler:current()
+  local current = co.running()
+  return self.coroutineMap[current]
+end
+
 -- await on an Awaitable
 -- return true and callback results, or false plus error message
 ---@param fn Awaitable
 ---@return boolean, ...
 function scheduler:await(fn, ...)
-  local current = co.running()
-  local f = self.coroutineMap[current]
+  local f = self:current()
   assert(f, "cannot await outside async function")
   if f.cancelled then
     return false, CANCELLED
@@ -154,7 +159,7 @@ end
 ---@field results any[]
 ---@field errmsg string?
 ---@field caller AsyncFunction?
----@field callee AsyncFunction?
+---@field callee Awaitable?
 ---@field cancelled boolean?
 ---@field waitGroup AwaitGroup?
 local AsyncFunction = {}
@@ -401,6 +406,18 @@ end
 
 function M.awaitall(...)
   return scheduler:awaitGroup(function() end, ...)
+end
+
+function M.current()
+  return scheduler:current()
+end
+
+function M.abort()
+  local f = scheduler:current()
+  assert(f, "cannot call abort() in sync code")
+  return function()
+    scheduler:cancel(f)
+  end
 end
 
 return M

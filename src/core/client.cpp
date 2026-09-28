@@ -91,10 +91,41 @@ void Client::connectToHost(const QString &server, ushort port, const QString &us
     L->callKTabletopMethod(u"client"_s, u"connectToHost"_s, {server, port, username, password});
 }
 
-void Client::setTaskStatus(const QString &key, const QString &message, int progress, bool cancelable, std::function<void()> cancelFn)
+void Client::startTask(const QString &key, const QString &message, int progress, bool cancelable, std::function<void()> cancelFn)
 {
+    if (cancelable && cancelFn) {
+        m_taskCancels.insert(key, std::move(cancelFn));
+    } else {
+        m_taskCancels.remove(key);
+    }
+
+    Q_EMIT setProgressDialogData(key, message, progress, cancelable);
 }
 
-void Client::completeTask(const QString &key)
+void Client::updateTask(const QString &key, int progress, const QString &message)
 {
+    Q_EMIT setProgressDialogData(key, message, progress, m_taskCancels.contains(key));
+
+    if (progress >= 100) {
+        m_taskCancels.remove(key);
+        Q_EMIT clearProgressDialogData(key);
+    }
+}
+
+void Client::cancelTask(const QString &key)
+{
+    auto it = m_taskCancels.find(key);
+    if (it == m_taskCancels.end()) {
+        return;
+    }
+
+    auto cancelFn = std::move(it.value());
+    // make cancelTask reentrant; Lua is likely to call it again
+    m_taskCancels.erase(it);
+
+    Q_EMIT clearProgressDialogData(key);
+
+    if (cancelFn) {
+        cancelFn();
+    }
 }

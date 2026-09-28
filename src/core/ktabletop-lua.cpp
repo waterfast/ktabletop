@@ -434,6 +434,55 @@ static int registerUser(lua_State *L)
     return 1;
 }
 
+static int startTask(lua_State *L)
+{
+    const char *key, *message;
+    int progress;
+    bool cancelable = false;
+    LuaStk<LUA_TFUNCTION> cb{0};
+    int nargs = lua_gettop(L);
+    auto *client = Client::instance();
+
+    if (nargs == 3) {
+        std::tie(key, message, progress) = LuaVM::readArgs<str, str, int>(L);
+        client->startTask(QString::fromUtf8(key), QString::fromUtf8(message), progress);
+    } else if (nargs == 5) {
+        std::tie(key, message, progress, cancelable, cb) = LuaVM::readArgs<str, str, int, bool, decltype(cb)>(L);
+
+        lua_pushvalue(L, cb.index);
+        int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
+        // FIXME: mind lifecycle of L (L may be a coroutine.)
+        auto f = [L, fnRef, _ = LuaRefRAII{L, fnRef}] {
+            lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
+            LuaVM::call(L);
+        };
+
+        client->startTask(QString::fromUtf8(key), QString::fromUtf8(message), progress, cancelable, f);
+    } else {
+        return luaL_error(L, "expected 3 or 5 arguments, got %d", nargs);
+    }
+
+    return 0;
+}
+
+static int updateTask(lua_State *L)
+{
+    int nargs = lua_gettop(L);
+    auto *client = Client::instance();
+
+    if (nargs == 2) {
+        auto [key, progress] = LuaVM::readArgs<str, int>(L);
+        client->updateTask(QString::fromUtf8(key), progress);
+    } else if (nargs == 3) {
+        auto [key, progress, message] = LuaVM::readArgs<str, int, str>(L);
+        client->updateTask(QString::fromUtf8(key), progress, QString::fromUtf8(message));
+    } else {
+        return luaL_error(L, "expected 2 or 3 arguments, got %d", nargs);
+    }
+
+    return 0;
+}
+
 static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
@@ -455,6 +504,9 @@ static luaL_Reg clientFuncTable[] = {
     {"getClientNonce", getClientNonce},
     {"verifyAuthChallenge", verifyAuthChallenge},
     {"acceptServerKey", acceptServerKey},
+
+    {"startTask", startTask},
+    {"updateTask", updateTask},
 
     {NULL, NULL},
 };

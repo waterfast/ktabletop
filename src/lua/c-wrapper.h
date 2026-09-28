@@ -15,6 +15,16 @@ struct LuaRef {
     int index = LUA_NOREF;
 };
 
+struct LuaRefRAII {
+    ~LuaRefRAII()
+    {
+        luaL_unref(L, LUA_REGISTRYINDEX, index);
+    }
+
+    lua_State *L;
+    int index = LUA_NOREF;
+};
+
 template<uint8_t Expected>
 struct LuaStk {
     int index = 0;
