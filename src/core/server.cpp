@@ -37,6 +37,12 @@ bool Server::initialized()
     return serverInstance != nullptr;
 }
 
+void Server::destroy()
+{
+    delete serverInstance;
+    serverInstance = nullptr;
+}
+
 static constexpr char usersDbSql[] = {
 #embed "users-init.sql"
 };

@@ -28,15 +28,11 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
     connect(vm, &MainViewModel::joinServerRequested, this, &QmlBackendController::onJoinServerRequested);
 
     auto *manager = LObjectManager::instance();
-    auto *client = Client::instance();
     manager->setCreateObjectFn([](const QVariantMap &opts) {
         return Client::instance()->luaBinding()->createLObject(opts);
     });
     manager->setReleaseObjectFn([](int ref) {
         Client::instance()->luaBinding()->releaseLObject(ref);
-    });
-    QObject::connect(manager, &LObjectManager::invoked, client, [](int ref, const QString &method, const QVariantList &args) {
-        Client::instance()->luaBinding()->invokeLObject(ref, method, args);
     });
 }
 
@@ -55,9 +51,14 @@ void QmlBackendController::onStartServerRequested(ushort port)
 
 void QmlBackendController::onJoinServerRequested(const QString &address, ushort port, const QString &username, const QString &password)
 {
+    Client::destroy();
     auto *client = Client::instance();
+    auto *manager = LObjectManager::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
     connect(client->luaBinding(), &LuaBinding::luaEvent, this, &QmlBackendController::handleCommonLuaEvent, Qt::UniqueConnection);
+    connect(manager, &LObjectManager::invoked, client, [client](int ref, const QString &method, const QVariantList &args) {
+        client->luaBinding()->invokeLObject(ref, method, args);
+    });
     client->connectToHost(address, port, username, password);
 }
 

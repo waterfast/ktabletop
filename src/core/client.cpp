@@ -22,6 +22,17 @@ Client *Client::instance()
     return clientInstance;
 }
 
+bool Client::initialized()
+{
+    return clientInstance != nullptr;
+}
+
+void Client::destroy()
+{
+    delete clientInstance;
+    clientInstance = nullptr;
+}
+
 Client::Client(QObject *parent)
     : QObject(parent)
 {
@@ -78,4 +89,12 @@ UserConnection *Client::connection() const
 void Client::connectToHost(const QString &server, ushort port, const QString &username, const QString &password)
 {
     L->callKTabletopMethod(u"client"_s, u"connectToHost"_s, {server, port, username, password});
+}
+
+void Client::setTaskStatus(const QString &key, const QString &message, int progress, bool cancelable, std::function<void()> cancelFn)
+{
+}
+
+void Client::completeTask(const QString &key)
+{
 }

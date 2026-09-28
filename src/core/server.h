@@ -34,6 +34,7 @@ public:
 
     static Server *instance();
     static bool initialized();
+    static void destroy();
     ~Server();
 
     bool listen(const QHostAddress &address = QHostAddress::Any, ushort port = DefaultPort);
