@@ -93,6 +93,7 @@ void Client::connectToHost(const QString &server, ushort port, const QString &us
 
 void Client::startTask(const QString &key, const QString &message, int progress, bool cancelable, std::function<void()> cancelFn)
 {
+    qDebug() << __FUNCTION__ << key << message << progress << cancelable;
     if (cancelable && cancelFn) {
         m_taskCancels.insert(key, std::move(cancelFn));
     } else {
@@ -104,6 +105,7 @@ void Client::startTask(const QString &key, const QString &message, int progress,
 
 void Client::updateTask(const QString &key, int progress, const QString &message)
 {
+    qDebug() << __FUNCTION__ << key << message << progress;
     Q_EMIT setProgressDialogData(key, message, progress, m_taskCancels.contains(key));
 
     if (progress >= 100) {

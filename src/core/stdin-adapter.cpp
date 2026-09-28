@@ -58,11 +58,6 @@ StdinAdapter::StdinAdapter(QObject *parent)
     : QThread(parent)
 {
     setObjectName("StdinThread");
-
-    QEventLoop loop;
-    connect(this, &StdinAdapter::ready, &loop, &QEventLoop::quit);
-    start();
-    loop.exec();
 }
 
 StdinAdapter::~StdinAdapter()

@@ -144,6 +144,7 @@ end
 function Server:processDisconnected(connId)
   local user = self.userManager:findUser(connId)
   if not user then
+    ktabletop.log.info(string.format("ConnId %d disconnected", connId))
     return
   end
 

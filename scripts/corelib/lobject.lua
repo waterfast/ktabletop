@@ -328,4 +328,8 @@ function LObject:createCppObject()
   }
 end
 
+function LObject:describe()
+  return string.format("id=%s", self._stringId)
+end
+
 return LObject

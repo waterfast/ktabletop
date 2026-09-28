@@ -145,24 +145,55 @@ end
 --- Below methods are called from C++ code.
 ----------------------------------------------------------
 
+local function waitForRequestGot(tp)
+  local ok, ret = async.await(async.wrap(function(cb)
+    ktabletop.client.waitForRequestGotCb = cb
+    return function() cb(async.CANCELLED) end
+  end)())
+  if not ok then return ok, ret end
+  if ret ~= tp then return false, ("Unexpected request: expect %s, got %s"):format(tp, ret) end
+  return ok, ret
+end
+
+---@param self Client
+local function connectToHost(self, host, port)
+  local ok, ret, errmsg
+  local success = false
+  ktabletop.startTask("connectToHost", "Connecting to host...", -1, true, async.abort())
+  local defer <close> = setmetatable({}, { __close = function()
+    if success then return end
+    ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
+    self:disconnectFromHost()
+    ktabletop.updateTask("connectToHost", 100)
+  end})
+  ok, ret = async.await(async.wrap(ktabletop.connectToHost)(host, port))
+  if not ok then
+    -- ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
+    return
+  end
+
+  ok, ret = waitForRequestGot("Auth::RequestNonce")
+  if not ok then return end
+  ktabletop.updateTask("connectToHost", -1, "Sending nonce to server...")
+
+  ok, ret = waitForRequestGot("Auth::ExchangeKey")
+  if not ok then return end
+  ktabletop.updateTask("connectToHost", -1, "Exchaging keys...")
+
+  ok, ret = waitForRequestGot("Auth::RequestUsername")
+  if not ok then return end
+  ktabletop.updateTask("connectToHost", -1, "Do test waiting...")
+
+  success = true
+  ktabletop.updateTask("connectToHost", 100)
+end
+
 ---@param host string
 ---@param port integer
 function Client:connectToHost(host, port, username, password)
   self.pendingUsername = username or ""
   self.pendingPassword = password or ""
-  async.run(function()
-    local wrapped = async.wrap(ktabletop.connectToHost)
-    local ok, ret = async.await(wrapped(host, port))
-
-    if not ok then
-      ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
-      ktabletop.luaEvent("Client::ConnectError", {
-        error = tostring(ret or "Unknown error")
-      })
-    else
-      ktabletop.luaEvent("Client::Connected", {})
-    end
-  end)
+  async.run(connectToHost, self, host, port)
 end
 
 -- TODO: use similar logic of server side
@@ -200,6 +231,12 @@ local requestDispatcher = async.async(function(client, connId, requestId, comman
   local user = client.myself
   assert(user, ("cannot find user of connId %d in request #%d"):format(connId, requestId))
   user.connId = connId
+
+  if client.waitForRequestGotCb then
+    local cb = client.waitForRequestGotCb
+    client.waitForRequestGotCb = nil
+    cb(nil, command)
+  end
 
   local arg1 = client
   local fn = client._requestHandlers[command]
@@ -249,6 +286,20 @@ end
 ---@param message string
 function Client:onSocketError(message)
   -- self.uiHelper:showError(message, "network")
+  ktabletop.log.warn(message)
+  ktabletop.luaEvent("Client::SocketError", nil)
+
+  -- TODO: should stop all async tasks here.
+  if self.waitForRequestGotCb then
+    local cb = self.waitForRequestGotCb
+    self.waitForRequestGotCb = nil
+    cb(message)
+  end
+
+end
+
+function Client:disconnectFromHost()
+  ktabletop.disconnect(0)
 end
 
 return Client

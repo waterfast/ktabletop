@@ -93,5 +93,7 @@ void QmlBackendController::handleCommonLuaEvent(const QString &sig, const QVaria
         vm->setGameViewModelName(map.value(u"viewModelName"_s).toString());
         vm->setGamePageUrl(QUrl::fromLocalFile(QFileInfo(pageUrl).absoluteFilePath()).toString());
         vm->setGameStarted(true);
+    } else if (sig == u"Client::SocketError"_s) {
+        vm->setConnected(false);
     }
 }

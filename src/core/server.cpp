@@ -118,6 +118,7 @@ bool Server::listen(const QHostAddress &address, ushort port)
     bool ret = server->listen(address, port);
     if (ret) {
         qInfo("Server is listening on port %d", port);
+        m_shell->start();
     }
     return ret;
 }
