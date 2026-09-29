@@ -99,6 +99,26 @@ Kirigami.ApplicationWindow {
         active: false
     }
 
+    TaskAndErrorDialog {
+        id: taskDialog
+    }
+
+    Connections {
+        target: Backend.mainViewModel
+        function onShowToast(message: string) {
+            root.showPassiveNotification(message, 3000);
+        }
+        function onShowErrorDialog(message: string) {
+            taskDialog.addError(message);
+        }
+        function onSetProgressDialogData(key: string, message: string, progress: int, cancelable: bool) {
+            taskDialog.setTaskData(key, message, progress, cancelable);
+        }
+        function onClearProgressDialogData(key: string) {
+            taskDialog.removeTask(key);
+        }
+    }
+
     // TODO: these functions are lobby-specific, or, only useful when there is navigator
     QtObject {
         id: priv

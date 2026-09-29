@@ -53,12 +53,19 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
 {
     Client::destroy();
     auto *client = Client::instance();
+    auto *vm = m_backend->mainViewModel();
     auto *manager = LObjectManager::instance();
     connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
     connect(client->luaBinding(), &LuaBinding::luaEvent, this, &QmlBackendController::handleCommonLuaEvent, Qt::UniqueConnection);
     connect(manager, &LObjectManager::invoked, client, [client](int ref, const QString &method, const QVariantList &args) {
         client->luaBinding()->invokeLObject(ref, method, args);
     });
+
+    connect(client, &Client::showToast, vm, &MainViewModel::showToast);
+    connect(client, &Client::showErrorDialog, vm, &MainViewModel::showErrorDialog);
+    connect(client, &Client::setProgressDialogData, vm, &MainViewModel::setProgressDialogData);
+    connect(client, &Client::clearProgressDialogData, vm, &MainViewModel::clearProgressDialogData);
+
     client->connectToHost(address, port, username, password);
 }
 

@@ -183,7 +183,6 @@ void Server::processNewConnection(ClientSocket *client)
 {
     auto *socket = client->socket();
     auto addr = QString(u"[%1]:%2"_s).arg(socket->peerAddress().toString()).arg(socket->peerPort());
-    qInfo() << addr << "connected";
 
     auto *conn = new UserConnection(this, client);
     auto connId = conn->connId();
@@ -191,6 +190,8 @@ void Server::processNewConnection(ClientSocket *client)
     connect(conn, &QObject::destroyed, this, [this, connId] {
         connections.remove(connId);
     });
+
+    qInfo().noquote() << addr << "connected, connId:" << connId;
 
     connect(conn, &UserConnection::notificationGot, this, [this, conn](const QByteArray &command, const QByteArray &data) {
         L->callKTabletopMethod(u"server"_s,

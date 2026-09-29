@@ -128,7 +128,7 @@ void ClientSocket::raiseError(QAbstractSocket::SocketError socket_error)
         break;
     }
 
-    Q_EMIT errorMessage(tr("Connection failed, error code = %1\n reason: %2").arg(socket_error).arg(reason));
+    Q_EMIT errorMessage(tr("Connection failed, error code = %1\nreason: %2").arg(socket_error).arg(reason));
 }
 
 static QCborValue readItem(QCborStreamReader &reader)

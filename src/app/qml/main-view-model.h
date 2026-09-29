@@ -60,6 +60,11 @@ Q_SIGNALS:
     void startServerRequested(ushort port);
     void joinServerRequested(const QString &address, ushort port, const QString &username, const QString &password);
 
+    void showToast(const QString &message);
+    void showErrorDialog(const QString &message);
+    void setProgressDialogData(const QString &key, const QString &message, int progress, bool cancelable);
+    void clearProgressDialogData(const QString &key);
+
 private:
     bool m_connected = false;
     int m_roomId = 0;

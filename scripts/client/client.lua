@@ -31,6 +31,9 @@ function Client:initialize()
   self:setRequestHandler("Auth::RequestUsername", self.handleAuthRequest)
   self:setCallback("User::Setup", self.setupUser)
 
+  self:setCallback("App::ErrorDialog", self.showErrorDialog)
+  self:setCallback("App::ShowToast", self.showToast)
+
   self:setCallback("Lobby::Enter", self.enterLobby)
 
   self:setCallback("Room::Enter", self.enterRoom)
@@ -141,6 +144,14 @@ function Client:startEncryption(_, _)
   end
 end
 
+function Client:showErrorDialog(_, message)
+  ktabletop.showErrorDialog(message)
+end
+
+function Client:showToast(_, message)
+  ktabletop.showToast(message)
+end
+
 ----------------------------------------------------------
 --- Below methods are called from C++ code.
 ----------------------------------------------------------
@@ -161,10 +172,10 @@ local function connectToHost(self, host, port)
   local success = false
   ktabletop.startTask("connectToHost", "Connecting to host...", -1, true, async.abort())
   local defer <close> = setmetatable({}, { __close = function()
+    ktabletop.updateTask("connectToHost", 100)
     if success then return end
     ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
     self:disconnectFromHost()
-    ktabletop.updateTask("connectToHost", 100)
   end})
   ok, ret = async.await(async.wrap(ktabletop.connectToHost)(host, port))
   if not ok then
@@ -185,7 +196,6 @@ local function connectToHost(self, host, port)
   ktabletop.updateTask("connectToHost", -1, "Do test waiting...")
 
   success = true
-  ktabletop.updateTask("connectToHost", 100)
 end
 
 ---@param host string
@@ -286,7 +296,7 @@ end
 ---@param message string
 function Client:onSocketError(message)
   -- self.uiHelper:showError(message, "network")
-  ktabletop.log.warn(message)
+  ktabletop.showErrorDialog(message)
   ktabletop.luaEvent("Client::SocketError", nil)
 
   -- TODO: should stop all async tasks here.

@@ -483,6 +483,26 @@ static int updateTask(lua_State *L)
     return 0;
 }
 
+static int showToast(lua_State *L)
+{
+    auto [message] = LuaVM::readArgs<str>(L);
+    auto *client = Client::instance();
+
+    Q_EMIT client->showToast(QString::fromUtf8(message));
+
+    return 0;
+}
+
+static int showErrorDialog(lua_State *L)
+{
+    auto [message] = LuaVM::readArgs<str>(L);
+    auto *client = Client::instance();
+
+    Q_EMIT client->showErrorDialog(QString::fromUtf8(message));
+
+    return 0;
+}
+
 static luaL_Reg commonFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
@@ -507,6 +527,8 @@ static luaL_Reg clientFuncTable[] = {
 
     {"startTask", startTask},
     {"updateTask", updateTask},
+    {"showToast", showToast},
+    {"showErrorDialog", showErrorDialog},
 
     {NULL, NULL},
 };
