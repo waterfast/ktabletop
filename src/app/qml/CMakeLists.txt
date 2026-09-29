@@ -33,6 +33,8 @@ target_link_libraries(ktabletop_qml PUBLIC
     KF6::I18n
     KF6::CoreAddons
     KF6::ConfigGui
+
+    ktabletop_settings
 )
 
 target_include_directories(ktabletop_qml PUBLIC

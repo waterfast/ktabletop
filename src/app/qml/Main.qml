@@ -6,6 +6,7 @@ import QtQuick
 import org.kde.kirigami as Kirigami
 
 import org.kde.ktabletop
+import org.kde.ktabletop.settings
 
 Kirigami.ApplicationWindow {
     id: root
@@ -229,6 +230,7 @@ Kirigami.ApplicationWindow {
     }
 
     Component.onCompleted: {
+        KTabletopSettingsView.window = root;
         updateNav();
     }
 }

@@ -49,10 +49,14 @@ int main(int argc, char *argv[])
     KAboutData aboutData(u"ktabletop"_s,
                          i18nc("@title", "KTabletop"),
                          QStringLiteral("0.0.1"),
-                         i18n("Application Description"),
-                         KAboutLicense::GPL,
-                         i18n("(c) 2026"));
-    aboutData.addAuthor(i18nc("@info:credit", ""), i18nc("@info:credit", "Maintainer"), u""_s, u"https://yourwebsite.com"_s);
+                         i18n("Play boardgames"),
+                         KAboutLicense::LGPL_V2_1,
+                         i18n("© 2026 KDE Community"));
+    aboutData.addAuthor(i18nc("@info:credit", "notify-ctrl"),
+                        i18nc("@info:credit", "Maintainer"),
+                        u"notify-ctrl@qq.com"_s,
+                        u"https://notify-ctrl.netlify.app/"_s,
+                        QUrl(u"https://notify-ctrl.netlify.app/images/avatar.jpg"_s));
     aboutData.setTranslator(i18nc("NAME OF TRANSLATORS", "Your names"), i18nc("EMAIL OF TRANSLATORS", "Your emails"));
     KAboutData::setApplicationData(aboutData);
     QGuiApplication::setWindowIcon(QIcon::fromTheme(u"org.kde.ktabletop"_s));

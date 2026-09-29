@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
 import org.kde.ktabletop
+import org.kde.ktabletop.settings
 
 
 Kirigami.Page {
@@ -56,6 +57,13 @@ Kirigami.Page {
                 icon.name: "system-users"
                 text: i18n("Join server")
                 onClicked: multiplayerDialog.open()
+            }
+
+            QQC2.Button {
+                Layout.fillWidth: true
+                icon.name: "settings-configure"
+                text: i18n("Settings")
+                onClicked: KTabletopSettingsView.open()
             }
 
             Kirigami.Separator {
