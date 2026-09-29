@@ -53,6 +53,11 @@ Kirigami.Dialog {
             implicitWidth: listView.width
             implicitHeight: loader.implicitHeight + padding
 
+            Kirigami.Separator {
+                width: parent.width
+                anchors.top: parent.top
+            }
+
             Loader {
                 id: loader
                 anchors.left: parent.left
@@ -67,11 +72,6 @@ Kirigami.Dialog {
                     item.model = parent.model
                 }
             }
-
-            Kirigami.Separator {
-                width: parent.width
-                anchors.bottom: parent.bottom
-            }
         }
     }
 
@@ -85,7 +85,7 @@ Kirigami.Dialog {
                 source: "dialog-error"
             }
 
-            Text {
+            QQC2.Label {
                 Layout.fillWidth: true
                 text: parent.model?.msg ?? ""
                 wrapMode: Text.Wrap
@@ -108,7 +108,7 @@ Kirigami.Dialog {
                 Layout.fillWidth: true
                 spacing: 0
 
-                Text {
+                QQC2.Label {
                     Layout.fillWidth: true
                     text: row.model?.msg ?? ""
                     wrapMode: Text.Wrap
