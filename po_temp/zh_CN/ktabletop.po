@@ -1,0 +1,565 @@
+# Copyright (C) 2026 This file is copyright:
+# This file is distributed under the same license as the PACKAGE package.
+#
+# SPDX-FileCopyrightText: 2026 notify <notify-ctrl@qq.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2026-10-01 06:41+0800\n"
+"PO-Revision-Date: 2026-10-01 06:52+0800\n"
+"Last-Translator: notify <notify-ctrl@qq.com>\n"
+"Language-Team: Chinese <kde-i18n-doc@kde.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 3.9\n"
+
+#: scripts/client/client.lua:182
+#, kde-format
+msgid "Connecting to host..."
+msgstr "正在连接到主机..."
+
+#: scripts/client/client.lua:197
+#, kde-format
+msgid "Sending nonce to server..."
+msgstr "正在向服务器发送随机数..."
+
+#: scripts/client/client.lua:201
+#, kde-format
+msgid "Exchanging keys..."
+msgstr "正在交换密钥..."
+
+#: scripts/client/server-messages.lua:5
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Failed to create the room!"
+msgstr "创建房间失败！"
+
+#: scripts/client/server-messages.lua:6
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "No such room."
+msgstr "房间不存在。"
+
+#: scripts/client/server-messages.lua:8
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Room is full!"
+msgstr "房间已满！"
+
+#: scripts/client/server-messages.lua:9
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Room is not full yet, you may not start game for now."
+msgstr "房间尚未满员，您暂时无法开始游戏。"
+
+#: scripts/client/server-messages.lua:10
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "The game has already started!"
+msgstr "游戏已经开始了！"
+
+#: scripts/client/server-messages.lua:11
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Someone is not getting ready!"
+msgstr "有人还没有准备好！"
+
+#: scripts/client/server-messages.lua:12
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Only the room owner can add a robot."
+msgstr "只有房主才能添加机器人。"
+
+#: scripts/client/server-messages.lua:13
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Only the room owner can start the game."
+msgstr "只有房主才能开始游戏。"
+
+#: scripts/client/server-messages.lua:15
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Chat message cannot be empty."
+msgstr "聊天消息不能为空。"
+
+#: scripts/client/server-messages.lua:16
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Invalid chat text"
+msgstr "无效的聊天文本"
+
+#: scripts/client/server-messages.lua:18
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Server internal error"
+msgstr "服务器内部错误"
+
+#: scripts/client/server-messages.lua:19
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Handshake failed!"
+msgstr "握手失败！"
+
+#: scripts/client/server-messages.lua:20
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Invalid username or password"
+msgstr "用户名或密码无效"
+
+#: scripts/client/server-messages.lua:21
+#, kde-format
+msgctxt "@lua-server-messages"
+msgid "Wrong password"
+msgstr "密码错误"
+
+#: scripts/demo/chess/ui/PlayerCard.qml:59
+#, kde-format
+msgid "Unknown"
+msgstr "未知"
+
+#: scripts/demo/chess/ui/PlayerCard.qml:66 src/app/qml/WaitingRoomPage.qml:120
+#, kde-format
+msgid "You"
+msgstr "您"
+
+#: scripts/demo/chess/ui/PlayerCard.qml:71
+#, kde-format
+msgid "White"
+msgstr "白方"
+
+#: scripts/demo/chess/ui/PlayerCard.qml:71
+#, kde-format
+msgid "Black"
+msgstr "黑方"
+
+#: scripts/demo/chess/ui/PromotionBox.qml:13
+#, kde-format
+msgid "Promotion"
+msgstr "升变"
+
+#: src/app/client.cpp:135
+#, kde-format
+msgctxt "@socket-error"
+msgid "Connection was refused or timeout"
+msgstr "连接被拒绝或超时"
+
+#: src/app/client.cpp:138
+#, kde-format
+msgctxt "@socket-error"
+msgid "Remote host close this connection"
+msgstr "远程主机关闭了此连接"
+
+#: src/app/client.cpp:141
+#, kde-format
+msgctxt "@socket-error"
+msgid "Host not found"
+msgstr "找不到主机"
+
+#: src/app/client.cpp:144
+#, kde-format
+msgctxt "@socket-error"
+msgid "Socket access error"
+msgstr "套接字访问错误"
+
+#: src/app/client.cpp:147
+#, kde-format
+msgctxt "@socket-error"
+msgid "Socket resource error"
+msgstr "套接字资源错误"
+
+#: src/app/client.cpp:150
+#, kde-format
+msgctxt "@socket-error"
+msgid "Socket timeout error"
+msgstr "套接字超时错误"
+
+#: src/app/client.cpp:153
+#, kde-format
+msgctxt "@socket-error"
+msgid "Datagram too large error"
+msgstr "数据报过大错误"
+
+#: src/app/client.cpp:156
+#, kde-format
+msgctxt "@socket-error"
+msgid "Network error"
+msgstr "网络错误"
+
+#: src/app/client.cpp:159
+#, kde-format
+msgctxt "@socket-error"
+msgid "Unsupported socket operation"
+msgstr "不支持的套接字操作"
+
+#: src/app/client.cpp:162
+#, kde-format
+msgctxt "@socket-error"
+msgid "Unfinished socket operation"
+msgstr "未完成的套接字操作"
+
+#: src/app/client.cpp:165
+#, kde-format
+msgctxt "@socket-error"
+msgid "Proxy auth error"
+msgstr "代理认证错误"
+
+#: src/app/client.cpp:168
+#, kde-format
+msgctxt "@socket-error"
+msgid "Proxy refused"
+msgstr "代理被拒绝"
+
+#: src/app/client.cpp:171
+#, kde-format
+msgctxt "@socket-error"
+msgid "Proxy closed"
+msgstr "代理已关闭"
+
+#: src/app/client.cpp:174
+#, kde-format
+msgctxt "@socket-error"
+msgid "Proxy timeout"
+msgstr "代理超时"
+
+#: src/app/client.cpp:177
+#, kde-format
+msgctxt "@socket-error"
+msgid "Proxy protocol error"
+msgstr "代理协议错误"
+
+#: src/app/client.cpp:180
+#, kde-format
+msgctxt "@socket-error"
+msgid "Operation error"
+msgstr "操作错误"
+
+#: src/app/client.cpp:183
+#, kde-format
+msgctxt "@socket-error"
+msgid "Temporary error"
+msgstr "临时错误"
+
+#: src/app/client.cpp:186
+#, kde-format
+msgctxt "@socket-error"
+msgid "Unknown error"
+msgstr "未知错误"
+
+#: src/app/client.cpp:190
+#, kde-format
+msgid ""
+"Connection failed, error code = %1\n"
+"reason: %2"
+msgstr ""
+"连接失败，错误代码 = %1\n"
+"原因：%2"
+
+#: src/app/main.cpp:50 src/app/qml/WelcomePage.qml:33
+#, kde-format
+msgid "KTabletop"
+msgstr "KTabletop"
+
+#: src/app/main.cpp:52
+#, kde-format
+msgid "Play boardgames online"
+msgstr "在线游玩桌游"
+
+#: src/app/main.cpp:54
+#, kde-format
+msgid "© 2026 KDE Community"
+msgstr "© 2026 KDE 社区"
+
+#: src/app/main.cpp:55
+#, kde-format
+msgid "notify-ctrl"
+msgstr "notify-ctrl"
+
+#: src/app/main.cpp:56
+#, kde-format
+msgid "Maintainer"
+msgstr "维护者"
+
+#: src/app/main.cpp:60
+#, kde-format
+msgctxt "NAME OF TRANSLATORS"
+msgid "Your names"
+msgstr "notify-ctrl"
+
+#: src/app/main.cpp:60
+#, kde-format
+msgctxt "EMAIL OF TRANSLATORS"
+msgid "Your emails"
+msgstr "notify-ctrl@qq.com"
+
+#: src/app/qml/ChatPanel.qml:123
+#, kde-format
+msgid "No messages yet"
+msgstr "暂无消息"
+
+#: src/app/qml/GameOverDialog.qml:23
+#, kde-format
+msgid "You win!"
+msgstr "您赢了！"
+
+#: src/app/qml/GameOverDialog.qml:26
+#, kde-format
+msgid "You lose!"
+msgstr "您输了！"
+
+#: src/app/qml/GameOverDialog.qml:28
+#, kde-format
+msgid "Draw!"
+msgstr "平局！"
+
+#: src/app/qml/GameOverDialog.qml:58
+#, kde-format
+msgid "Winner: %1"
+msgstr "胜者：%1"
+
+#: src/app/qml/GameOverDialog.qml:64
+#, kde-format
+msgid "Back to Room"
+msgstr "返回房间"
+
+#: src/app/qml/GameOverDialog.qml:69
+#, kde-format
+msgid "Back to Lobby"
+msgstr "返回大厅"
+
+#: src/app/qml/lobby/BottomToolbar.qml:14 src/app/qml/lobby/RoomsPage.qml:12
+#: src/app/qml/Main.qml:27
+#, kde-format
+msgid "Rooms"
+msgstr "房间"
+
+#: src/app/qml/lobby/BottomToolbar.qml:24 src/app/qml/lobby/ChatPage.qml:12
+#: src/app/qml/Main.qml:28
+#, kde-format
+msgid "Chat"
+msgstr "聊天"
+
+#: src/app/qml/lobby/ChatPage.qml:22
+#, kde-format
+msgid "%1 player(s) in lobby"
+msgstr "大厅中有 %1 名玩家"
+
+#: src/app/qml/lobby/ChatPage.qml:37
+#, kde-format
+msgid "Write a message…"
+msgstr "写下一条消息…"
+
+#: src/app/qml/lobby/CreateRoomDialog.qml:16
+#, kde-format
+msgid "Create Room"
+msgstr "创建房间"
+
+#: src/app/qml/lobby/CreateRoomDialog.qml:23
+#, kde-format
+msgid "Room name:"
+msgstr "房间名称："
+
+#: src/app/qml/lobby/CreateRoomDialog.qml:24
+#, kde-format
+msgid "%1's room"
+msgstr "%1 的房间"
+
+#: src/app/qml/lobby/CreateRoomDialog.qml:34
+#, kde-format
+msgid "Players:"
+msgstr "玩家数："
+
+#: src/app/qml/lobby/RoomsPage.qml:25
+#, kde-format
+msgid "Refresh rooms"
+msgstr "刷新房间列表"
+
+#: src/app/qml/lobby/RoomsPage.qml:30 src/app/qml/lobby/RoomsPage.qml:118
+#, kde-format
+msgid "Create room"
+msgstr "创建房间"
+
+#: src/app/qml/lobby/RoomsPage.qml:35 src/app/qml/lobby/RoomsPage.qml:139
+#, kde-format
+msgid "Exit lobby"
+msgstr "离开大厅"
+
+#: src/app/qml/lobby/RoomsPage.qml:44
+#, kde-format
+msgid "%1 player(s) online · %2 room(s)"
+msgstr "%1 名玩家在线 · %2 个房间"
+
+#: src/app/qml/lobby/RoomsPage.qml:62
+#, kde-format
+msgid "Room full"
+msgstr "房间已满"
+
+#: src/app/qml/lobby/RoomsPage.qml:62
+#, kde-format
+msgid "join"
+msgstr "加入"
+
+#: src/app/qml/lobby/RoomsPage.qml:81
+#, kde-format
+msgid "Your room"
+msgstr "您的房间"
+
+#: src/app/qml/lobby/RoomsPage.qml:86
+#, kde-format
+msgid "Full"
+msgstr "已满"
+
+#: src/app/qml/lobby/RoomsPage.qml:95
+#, kde-format
+msgid "Players: %1/%2"
+msgstr "玩家：%1/%2"
+
+#: src/app/qml/lobby/RoomsPage.qml:114
+#, kde-format
+msgid "There isn't any room yet"
+msgstr "还没有任何房间"
+
+#: src/app/qml/lobby/RoomsPage.qml:115
+#, kde-format
+msgid "Create a room to start playing with friends"
+msgstr "创建房间与好友一起开始游戏"
+
+#: src/app/qml/lobby/RoomsPage.qml:140
+#, kde-format
+msgid "Are you sure you want to disconnect from this server?"
+msgstr "您确定要断开与此服务器的连接吗？"
+
+#: src/app/qml/TaskAndErrorDialog.qml:13
+#, kde-format
+msgid "Empty"
+msgstr "空"
+
+#: src/app/qml/TaskAndErrorDialog.qml:29
+#, kde-format
+msgid "%1 task"
+msgid_plural "%1 tasks"
+msgstr[0] "%1 个任务"
+
+#: src/app/qml/TaskAndErrorDialog.qml:32
+#, kde-format
+msgid "%1 error"
+msgid_plural "%1 errors"
+msgstr[0] "%1 个错误"
+
+#: src/app/qml/TaskAndErrorDialog.qml:137 src/app/qml/WelcomePage.qml:120
+#, kde-format
+msgid "Cancel"
+msgstr "取消"
+
+#: src/app/qml/WaitingRoomPage.qml:29
+#, kde-format
+msgid "Add Robot"
+msgstr "添加机器人"
+
+#: src/app/qml/WaitingRoomPage.qml:53
+#, kde-format
+msgid "Quit Room"
+msgstr "退出房间"
+
+#: src/app/qml/WaitingRoomPage.qml:71
+#, kde-format
+msgid "Waiting players"
+msgstr "等待玩家"
+
+#: src/app/qml/WaitingRoomPage.qml:76
+#, kde-format
+msgid "%1 / %2 players"
+msgstr "%1 / %2 名玩家"
+
+#: src/app/qml/WaitingRoomPage.qml:125
+#, kde-format
+msgid "Owner"
+msgstr "房主"
+
+#: src/app/qml/WaitingRoomPage.qml:132 src/app/qml/WaitingRoomPage.qml:184
+#, kde-format
+msgid "Ready"
+msgstr "准备"
+
+#: src/app/qml/WaitingRoomPage.qml:132
+#, kde-format
+msgid "Not Ready"
+msgstr "未准备"
+
+#: src/app/qml/WaitingRoomPage.qml:158
+#, kde-format
+msgid "Waiting for player..."
+msgstr "等待玩家..."
+
+#: src/app/qml/WaitingRoomPage.qml:177
+#, kde-format
+msgid "Start Game"
+msgstr "开始游戏"
+
+#: src/app/qml/WaitingRoomPage.qml:184
+#, kde-format
+msgid "Cancel Ready"
+msgstr "取消准备"
+
+#: src/app/qml/WelcomePage.qml:51
+#, kde-format
+msgid "Start locally"
+msgstr "本地开始"
+
+#: src/app/qml/WelcomePage.qml:58 src/app/qml/WelcomePage.qml:107
+#, kde-format
+msgid "Join server"
+msgstr "加入服务器"
+
+#: src/app/qml/WelcomePage.qml:65
+#, kde-format
+msgid "Settings"
+msgstr "设置"
+
+#: src/app/qml/WelcomePage.qml:79
+#, kde-format
+msgid "Exit"
+msgstr "退出"
+
+#: src/app/qml/WelcomePage.qml:87
+#, kde-format
+msgid "Join local server"
+msgstr "加入本地服务器"
+
+#: src/app/qml/WelcomePage.qml:95 src/app/qml/WelcomePage.qml:140
+#, kde-format
+msgid "Username:"
+msgstr "用户名："
+
+#: src/app/qml/WelcomePage.qml:100 src/app/qml/WelcomePage.qml:144
+#, kde-format
+msgid "Password:"
+msgstr "密码："
+
+#: src/app/qml/WelcomePage.qml:111
+#, kde-format
+msgid "Join"
+msgstr "加入"
+
+#: src/app/qml/WelcomePage.qml:128
+#, kde-format
+msgid "Server address:"
+msgstr "服务器地址："
+
+#: src/app/qml/WelcomePage.qml:136
+#, kde-format
+msgid "Port:"
+msgstr "端口："
+
+#: src/settings/KTabletopSettingsView.qml:14
+#, kde-format
+msgid "About KTabletop"
+msgstr "关于 KTabletop"
+
+#: src/settings/KTabletopSettingsView.qml:20
+#, kde-format
+msgid "About KDE"
+msgstr "关于 KDE"

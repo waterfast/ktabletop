@@ -72,7 +72,7 @@ add_subdirectory(src)
 
 # install(FILES org.kde.kapp4.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 # install(FILES org.kde.kapp4.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
-# ki18n_install(po)
+ki18n_install(po_temp)
 
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
