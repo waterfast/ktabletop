@@ -4,6 +4,8 @@
 add_subdirectory(qml)
 
 add_executable(ktabletop-app
+    client.cpp
+    client-lua.cpp
     qml-backend-controller.cpp
     main.cpp
 )

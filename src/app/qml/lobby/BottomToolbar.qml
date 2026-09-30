@@ -31,7 +31,7 @@ Kirigami.NavigationTabBar {
         },
         Kirigami.Action {
             icon.name: "question"
-            text: i18n("TODO")
+            text: "TODO"
             checked: applicationWindow().lobbyNavActive("Todo")
             onTriggered: {
                 if (!applicationWindow().lobbyNavActive("Todo")) {

@@ -5,4 +5,4 @@
 
 struct lua_State;
 
-extern "C" int luaopen_ktabletop(lua_State *L);
+extern "C" int luaopen_ktabletop_client(lua_State *L);

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QAbstractSocket>
 #include <QHash>
 #include <QObject>
 
@@ -27,6 +28,8 @@ public:
     void startTask(const QString &key, const QString &message, int progress, bool cancelable = false, std::move_only_function<void()> cancelFn = {});
     void updateTask(const QString &key, int progress, const QString &message = QString());
     void cancelTask(const QString &key);
+
+    void raiseSocketError(QAbstractSocket::SocketError error);
 
 Q_SIGNALS:
     void showToast(const QString &message);

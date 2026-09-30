@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "lua-binding.h"
+#include "async-context.h"
 #include "c-wrapper.h"
 
 #include <QDir>
@@ -141,4 +142,21 @@ LuaBinding *LuaBinding::forState(lua_State *state)
     auto *binding = static_cast<LuaBinding *>(lua_touserdata(state, -1));
     lua_pop(state, 1);
     return binding;
+}
+
+int LuaBinding::pushAsyncCancelToken(lua_State *L, AsyncContext *ctx)
+{
+    // ctx is certainly alive when calling this function from Lua
+    // because this will only be triggered by async.cancel,
+    // and if ctx->complete has been called,
+    // corresponding awaitable should have done and removed from calling chain
+    constexpr auto f = [](lua_State *L) {
+        auto *ctx = static_cast<AsyncContext *>(lua_touserdata(L, lua_upvalueindex(1)));
+        ctx->cancel();
+        return 0;
+    };
+
+    lua_pushlightuserdata(L, ctx);
+    lua_pushcclosure(L, f, 1);
+    return 1;
 }

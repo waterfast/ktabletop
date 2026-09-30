@@ -1,13 +1,13 @@
 add_library(ktabletop_core STATIC
-    async-context.cpp
     server.cpp
-    client.cpp
     logger.cpp
-    ktabletop-lua.cpp
     game-thread.cpp
     db-thread.cpp
     util.cpp
     stdin-adapter.cpp
+
+    common-lua.cpp
+    server-lua.cpp
 
     packman.cpp
 )

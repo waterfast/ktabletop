@@ -32,7 +32,6 @@ ClientSocket::~ClientSocket()
 void ClientSocket::init()
 {
     connect(m_socket, &QTcpSocket::readyRead, this, &ClientSocket::getMessage);
-    connect(m_socket, &QTcpSocket::errorOccurred, this, &ClientSocket::raiseError);
     connect(m_socket, &QTcpSocket::disconnected, this, &ClientSocket::disconnected);
     m_socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 }
@@ -60,75 +59,12 @@ QTcpSocket *ClientSocket::socket() const
 void ClientSocket::send(const QByteArray &msg)
 {
     if (m_socket->state() != QTcpSocket::ConnectedState) {
-        errorMessage(u"Cannot send messages if not connected"_s);
+        qWarning() << "Cannot send messages if not connected";
         return;
     }
 
     m_socket->write(msg);
     m_socket->flush();
-}
-
-void ClientSocket::raiseError(QAbstractSocket::SocketError socket_error)
-{
-    QString reason;
-    switch (socket_error) {
-    case QAbstractSocket::ConnectionRefusedError:
-        reason = tr("Connection was refused or timeout");
-        break;
-    case QAbstractSocket::RemoteHostClosedError:
-        reason = tr("Remote host close this connection");
-        break;
-    case QAbstractSocket::HostNotFoundError:
-        reason = tr("Host not found");
-        break;
-    case QAbstractSocket::SocketAccessError:
-        reason = tr("Socket access error");
-        break;
-    case QAbstractSocket::SocketResourceError:
-        reason = tr("Socket resource error");
-        break;
-    case QAbstractSocket::SocketTimeoutError:
-        reason = tr("Socket timeout error");
-        break;
-    case QAbstractSocket::DatagramTooLargeError:
-        reason = tr("Datagram too large error");
-        break;
-    case QAbstractSocket::NetworkError:
-        reason = tr("Network error");
-        break;
-    case QAbstractSocket::UnsupportedSocketOperationError:
-        reason = tr("Unsupprted socket operation");
-        break;
-    case QAbstractSocket::UnfinishedSocketOperationError:
-        reason = tr("Unfinished socket operation");
-        break;
-    case QAbstractSocket::ProxyAuthenticationRequiredError:
-        reason = tr("Proxy auth error");
-        break;
-    case QAbstractSocket::ProxyConnectionRefusedError:
-        reason = tr("Proxy refused");
-        break;
-    case QAbstractSocket::ProxyConnectionClosedError:
-        reason = tr("Proxy closed");
-        break;
-    case QAbstractSocket::ProxyConnectionTimeoutError:
-        reason = tr("Proxy timeout");
-        break;
-    case QAbstractSocket::ProxyProtocolError:
-        reason = tr("Proxy protocol error");
-        break;
-    case QAbstractSocket::OperationError:
-        reason = tr("Operation error");
-        break;
-    case QAbstractSocket::TemporaryError:
-        reason = tr("Temporary error");
-        break;
-    default:
-        reason = tr("Unknown error");
-        break;
-    }
-
-    Q_EMIT errorMessage(tr("Connection failed, error code = %1\nreason: %2").arg(socket_error).arg(reason));
 }
 
 static QCborValue readItem(QCborStreamReader &reader)

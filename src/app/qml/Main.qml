@@ -26,7 +26,7 @@ Kirigami.ApplicationWindow {
     readonly property var lobbyNavModel: [
         { name: "Rooms", title: i18n("Rooms"), icon: "view-list-details", pages: ["Rooms"] },
         { name: "Chat", title: i18n("Chat"), icon: "dialog-messages", pages: ["Chat"] },
-        { name: "Todo", title: i18n("TODO"), icon: "question", pages: ["Todo"] },
+        { name: "Todo", title: "TODO", icon: "question", pages: ["Todo"] },
     ]
 
     onIsWidescreenChanged: updateNav()

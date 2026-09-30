@@ -5,9 +5,9 @@
 
 #include <QObject>
 #include <QVariant>
-#include <system_error>
 
 class LuaVM;
+class AsyncContext;
 struct lua_State;
 
 class LuaBinding : public QObject
@@ -51,6 +51,7 @@ public:
     lua_State *state() const;
 
     static LuaBinding *forState(lua_State *state);
+    static int pushAsyncCancelToken(lua_State *L, AsyncContext *ctx);
 
 public Q_SLOTS:
     // void requestDone(int func, std::error_code err, QByteArray data);

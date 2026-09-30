@@ -6,7 +6,7 @@
 #include "qml/main-view-model.h"
 #include "qml/qml-backend.h"
 
-#include "core/client.h"
+#include "client.h"
 #include "core/server.h"
 #include "lua/lua-binding.h"
 

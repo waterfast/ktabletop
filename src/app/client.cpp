@@ -2,13 +2,16 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "client.h"
-#include "ktabletop-lua.h"
+#include "client-lua.h"
+#include "core/common-lua.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
 #include "network/user-connection.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>
+
+#include <KLocalizedString>
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -37,7 +40,8 @@ Client::Client(QObject *parent)
     : QObject(parent)
 {
     L = new LuaBinding(this, LuaBinding::Client);
-    luaopen_ktabletop(L->state());
+    luaopen_ktabletop_common(L->state());
+    luaopen_ktabletop_client(L->state());
     L->run();
 
     m_connection = new UserConnection(this, new ClientSocket);
@@ -66,9 +70,7 @@ Client::Client(QObject *parent)
                                });
     });
 
-    connect(m_connection, &UserConnection::socketError, this, [this](const QString &msg) {
-        L->callKTabletopMethod(u"client"_s, u"onSocketError"_s, {msg});
-    });
+    connect(m_connection->socket()->socket(), &QTcpSocket::errorOccurred, this, &Client::raiseSocketError);
 }
 
 Client::~Client()
@@ -123,4 +125,68 @@ void Client::cancelTask(const QString &key)
     if (!node.empty()) {
         node.mapped()();
     }
+}
+
+void Client::raiseSocketError(QAbstractSocket::SocketError socket_error)
+{
+    QString reason;
+    switch (socket_error) {
+    case QAbstractSocket::ConnectionRefusedError:
+        reason = i18nc("@socket-error", "Connection was refused or timeout");
+        break;
+    case QAbstractSocket::RemoteHostClosedError:
+        reason = i18nc("@socket-error", "Remote host close this connection");
+        break;
+    case QAbstractSocket::HostNotFoundError:
+        reason = i18nc("@socket-error", "Host not found");
+        break;
+    case QAbstractSocket::SocketAccessError:
+        reason = i18nc("@socket-error", "Socket access error");
+        break;
+    case QAbstractSocket::SocketResourceError:
+        reason = i18nc("@socket-error", "Socket resource error");
+        break;
+    case QAbstractSocket::SocketTimeoutError:
+        reason = i18nc("@socket-error", "Socket timeout error");
+        break;
+    case QAbstractSocket::DatagramTooLargeError:
+        reason = i18nc("@socket-error", "Datagram too large error");
+        break;
+    case QAbstractSocket::NetworkError:
+        reason = i18nc("@socket-error", "Network error");
+        break;
+    case QAbstractSocket::UnsupportedSocketOperationError:
+        reason = i18nc("@socket-error", "Unsupported socket operation");
+        break;
+    case QAbstractSocket::UnfinishedSocketOperationError:
+        reason = i18nc("@socket-error", "Unfinished socket operation");
+        break;
+    case QAbstractSocket::ProxyAuthenticationRequiredError:
+        reason = i18nc("@socket-error", "Proxy auth error");
+        break;
+    case QAbstractSocket::ProxyConnectionRefusedError:
+        reason = i18nc("@socket-error", "Proxy refused");
+        break;
+    case QAbstractSocket::ProxyConnectionClosedError:
+        reason = i18nc("@socket-error", "Proxy closed");
+        break;
+    case QAbstractSocket::ProxyConnectionTimeoutError:
+        reason = i18nc("@socket-error", "Proxy timeout");
+        break;
+    case QAbstractSocket::ProxyProtocolError:
+        reason = i18nc("@socket-error", "Proxy protocol error");
+        break;
+    case QAbstractSocket::OperationError:
+        reason = i18nc("@socket-error", "Operation error");
+        break;
+    case QAbstractSocket::TemporaryError:
+        reason = i18nc("@socket-error", "Temporary error");
+        break;
+    default:
+        reason = i18nc("@socket-error", "Unknown error");
+        break;
+    }
+
+    auto msg = i18n("Connection failed, error code = %1\nreason: %2", socket_error, reason);
+    L->callKTabletopMethod(u"client"_s, u"onSocketError"_s, {msg});
 }

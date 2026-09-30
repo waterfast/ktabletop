@@ -48,7 +48,7 @@ Kirigami.Page {
             QQC2.Button {
                 Layout.fillWidth: true
                 icon.name: "user-identity"
-                text: i18n("Single player")
+                text: i18n("Start locally")
                 onClicked: singlePlayerDialog.open()
             }
 
@@ -84,7 +84,7 @@ Kirigami.Page {
 
     Kirigami.Dialog {
         id: singlePlayerDialog
-        title: i18n("Single Player")
+        title: i18n("Join local server")
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
         onAccepted: Backend.mainViewModel.startSinglePlayer(spUsername.text, spPassword.text)
         padding: Kirigami.Units.largeSpacing

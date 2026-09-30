@@ -4,7 +4,7 @@
 #include "game-thread.h"
 #include "server.h"
 
-#include "ktabletop-lua.h"
+#include "common-lua.h"
 #include "lua/c-wrapper.h"
 #include "lua/lua-binding.h"
 
@@ -40,7 +40,7 @@ GameThread::~GameThread()
 void GameThread::run()
 {
     L = new LuaBinding(nullptr, LuaBinding::GameThread);
-    luaopen_ktabletop(L->state());
+    luaopen_ktabletop_common(L->state());
     L->run();
 
     // TODO: seems overused luaEvent. maybe should give this a new name to post some events to main thread Lua

@@ -27,7 +27,6 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void getMessage();
-    void raiseError(QAbstractSocket::SocketError error);
 
 private:
     void init();

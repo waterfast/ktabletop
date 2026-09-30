@@ -1,6 +1,7 @@
 add_library(ktabletop_lua STATIC
     c-wrapper.cpp
     lua-binding.cpp
+    async-context.cpp
 )
 
 target_link_libraries(ktabletop_lua PUBLIC Qt6::Core ${LUA_LIBRARIES})

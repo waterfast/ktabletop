@@ -103,7 +103,6 @@ void UserConnection::setSocket(ClientSocket *socket)
     if (socket != nullptr) {
         connect(this, &UserConnection::messageReady, socket, &ClientSocket::send);
         connect(socket, &ClientSocket::messageGot, this, &UserConnection::handlePacket);
-        connect(socket, &ClientSocket::errorMessage, this, &UserConnection::socketError);
         connect(socket, &ClientSocket::disconnected, this, &UserConnection::disconnected);
         socket->setParent(this);
         m_socket = socket;

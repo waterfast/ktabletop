@@ -76,7 +76,6 @@ Q_SIGNALS:
 
     void notificationGot(const QByteArray &command, const QByteArray &jsonData);
     void requestGot(int requestId);
-    void socketError(const QString &msg);
     void disconnected();
 
 protected:

@@ -21,7 +21,7 @@ Kirigami.Dialog {
         QQC2.TextField {
             id: nameField
             Kirigami.FormData.label: "Room name"
-            text: `${root.d.username}'s room`
+            text: i18n("%1's room", root.d.username)
             onTextChanged: root.d.invoke("updateName", [text])
         }
 

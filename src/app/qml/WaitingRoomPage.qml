@@ -12,7 +12,7 @@ import org.kde.ktabletop
 Kirigami.Page {
     id: root
 
-    title: root.d.name !== "" ? root.d.name : i18n("Waiting Room")
+    title: root.d.name
 
     required property LuaObject d
     readonly property bool isOwner: d.ownerId === d.selfId
@@ -155,7 +155,7 @@ Kirigami.Page {
                     }
                     QQC2.Label {
                         Layout.fillWidth: true
-                        text: i18n("Waiting for a player...")
+                        text: i18n("Waiting for player...")
                     }
                 }
             }

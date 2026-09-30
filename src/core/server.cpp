@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "server.h"
+#include "common-lua.h"
 #include "db-thread.h"
 #include "game-thread.h"
-#include "ktabletop-lua.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
 #include "network/crypto-util.h"
 #include "network/server-socket.h"
 #include "network/user-connection.h"
+#include "server-lua.h"
 #include "stdin-adapter.h"
 #include "util.h"
 
@@ -54,7 +55,8 @@ Server::Server(QObject *parent)
     : QObject(parent)
 {
     L = new LuaBinding(this, LuaBinding::Server);
-    luaopen_ktabletop(L->state());
+    luaopen_ktabletop_common(L->state());
+    luaopen_ktabletop_server(L->state());
     L->run();
 
     initAuthKeys();

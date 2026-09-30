@@ -10,7 +10,7 @@ Kirigami.Dialog {
 
     title: {
         if (listModel.count === 0) {
-            return "Empty";
+            return i18n("Empty");
         }
 
         let tasks = 0;
@@ -23,12 +23,21 @@ Kirigami.Dialog {
             }
         }
 
-        if (tasks === 0) {
-            return `${errors} error(s)`;
-        } else if (errors === 0) {
-            return `${tasks} task(s)`;
+        let taskStr = "";
+        let errorStr = "";
+        if (tasks > 0) {
+            taskStr = i18np("%1 task", "%1 tasks", errors);
+        }
+        if (errorStr > 0) {
+            errorStr = i18np("%1 error", "%1 errors", errors);
+        }
+
+        if (taskStr === "") {
+            return errorStr;
+        } else if (errorStr === "") {
+            return taskStr;
         } else {
-            return `${tasks} task(s), ${errors} error(s)`;
+            return taskStr + ", " + errorStr;
         }
     }
 
@@ -125,7 +134,7 @@ Kirigami.Dialog {
             QQC2.Button {
                 Layout.alignment: Qt.AlignCenter
                 icon.name: "dialog-cancel"
-                text: "Cancel"
+                text: i18n("Cancel")
                 visible: row.model?.cancelable ?? false
             }
         }

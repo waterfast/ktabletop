@@ -20,12 +20,12 @@ Kirigami.Dialog {
 
     title: {
         if (root.resultKind === "win") {
-            return i18n("You Win");
+            return i18n("You win!");
         }
         if (root.resultKind === "lose") {
-            return i18n("You Lose");
+            return i18n("You lose!");
         }
-        return i18n("Draw");
+        return i18n("Draw!");
     }
     modal: true
     closePolicy: QQC2.Popup.NoAutoClose
