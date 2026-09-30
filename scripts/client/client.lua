@@ -304,7 +304,7 @@ end
 ---@param message string
 function Client:onSocketError(message)
   -- self.uiHelper:showError(message, "network")
-  ktabletop.showErrorDialog(message)
+  ktabletop.showToast(message)
   ktabletop.luaEvent("Client::SocketError", nil)
 
   -- TODO: should stop all async tasks here.

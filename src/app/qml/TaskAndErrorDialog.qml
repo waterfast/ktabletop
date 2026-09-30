@@ -26,9 +26,9 @@ Kirigami.Dialog {
         let taskStr = "";
         let errorStr = "";
         if (tasks > 0) {
-            taskStr = i18np("%1 task", "%1 tasks", errors);
+            taskStr = i18np("%1 task", "%1 tasks", tasks);
         }
-        if (errorStr > 0) {
+        if (errors > 0) {
             errorStr = i18np("%1 error", "%1 errors", errors);
         }
 
