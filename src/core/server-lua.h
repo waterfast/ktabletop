@@ -6,3 +6,4 @@
 struct lua_State;
 
 extern "C" int luaopen_ktabletop_server(lua_State *L);
+extern "C" int luaopen_ktabletop_gamethread(lua_State *L);

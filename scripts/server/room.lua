@@ -46,7 +46,7 @@ end
 ---@param user ServerUser
 function Room:addUser(user)
   if self:isFull() or self.gameStarted then
-    user:notify("ErrorMsg", "Room is full or already started")
+    user:notify("App::ShowToast", "room.full")
     return
   end
 
@@ -89,11 +89,11 @@ end
 ---@param user ServerUser
 function Room:handleAddRobot(user)
   if self.owner ~= user then
-    return nil, "you need to be room owner to add robot!"
+    return nil, "room.not_owner_add_robot"
   end
 
   if self:isFull() then
-    return nil, "room is full!"
+    return nil, "room.full"
   end
 
   local robot = ktabletop.server.userManager:createRobot()
@@ -112,19 +112,19 @@ end
 ---@param user ServerUser
 function Room:handleStartGame(user)
   if user ~= self.owner then
-    return nil, "you need to be room owner to start the game!"
+    return nil, "room.not_owner_start"
   end
 
   if self.gameStarted then
-    return nil, "game already started!"
+    return nil, "room.already_started"
   end
 
   if not self:isFull() then
-    return nil, "room is not full!"
+    return nil, "room.not_full_start"
   end
 
   if not self:allReady() then
-    return nil, "not all players are ready!"
+    return nil, "room.not_all_ready"
   end
 
   self.gameStarted = true

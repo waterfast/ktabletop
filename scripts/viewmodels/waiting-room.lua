@@ -1,5 +1,6 @@
 local LObject = require "corelib.lobject"
 local async = require "corelib.async"
+local translateServerMessage = require "client.server-messages"
 local tablib = ktabletop.tablib
 
 ---@class WaitingRoomViewModel: Object, LObject
@@ -51,13 +52,15 @@ end
 
 function WaitingRoomViewModel:addRobot()
   async.run(function()
-    self.myself:request("Room::AddRobot", {})
+    local _, err = self.myself:request("Room::AddRobot", {})
+    if err then ktabletop.showToast(translateServerMessage(err)) end
   end)
 end
 
 function WaitingRoomViewModel:startGame()
   async.run(function()
-    self.myself:request("Room::StartGame", {})
+    local _, err = self.myself:request("Room::StartGame", {})
+    if err then ktabletop.showToast(translateServerMessage(err)) end
   end)
 end
 
@@ -69,14 +72,16 @@ end
 
 function WaitingRoomViewModel:toggleReady()
   async.run(function()
-    self.myself:request("Room::Ready", {})
+    local _, err = self.myself:request("Room::Ready", {})
+    if err then ktabletop.showToast(translateServerMessage(err)) end
   end)
 end
 
 
 function WaitingRoomViewModel:sendChatMessage(text)
   async.run(function()
-    self.myself:request("Room::Chat", { text = text })
+    local _, err = self.myself:request("Room::Chat", { text = text })
+    if err then ktabletop.showToast(translateServerMessage(err)) end
   end)
 end
 

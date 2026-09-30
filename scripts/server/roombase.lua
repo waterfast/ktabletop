@@ -40,12 +40,12 @@ function ServerRoomBase:handleChat(user, data)
   local text = data and data.text
 
   if type(text) ~= "string" or text == "" then
-    return nil, "chat message cannot be empty"
+    return nil, "chat.empty"
   end
   
   local char_count = utf8.len(text)
   if not char_count then
-    return nil, "invalid UTF-8 string"
+    return nil, "chat.invalid_utf8"
   end
 
   if char_count > MAX_CHAT_LENGTH then

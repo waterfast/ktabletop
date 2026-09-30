@@ -232,12 +232,14 @@ static int registerUser(lua_State *L)
     return 1;
 }
 
-static luaL_Reg serverFuncTable[] = {
+static luaL_Reg socketFuncTable[] = {
     {"notifySocket", notifySocket},
     {"requestSocket", requestSocket},
     {"replySocket", replySocket},
     {"disconnect", disconnectSocket},
+};
 
+static luaL_Reg serverFuncTable[] = {
     {"startGame", startGame},
 
     {"getServerPublicKey", getServerPublicKey},
@@ -253,7 +255,16 @@ static luaL_Reg serverFuncTable[] = {
 extern "C" int luaopen_ktabletop_server(lua_State *L)
 {
     lua_getglobal(L, "ktabletop");
+    luaL_setfuncs(L, socketFuncTable, 0);
     luaL_setfuncs(L, serverFuncTable, 0);
+    lua_pop(L, 1);
+    return 0;
+}
+
+extern "C" int luaopen_ktabletop_gamethread(lua_State *L)
+{
+    lua_getglobal(L, "ktabletop");
+    luaL_setfuncs(L, socketFuncTable, 0);
     lua_pop(L, 1);
     return 0;
 }

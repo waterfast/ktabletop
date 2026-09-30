@@ -13,9 +13,10 @@
 #include <QAbstractSocket>
 #include <QTimer>
 
+#include <KLocalizedString>
+
 #include <lua.hpp>
 
-using namespace Qt::Literals::StringLiterals;
 using namespace KTabletopCrypto;
 using str = const char *;
 
@@ -288,10 +289,73 @@ static luaL_Reg clientFuncTable[] = {
     {NULL, NULL},
 };
 
+static QString subsLuaArgs(lua_State *L, KLocalizedString msg, int firstArg)
+{
+    const int n = lua_gettop(L);
+    for (int i = firstArg; i <= n; i++) {
+        if (lua_isinteger(L, i)) {
+            msg = msg.subs(lua_tointeger(L, i));
+        } else if (lua_type(L, i) == LUA_TNUMBER) {
+            msg = msg.subs(lua_tonumber(L, i));
+        } else {
+            size_t len = 0;
+            const char *s = luaL_tolstring(L, i, &len);
+            msg = msg.subs(QString::fromUtf8(s, len));
+            lua_pop(L, 1);
+        }
+    }
+    return msg.toString();
+}
+
+static int luaI18n(lua_State *L)
+{
+    const char *text = luaL_checkstring(L, 1);
+    auto msg = subsLuaArgs(L, ki18n(text), 2);
+    lua_pushstring(L, msg.toUtf8().constData());
+    return 1;
+}
+
+static int luaI18nc(lua_State *L)
+{
+    const char *context = luaL_checkstring(L, 1);
+    const char *text = luaL_checkstring(L, 2);
+    auto msg = subsLuaArgs(L, ki18nc(context, text), 3);
+    lua_pushstring(L, msg.toUtf8().constData());
+    return 1;
+}
+
+static int luaI18np(lua_State *L)
+{
+    const char *singular = luaL_checkstring(L, 1);
+    const char *plural = luaL_checkstring(L, 2);
+    auto msg = subsLuaArgs(L, ki18np(singular, plural), 3);
+    lua_pushstring(L, msg.toUtf8().constData());
+    return 1;
+}
+
+static int luaI18ncp(lua_State *L)
+{
+    const char *context = luaL_checkstring(L, 1);
+    const char *singular = luaL_checkstring(L, 2);
+    const char *plural = luaL_checkstring(L, 3);
+    auto msg = subsLuaArgs(L, ki18ncp(context, singular, plural), 4);
+    lua_pushstring(L, msg.toUtf8().constData());
+    return 1;
+}
+
+static luaL_Reg i18nFuncTable[] = {
+    {"i18n", luaI18n},
+    {"i18nc", luaI18nc},
+    {"i18np", luaI18np},
+    {"i18ncp", luaI18ncp},
+    {NULL, NULL},
+};
+
 extern "C" int luaopen_ktabletop_client(lua_State *L)
 {
     lua_getglobal(L, "ktabletop");
     luaL_setfuncs(L, clientFuncTable, 0);
+    luaL_setfuncs(L, i18nFuncTable, 0);
     lua_pop(L, 1);
     return 0;
 }

@@ -59,7 +59,7 @@ function Lobby:handleCreateRoom(user, data)
   local rm = ktabletop.server.roomManager
   local room = rm:createRoom(user, data.name, data.capacity)
   if not room then
-    return nil, "createRoom failed!"
+    return nil, "lobby.create_room_failed"
   end
 
   return room.id
@@ -69,7 +69,7 @@ function Lobby:handleJoinRoom(user, data)
   local rm = ktabletop.server.roomManager
   local room = rm:findRoom(data.id)
   if not room then
-    return nil, "no such room"
+    return nil, "lobby.no_such_room"
   end
 
   -- TODO: password check

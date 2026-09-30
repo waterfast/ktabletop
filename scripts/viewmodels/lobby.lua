@@ -3,6 +3,7 @@
 
 local LObject = require "corelib.lobject"
 local async = require "corelib.async"
+local translateServerMessage = require "client.server-messages"
 
 ---@class LobbyViewModel: Object, LObject
 ---@field userCount integer
@@ -56,21 +57,28 @@ end
 
 function LobbyViewModel:joinRoom(roomId)
   async.run(function()
-    self.myself:request("Room::Join", { id = roomId })
+    local _, err = self.myself:request("Room::Join", { id = roomId })
+    if err then ktabletop.showToast(translateServerMessage(err)) end
   end)
 end
 
 function LobbyViewModel:createRoom(data)
   async.run(function()
     local p = self.myself
-    local roomId = p:request("Room::Create", data)
-    p:request("Room::Join", { id = roomId })
+    local roomId, err = p:request("Room::Create", data)
+    if err then
+      ktabletop.showToast(translateServerMessage(err))
+      return
+    end
+    _, err = p:request("Room::Join", { id = roomId })
+    if err then ktabletop.showToast(translateServerMessage(err)) end
   end)
 end
 
 function LobbyViewModel:sendChatMessage(text)
   async.run(function()
-    self.myself:request("Room::Chat", { text = text })
+    local _, err = self.myself:request("Room::Chat", { text = text })
+    if err then ktabletop.showToast(translateServerMessage(err)) end
   end)
 end
 

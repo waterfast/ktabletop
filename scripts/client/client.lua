@@ -3,6 +3,7 @@
 
 local async = require "corelib.async"
 local class = ktabletop.class
+local translateServerMessage = require "client.server-messages"
 
 local ClientUser = require "client.user"
 local ClientLobby = require "client.lobby"
@@ -31,8 +32,8 @@ function Client:initialize()
   self:setRequestHandler("Auth::RequestUsername", self.handleAuthRequest)
   self:setCallback("User::Setup", self.setupUser)
 
-  self:setCallback("App::ErrorDialog", self.showErrorDialog)
-  self:setCallback("App::ShowToast", self.showToast)
+  self:setCallback("App::ErrorDialog", self.handleErrorDialog)
+  self:setCallback("App::ShowToast", self.handleShowToast)
 
   self:setCallback("Lobby::Enter", self.enterLobby)
 
@@ -144,12 +145,20 @@ function Client:startEncryption(_, _)
   end
 end
 
-function Client:showErrorDialog(_, message)
+function Client:showErrorDialog(message)
   ktabletop.showErrorDialog(message)
 end
 
-function Client:showToast(_, message)
+function Client:showToast(message)
   ktabletop.showToast(message)
+end
+
+function Client:handleErrorDialog(_, code)
+  self:showErrorDialog(translateServerMessage(code))
+end
+
+function Client:handleShowToast(_, code)
+  self:showToast(translateServerMessage(code))
 end
 
 ----------------------------------------------------------
@@ -168,9 +177,9 @@ end
 
 ---@param self Client
 local function connectToHost(self, host, port)
-  local ok, ret, errmsg
+  local ok, ret
   local success = false
-  ktabletop.startTask("connectToHost", "Connecting to host...", -1, true, async.abort())
+  ktabletop.startTask("connectToHost", ktabletop.i18n("Connecting to host..."), -1, true, async.abort())
   local defer <close> = setmetatable({}, { __close = function()
     ktabletop.updateTask("connectToHost", 100)
     if success then return end
@@ -185,15 +194,14 @@ local function connectToHost(self, host, port)
 
   ok, ret = waitForRequestGot("Auth::RequestNonce")
   if not ok then return end
-  ktabletop.updateTask("connectToHost", -1, "Sending nonce to server...")
+  ktabletop.updateTask("connectToHost", -1, ktabletop.i18n("Sending nonce to server..."))
 
   ok, ret = waitForRequestGot("Auth::ExchangeKey")
   if not ok then return end
-  ktabletop.updateTask("connectToHost", -1, "Exchaging keys...")
+  ktabletop.updateTask("connectToHost", -1, ktabletop.i18n("Exchanging keys..."))
 
   ok, ret = waitForRequestGot("Auth::RequestUsername")
   if not ok then return end
-  ktabletop.updateTask("connectToHost", -1, "Do test waiting...")
 
   success = true
 end

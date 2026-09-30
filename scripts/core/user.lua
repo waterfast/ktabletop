@@ -53,7 +53,6 @@ function User:request(command, data, timeout, timestamp, isJson)
 
   if not ok then
     local err = tostring(ret)
-    ktabletop.log.critical(("request(%s): error from peer"):format(command), err)
     return "", err
   else
     return json.decode(ret)

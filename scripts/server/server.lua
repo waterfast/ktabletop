@@ -92,12 +92,12 @@ function Server:processNewConnection(connId)
   async.run(function ()
     local requestFn = async.wrap(ktabletop.requestSocket)
     local success = false
-    local errmsg = "server internal error"
+    local userErrCode = "auth.internal_error"
     local internal_errmsg
     local defer <close> = setmetatable({}, { __close = function()
       if success then return end
-      ktabletop.log.info(internal_errmsg or errmsg)
-      ktabletop.notifySocket(connId, "App::ErrorDialog", json.encode(errmsg))
+      ktabletop.log.info(internal_errmsg or userErrCode)
+      ktabletop.notifySocket(connId, "App::ErrorDialog", json.encode(userErrCode))
       ktabletop.disconnect(connId)
     end})
 
@@ -105,7 +105,7 @@ function Server:processNewConnection(connId)
     if not ok then return end
     if ret then
       internal_errmsg = ret
-      errmsg = "handshake failed!"
+      userErrCode = "auth.handshake_failed"
       return
     end
 
@@ -115,7 +115,7 @@ function Server:processNewConnection(connId)
     local username = data and data.username
     local password = data and data.password
     if not validateUsername(username) or not validatePassword(password) then
-      errmsg = "Rejecting connection: invalid username or password"
+      userErrCode = "auth.invalid_credentials"
       return
     end
 
@@ -123,7 +123,7 @@ function Server:processNewConnection(connId)
     ok, row = ktabletop.findUserByUsername(username)
     if not ok then
       -- err branch: database lookup failed
-      errmsg = ("lookup username failed: %s"):format(tostring(row))
+      internal_errmsg = ("lookup username failed: %s"):format(tostring(row))
       return
     end
     if row == nil then
@@ -131,14 +131,14 @@ function Server:processNewConnection(connId)
       local errReg
       ok, errReg = ktabletop.registerUser(username, password)
       if not ok then
-        errmsg = ("register user failed: %s"):format(tostring(errReg))
+        internal_errmsg = ("register user failed: %s"):format(tostring(errReg))
         return
       end
     else
       local salt = row.salt or ""
       local hash = ktabletop.sha256(password .. salt)
       if hash ~= row.password then
-        errmsg = "Rejecting connection: wrong password"
+        userErrCode = "auth.wrong_password"
         return
       end
     end
