@@ -5,8 +5,8 @@
 #include "common-lua.h"
 #include "db-thread.h"
 #include "lua/async-context.h"
-#include "lua/c-wrapper.h" // for LuaVM::readValue
 #include "lua/lua-binding.h"
+#include "lua/lua-helper.h" // for LuaVM::readValue
 #include "network/client-socket.h"
 #include "network/crypto-util.h"
 #include "network/user-connection.h"

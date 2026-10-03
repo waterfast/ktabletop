@@ -5,8 +5,8 @@
 #include "server.h"
 
 #include "common-lua.h"
-#include "lua/c-wrapper.h"
 #include "lua/lua-binding.h"
+#include "lua/lua-helper.h"
 #include "server-lua.h"
 
 #include <QEventLoop>
@@ -96,7 +96,7 @@ void GameThread::call(QString func, QVariantList args)
     QMetaObject::invokeMethod(
         L,
         [this, func, args] {
-            L->vm().call(func, args);
+            LuaVM::call(L->state(), func, args);
         },
         Qt::QueuedConnection);
 }

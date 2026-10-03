@@ -6,7 +6,6 @@
 #include <QObject>
 #include <QVariant>
 
-class LuaVM;
 class AsyncContext;
 struct lua_State;
 
@@ -47,7 +46,6 @@ public:
     // Release the registry reference held for an LObject.
     void releaseLObject(int ref);
 
-    LuaVM &vm();
     lua_State *state() const;
 
     static LuaBinding *forState(lua_State *state);
@@ -64,7 +62,7 @@ Q_SIGNALS:
 private:
     Role m_role;
     int m_gameThreadId = 0;
-    LuaVM *L;
+    lua_State *L;
 
     static void warnf(void *ud, const char *msg, int tocont);
     static int qrcSearcher(lua_State *L);

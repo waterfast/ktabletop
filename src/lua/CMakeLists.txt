@@ -1,5 +1,5 @@
 add_library(ktabletop_lua STATIC
-    c-wrapper.cpp
+    lua-helper.cpp
     lua-binding.cpp
     async-context.cpp
 )

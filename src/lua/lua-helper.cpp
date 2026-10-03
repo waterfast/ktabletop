@@ -1,26 +1,10 @@
 // SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
-#include "c-wrapper.h"
+#include "lua-helper.h"
 #include <QFile>
 
-LuaVM::LuaVM()
-{
-    L = luaL_newstate();
-    luaL_openlibs(L);
-}
-
-LuaVM::~LuaVM()
-{
-    lua_close(L);
-}
-
-lua_State *LuaVM::state() const
-{
-    return L;
-}
-
-void LuaVM::dofile(const QString &path)
+void LuaVM::dofile(lua_State *L, const QString &path)
 {
     if (!QFile::exists(path)) {
         qCritical() << path << "does not exist!";
@@ -45,7 +29,7 @@ void LuaVM::dumpStack(lua_State *L)
     }
 }
 
-QVariant LuaVM::call(const QString &func_name, QVariantList params)
+QVariant LuaVM::call(lua_State *L, const QString &func_name, QVariantList params)
 {
     lua_getglobal(L, func_name.toLatin1().data());
     return call(L, params);
@@ -53,7 +37,7 @@ QVariant LuaVM::call(const QString &func_name, QVariantList params)
 
 QVariant LuaVM::call(lua_State *L, QVariantList params)
 {
-    pushLibFunc(L, "debug", "traceback");
+    getTableField(L, "debug", "traceback");
     lua_rotate(L, -2, 1);
     int msgh = lua_gettop(L) - 1;
 
@@ -74,9 +58,9 @@ QVariant LuaVM::call(lua_State *L, QVariantList params)
     return result;
 }
 
-QVariant LuaVM::callMethod(const QString &method, QVariantList args)
+QVariant LuaVM::callMethod(lua_State *L, const QString &method, QVariantList args)
 {
-    pushLibFunc(L, "debug", "traceback");
+    getTableField(L, "debug", "traceback");
     lua_rotate(L, -2, 1);
     int msgh = lua_gettop(L) - 1;
 
@@ -105,7 +89,7 @@ QVariant LuaVM::callMethod(const QString &method, QVariantList args)
     return result;
 }
 
-QVariant LuaVM::eval(const QString &lua)
+QVariant LuaVM::eval(lua_State *L, const QString &lua)
 {
     if (luaL_loadstring(L, lua.toUtf8().constData()) != LUA_OK) {
         lua_warning(L, lua_tostring(L, -1), false);
@@ -265,7 +249,7 @@ QVariant LuaVM::readValue(lua_State *L, int index, QHash<const void *, bool> sta
     return QVariant();
 }
 
-int LuaVM::pushLibFunc(lua_State *L, const char *libName, const char *funcName)
+int LuaVM::getTableField(lua_State *L, const char *libName, const char *funcName)
 {
     lua_getglobal(L, libName);
     lua_getfield(L, -1, funcName);

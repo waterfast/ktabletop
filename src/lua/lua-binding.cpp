@@ -3,7 +3,7 @@
 
 #include "lua-binding.h"
 #include "async-context.h"
-#include "c-wrapper.h"
+#include "lua-helper.h"
 
 #include <QDir>
 #include <QString>
@@ -24,14 +24,14 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
     : QObject(parent)
     , m_role(role)
 {
-    L = new LuaVM;
-    auto *L = this->L->state();
+    L = luaL_newstate();
+    luaL_openlibs(L);
     lua_pushlightuserdata(L, this);
     lua_rawsetp(L, LUA_REGISTRYINDEX, &regKey);
 
     // set up searchers
-    LuaVM::pushLibFunc(L, "table", "insert");
-    LuaVM::pushLibFunc(L, "package", "searchers");
+    LuaVM::getTableField(L, "table", "insert");
+    LuaVM::getTableField(L, "package", "searchers");
     lua_pushinteger(L, 2);
     lua_getglobal(L, "package");
     lua_pushcclosure(L, &LuaBinding::qrcSearcher, 1);
@@ -48,17 +48,17 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
 
 LuaBinding::~LuaBinding()
 {
-    delete L;
+    lua_close(L);
 }
 
 void LuaBinding::run()
 {
     if (m_role == Server) {
-        L->eval(u"require 'server.entry'"_s);
+        LuaVM::eval(L, u"require 'server.entry'"_s);
     } else if (m_role == GameThread) {
-        L->eval(u"require 'gamethread.entry'"_s);
+        LuaVM::eval(L, u"require 'gamethread.entry'"_s);
     } else {
-        L->eval(u"require 'client.entry'"_s);
+        LuaVM::eval(L, u"require 'client.entry'"_s);
     }
 }
 
@@ -84,10 +84,8 @@ void LuaBinding::triggerLuaEvent(const QString &type, const QVariant &payload)
 
 QVariant LuaBinding::callKTabletopMethod(const QString &subtable, const QString &method, const QVariantList &args)
 {
-    lua_State *L = this->L->state();
-
-    LuaVM::pushLibFunc(L, "ktabletop", subtable.toUtf8().constData());
-    auto result = this->L->callMethod(method, args);
+    LuaVM::getTableField(L, "ktabletop", subtable.toUtf8().constData());
+    auto result = LuaVM::callMethod(L, method, args);
     lua_pop(L, 1);
 
     return result;
@@ -96,18 +94,16 @@ QVariant LuaBinding::callKTabletopMethod(const QString &subtable, const QString 
 QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
 {
     QVariantMap result;
-    auto *vm = this->L;
-    lua_State *L = vm->state();
 
-    LuaVM::pushLibFunc(L, "ktabletop", "viewModelManager");
-    auto ref = vm->callMethod(u"getViewModel"_s, {opts});
+    LuaVM::getTableField(L, "ktabletop", "viewModelManager");
+    auto ref = LuaVM::callMethod(L, u"getViewModel"_s, {opts});
     lua_pop(L, 1);
     if (!ref.isValid()) {
         return result;
     }
 
     LuaVM::pushValue(L, ref);
-    auto obj = vm->callMethod(u"createCppObject"_s);
+    auto obj = LuaVM::callMethod(L, u"createCppObject"_s);
     lua_pop(L, 1);
     if (!obj.isValid()) {
         luaL_unref(L, LUA_REGISTRYINDEX, ref.value<LuaRef>().index);
@@ -124,11 +120,8 @@ QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
 
 QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVariantList &args)
 {
-    auto *vm = this->L;
-    lua_State *L = vm->state();
-
     lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-    auto result = vm->callMethod(method, args);
+    auto result = LuaVM::callMethod(L, method, args);
     lua_pop(L, 1);
 
     lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
@@ -138,20 +131,13 @@ QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVarian
 
 void LuaBinding::releaseLObject(int ref)
 {
-    lua_State *L = this->L->state();
-
     lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
     luaL_unref(L, LUA_REGISTRYINDEX, ref);
 }
 
-LuaVM &LuaBinding::vm()
-{
-    return *L;
-}
-
 lua_State *LuaBinding::state() const
 {
-    return L->state();
+    return L;
 }
 
 LuaBinding *LuaBinding::forState(lua_State *state)

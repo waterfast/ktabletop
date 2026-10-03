@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "async-context.h"
-#include "c-wrapper.h"
 #include "lua-binding.h"
+#include "lua-helper.h"
 
 #include <QThread>
 
