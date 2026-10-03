@@ -39,7 +39,6 @@ public:
 
 Q_SIGNALS:
     void ready();
-    void luaWarning(QString message);
 
 protected:
     void run() override;

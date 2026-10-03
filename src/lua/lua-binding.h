@@ -67,4 +67,5 @@ private:
     LuaVM *L;
 
     static void warnf(void *ud, const char *msg, int tocont);
+    static int qrcSearcher(lua_State *L);
 };

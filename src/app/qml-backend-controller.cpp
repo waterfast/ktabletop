@@ -46,7 +46,7 @@ void QmlBackendController::onStartServerRequested(ushort port)
 {
     auto *server = Server::instance();
     auto *vm = m_backend->mainViewModel();
-    connect(server->luaBinding(), &LuaBinding::luaWarning, vm, &MainViewModel::showLuaError);
+    connect(server, &Server::luaWarning, vm, &MainViewModel::showLuaError);
     server->luaBinding()->run();
     if (!server->listen(QHostAddress::Any, port)) {
         // server->deleteLater();

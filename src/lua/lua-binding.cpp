@@ -29,12 +29,21 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
     lua_pushlightuserdata(L, this);
     lua_rawsetp(L, LUA_REGISTRYINDEX, &regKey);
 
-    lua_setwarnf(L, LuaBinding::warnf, this);
-    lua_warning(L, "@on", false);
+    // set up searchers
+    LuaVM::pushLibFunc(L, "table", "insert");
+    LuaVM::pushLibFunc(L, "package", "searchers");
+    lua_pushinteger(L, 2);
+    lua_getglobal(L, "package");
+    lua_pushcclosure(L, &LuaBinding::qrcSearcher, 1);
+    lua_call(L, 3, 0);
 
+    lua_setwarnf(L, &LuaBinding::warnf, this);
+    lua_warning(L, "@on", false);
     connect(this, &LuaBinding::luaWarning, this, [](QString msg) {
         qCritical().noquote() << msg;
     });
+
+    luaL_dostring(L, sandboxLua);
 }
 
 LuaBinding::~LuaBinding()
@@ -44,18 +53,12 @@ LuaBinding::~LuaBinding()
 
 void LuaBinding::run()
 {
-    L->eval(
-        u"package.path = './scripts/?.lua;./scripts/?/init.lua;"
-        "./plugins/?.lua;./plugins/?/init.lua;' .. package.path"_s);
-
-    // TODO: move this to ctor, after implementing package.searchers (which is a part of plugin system)
-    luaL_dostring(L->state(), sandboxLua);
     if (m_role == Server) {
-        L->dofile(u"scripts/server/entry.lua"_s);
+        L->eval(u"require 'server.entry'"_s);
     } else if (m_role == GameThread) {
-        L->dofile(u"scripts/gamethread/entry.lua"_s);
+        L->eval(u"require 'gamethread.entry'"_s);
     } else {
-        L->dofile(u"scripts/client/entry.lua"_s);
+        L->eval(u"require 'client.entry'"_s);
     }
 }
 
@@ -180,4 +183,38 @@ void LuaBinding::warnf(void *ud, const char *msg, int)
 {
     auto *binding = reinterpret_cast<LuaBinding *>(ud);
     Q_EMIT binding->luaWarning(QString::fromUtf8(msg));
+}
+
+int LuaBinding::qrcSearcher(lua_State *L)
+{
+    QString filename;
+    const char *modname = luaL_checkstring(L, 1);
+    auto name = QString::fromUtf8(modname).replace(u"."_s, u"/"_s);
+    auto name1 = u":/scripts/" + name + u".lua"_s;
+    auto name2 = u":/scripts/" + name + u"/init.lua"_s;
+    if (QFile::exists(name1)) {
+        filename = name1;
+    } else if (QFile::exists(name2)) {
+        filename = name2;
+    }
+    if (filename.isEmpty()) {
+        lua_pushstring(L, QString(u"qrcSearcher: module '%1' not found"_s).arg(modname).toUtf8().constData());
+        return 1;
+    }
+
+    QFile file(filename);
+    [[unlikely]] if (!file.open(QIODevice::ReadOnly)) {
+        lua_pushstring(L, QString(u"qrcSearcher: module '%1' open error"_s).arg(modname).toUtf8().constData());
+        return 1;
+    }
+    auto filenameBytes = filename.prepend(u"=qrc"_s).toUtf8();
+    auto *filenameStr = filenameBytes.constData();
+    auto bytes = file.readAll();
+    [[likely]] if (luaL_loadbuffer(L, bytes.constData(), bytes.length(), filenameStr) == LUA_OK) {
+        lua_pushstring(L, filename.toUtf8().constData());
+        return 2;
+    } else {
+        file.close();
+        return luaL_error(L, "error loading module '%s' from file '%s':\n\t%s", lua_tostring(L, 1), filenameStr, lua_tostring(L, -1));
+    }
 }

@@ -6,7 +6,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.Dialog {
     id: root
-    preferredWidth: Kirigami.Units.gridUnit * 24
+    preferredWidth: Kirigami.Units.gridUnit * 32
 
     title: {
         if (listModel.count === 0) {

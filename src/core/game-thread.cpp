@@ -21,7 +21,6 @@ GameThread::GameThread(Server *parent)
     , m_capacity(DefaultCapacity)
 {
     setObjectName(u"GameThread-%1"_s.arg(m_id));
-    connect(this, &GameThread::luaWarning, parent, &Server::luaWarning);
 
     // Wait until the Lua VM is created in run()
     QEventLoop loop;
@@ -42,7 +41,7 @@ GameThread::~GameThread()
 void GameThread::run()
 {
     L = new LuaBinding(nullptr, LuaBinding::GameThread);
-    connect(L, &LuaBinding::luaWarning, this, &GameThread::luaWarning);
+    connect(L, &LuaBinding::luaWarning, qobject_cast<Server *>(parent()), &Server::luaWarning);
     luaopen_ktabletop_common(L->state());
     luaopen_ktabletop_gamethread(L->state());
     L->run();
