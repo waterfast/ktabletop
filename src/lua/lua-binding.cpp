@@ -16,6 +16,10 @@ using namespace Qt::Literals::StringLiterals;
 // Thread-safe way to get binding instance
 static const char regKey = 0;
 
+static constexpr char sandboxLua[] = {
+#embed "sandboxing.lua"
+};
+
 LuaBinding::LuaBinding(QObject *parent, Role role)
     : QObject(parent)
     , m_role(role)
@@ -43,6 +47,9 @@ void LuaBinding::run()
     L->eval(
         u"package.path = './scripts/?.lua;./scripts/?/init.lua;"
         "./plugins/?.lua;./plugins/?/init.lua;' .. package.path"_s);
+
+    // TODO: move this to ctor, after implementing package.searchers (which is a part of plugin system)
+    luaL_dostring(L->state(), sandboxLua);
     if (m_role == Server) {
         L->dofile(u"scripts/server/entry.lua"_s);
     } else if (m_role == GameThread) {
