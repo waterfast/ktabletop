@@ -21,7 +21,7 @@ ktabletop.viewModelManager = ViewModelManager:new()
 local BoardGameManager = require "core.boardgame-manager"
 ktabletop.boardgames = BoardGameManager:new()
 
-require "demo.chess"
+-- require "demo.chess"
 
 --- Returns the game context currently in play, or nil.
 ---@return GameContextBase?
