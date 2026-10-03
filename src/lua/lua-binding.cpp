@@ -21,8 +21,16 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
     , m_role(role)
 {
     L = new LuaVM;
-    lua_pushlightuserdata(L->state(), this);
-    lua_rawsetp(L->state(), LUA_REGISTRYINDEX, &regKey);
+    auto *L = this->L->state();
+    lua_pushlightuserdata(L, this);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, &regKey);
+
+    lua_setwarnf(L, LuaBinding::warnf, this);
+    lua_warning(L, "@on", false);
+
+    connect(this, &LuaBinding::luaWarning, this, [](QString msg) {
+        qCritical().noquote() << msg;
+    });
 }
 
 LuaBinding::~LuaBinding()
@@ -159,4 +167,10 @@ int LuaBinding::pushAsyncCancelToken(lua_State *L, AsyncContext *ctx)
     lua_pushlightuserdata(L, ctx);
     lua_pushcclosure(L, f, 1);
     return 1;
+}
+
+void LuaBinding::warnf(void *ud, const char *msg, int)
+{
+    auto *binding = reinterpret_cast<LuaBinding *>(ud);
+    Q_EMIT binding->luaWarning(QString::fromUtf8(msg));
 }

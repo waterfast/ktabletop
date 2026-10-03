@@ -40,6 +40,7 @@ public:
     bool listen(const QHostAddress &address = QHostAddress::Any, ushort port = DefaultPort);
 
     UserConnection *findConnection(int connId) const;
+    LuaBinding *luaBinding() const;
 
     GameThread *createGameThread();
     GameThread *getGameThread(int id) const;
@@ -56,6 +57,9 @@ public:
 
     DbThread *usersDb() const;
     StdinAdapter *shell() const;
+
+Q_SIGNALS:
+    void luaWarning(QString message);
 
 private:
     explicit Server(QObject *parent = nullptr);

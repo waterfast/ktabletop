@@ -48,6 +48,8 @@ public:
     Q_INVOKABLE void startSinglePlayer(const QString &username, const QString &password);
     Q_INVOKABLE void joinMultiPlayer(const QString &address, int port, const QString &username, const QString &password);
 
+    void showLuaError(const QString &msg);
+
 Q_SIGNALS:
     void connectedChanged(bool connected);
     void roomIdChanged(int roomId);

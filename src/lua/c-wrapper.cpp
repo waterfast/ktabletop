@@ -65,7 +65,7 @@ QVariant LuaVM::call(lua_State *L, QVariantList params)
     QVariant result;
     int err = lua_pcall(L, nargs, 1, msgh);
     if (err) {
-        qCritical().noquote() << lua_tostring(L, -1);
+        lua_warning(L, lua_tostring(L, -1), false);
     } else {
         result = readValue(L);
     }
@@ -93,7 +93,7 @@ QVariant LuaVM::callMethod(const QString &method, QVariantList args)
     int err = lua_pcall(L, nargs, 1, msgh);
     // stack: msgh, <object>, <ret/err>
     if (err) {
-        qCritical() << lua_tostring(L, -1);
+        lua_warning(L, lua_tostring(L, -1), false);
     } else {
         result = LuaVM::readValue(L);
     }
@@ -108,7 +108,7 @@ QVariant LuaVM::callMethod(const QString &method, QVariantList args)
 QVariant LuaVM::eval(const QString &lua)
 {
     if (luaL_loadstring(L, lua.toUtf8().constData()) != LUA_OK) {
-        qCritical() << lua_tostring(L, -1);
+        lua_warning(L, lua_tostring(L, -1), false);
         lua_pop(L, 1); // clear err+msgh
         return QVariant();
     }
@@ -174,7 +174,7 @@ void LuaVM::pushValue(lua_State *L, QVariant v)
         if (typeId == QMetaType::fromType<LuaRef>().id()) {
             lua_rawgeti(L, LUA_REGISTRYINDEX, v.value<LuaRef>().index);
         } else {
-            qCritical() << "cannot handle QVariant type" << v.typeName() << "(id:" << v.typeId() << "): pushing nil";
+            qWarning() << "cannot handle QVariant type" << v.typeName() << "(id:" << v.typeId() << "): pushing nil";
             lua_pushnil(L);
         }
         break;
@@ -260,7 +260,7 @@ QVariant LuaVM::readValue(lua_State *L, int index, QHash<const void *, bool> sta
 
     // ignore function, userdata and thread
     default:
-        qCritical("unexpected value type %s", lua_typename(L, tp));
+        qWarning("LuaVM::readValue: unexpected value type %s", lua_typename(L, tp));
     }
     return QVariant();
 }

@@ -17,6 +17,8 @@
 #include <QTcpSocket>
 #include <QUrl>
 
+#include <KLocalizedString>
+
 using namespace Qt::Literals::StringLiterals;
 
 QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
@@ -43,9 +45,13 @@ QmlBackendController::~QmlBackendController()
 void QmlBackendController::onStartServerRequested(ushort port)
 {
     auto *server = Server::instance();
+    auto *vm = m_backend->mainViewModel();
+    connect(server->luaBinding(), &LuaBinding::luaWarning, vm, &MainViewModel::showLuaError);
+    server->luaBinding()->run();
     if (!server->listen(QHostAddress::Any, port)) {
         // server->deleteLater();
-        qCritical("Cannot start server!");
+        auto *vm = m_backend->mainViewModel();
+        vm->showToast(i18n("Cannot start server!"));
     }
 }
 
@@ -55,8 +61,9 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
     auto *client = Client::instance();
     auto *vm = m_backend->mainViewModel();
     auto *manager = LObjectManager::instance();
-    connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch, Qt::UniqueConnection);
-    connect(client->luaBinding(), &LuaBinding::luaEvent, this, &QmlBackendController::handleCommonLuaEvent, Qt::UniqueConnection);
+    connect(client->luaBinding(), &LuaBinding::luaWarning, vm, &MainViewModel::showLuaError);
+    connect(client->luaBinding(), &LuaBinding::luaEvent, LObjectManager::instance(), &LObjectManager::dispatch);
+    connect(client->luaBinding(), &LuaBinding::luaEvent, this, &QmlBackendController::handleCommonLuaEvent);
     connect(manager, &LObjectManager::invoked, client, [client](int ref, const QString &method, const QVariantList &args) {
         client->luaBinding()->invokeLObject(ref, method, args);
     });
@@ -66,6 +73,7 @@ void QmlBackendController::onJoinServerRequested(const QString &address, ushort 
     connect(client, &Client::setProgressDialogData, vm, &MainViewModel::setProgressDialogData);
     connect(client, &Client::clearProgressDialogData, vm, &MainViewModel::clearProgressDialogData);
 
+    client->luaBinding()->run();
     client->connectToHost(address, port, username, password);
 }
 

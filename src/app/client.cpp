@@ -42,7 +42,6 @@ Client::Client(QObject *parent)
     L = new LuaBinding(this, LuaBinding::Client);
     luaopen_ktabletop_common(L->state());
     luaopen_ktabletop_client(L->state());
-    L->run();
 
     m_connection = new UserConnection(this, new ClientSocket);
     m_connection->setClientSide(true);

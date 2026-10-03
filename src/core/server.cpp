@@ -55,9 +55,9 @@ Server::Server(QObject *parent)
     : QObject(parent)
 {
     L = new LuaBinding(this, LuaBinding::Server);
+    connect(L, &LuaBinding::luaWarning, this, &Server::luaWarning);
     luaopen_ktabletop_common(L->state());
     luaopen_ktabletop_server(L->state());
-    L->run();
 
     initAuthKeys();
 
@@ -128,6 +128,11 @@ bool Server::listen(const QHostAddress &address, ushort port)
 UserConnection *Server::findConnection(int connId) const
 {
     return connections.value(connId);
+}
+
+LuaBinding *Server::luaBinding() const
+{
+    return L;
 }
 
 GameThread *Server::createGameThread()

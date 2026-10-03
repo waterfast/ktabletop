@@ -59,9 +59,12 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void luaEvent(const QString &type, const QVariant &payload);
+    void luaWarning(QString message);
 
 private:
     Role m_role;
     int m_gameThreadId = 0;
     LuaVM *L;
+
+    static void warnf(void *ud, const char *msg, int tocont);
 };

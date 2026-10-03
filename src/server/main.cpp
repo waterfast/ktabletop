@@ -8,6 +8,7 @@
 
 #include "core/logger.h"
 #include "core/server.h"
+#include "lua/lua-binding.h"
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -35,7 +36,9 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!Server::instance()->listen(QHostAddress::Any, port)) {
+    auto *server = Server::instance();
+    server->luaBinding()->run();
+    if (!server->listen(QHostAddress::Any, port)) {
         qCritical("Cannot start server on port %u!", port);
         return EXIT_FAILURE;
     }

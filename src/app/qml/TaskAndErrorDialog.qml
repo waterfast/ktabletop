@@ -91,6 +91,7 @@ Kirigami.Dialog {
             property var model
             implicitWidth: parent ? parent.width : implicitWidth
             Kirigami.Icon {
+                Layout.alignment: Qt.AlignTop
                 source: "dialog-error"
             }
 

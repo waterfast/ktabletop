@@ -8,6 +8,7 @@
 #include <QVariantMap>
 
 class LuaBinding;
+class Server;
 
 // Thread for running game logic Lua VM
 class GameThread : public QThread
@@ -17,7 +18,7 @@ class GameThread : public QThread
 public:
     static constexpr int DefaultCapacity = 2000;
 
-    explicit GameThread(QObject *parent = nullptr);
+    explicit GameThread(Server *parent = nullptr);
     ~GameThread() override;
 
     int id() const;
@@ -38,6 +39,7 @@ public:
 
 Q_SIGNALS:
     void ready();
+    void luaWarning(QString message);
 
 protected:
     void run() override;

@@ -3,6 +3,10 @@
 
 #include "main-view-model.h"
 
+#include <KLocalizedString>
+
+using namespace Qt::StringLiterals;
+
 MainViewModel::MainViewModel(QObject *parent)
     : QObject(parent)
 {
@@ -116,4 +120,10 @@ void MainViewModel::startSinglePlayer(const QString &username, const QString &pa
 void MainViewModel::joinMultiPlayer(const QString &address, int port, const QString &username, const QString &password)
 {
     Q_EMIT joinServerRequested(address, static_cast<ushort>(port), username, password);
+}
+
+void MainViewModel::showLuaError(const QString &msg)
+{
+    QString message = i18n("Lua script error!") + u'\n' + msg;
+    Q_EMIT showErrorDialog(message.replace(u"\t"_s, u" "_s.repeated(8)));
 }
