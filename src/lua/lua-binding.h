@@ -48,6 +48,9 @@ public:
 
     lua_State *state() const;
 
+    const QStringList &runtimePaths() const;
+    void setRuntimePaths(const QStringList &paths);
+
     static LuaBinding *forState(lua_State *state);
     static int pushAsyncCancelToken(lua_State *L, AsyncContext *ctx);
 
@@ -63,7 +66,9 @@ private:
     Role m_role;
     int m_gameThreadId = 0;
     lua_State *L;
+    QStringList m_runtimePaths;
 
     static void warnf(void *ud, const char *msg, int tocont);
     static int qrcSearcher(lua_State *L);
+    static int rtpSearcher(lua_State *L);
 };

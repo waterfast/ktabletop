@@ -29,13 +29,14 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
     lua_pushlightuserdata(L, this);
     lua_rawsetp(L, LUA_REGISTRYINDEX, &regKey);
 
-    // set up searchers
-    LuaVM::getTableField(L, "table", "insert");
+    // rewrite package.path/cpath searchers with custom one, since they are unnecessary
+    // (they should be unnecessary in this app, according to my experience)
     LuaVM::getTableField(L, "package", "searchers");
-    lua_pushinteger(L, 2);
-    lua_getglobal(L, "package");
-    lua_pushcclosure(L, &LuaBinding::qrcSearcher, 1);
-    lua_call(L, 3, 0);
+    lua_pushcfunction(L, &LuaBinding::qrcSearcher);
+    lua_rawseti(L, -2, 2);
+    lua_pushcfunction(L, &LuaBinding::rtpSearcher);
+    lua_rawseti(L, -2, 3);
+    lua_pop(L, 1);
 
     lua_setwarnf(L, &LuaBinding::warnf, this);
     lua_warning(L, "@on", false);
@@ -140,6 +141,16 @@ lua_State *LuaBinding::state() const
     return L;
 }
 
+const QStringList &LuaBinding::runtimePaths() const
+{
+    return m_runtimePaths;
+}
+
+void LuaBinding::setRuntimePaths(const QStringList &paths)
+{
+    m_runtimePaths = paths;
+}
+
 LuaBinding *LuaBinding::forState(lua_State *state)
 {
     lua_rawgetp(state, LUA_REGISTRYINDEX, &regKey);
@@ -202,5 +213,48 @@ int LuaBinding::qrcSearcher(lua_State *L)
     } else {
         file.close();
         return luaL_error(L, "error loading module '%s' from file '%s':\n\t%s", lua_tostring(L, 1), filenameStr, lua_tostring(L, -1));
+    }
+}
+
+static QString searchRtpPath(lua_State *L, const QString &name)
+{
+    auto *binding = LuaBinding::forState(L);
+    const auto &pathList = binding->runtimePaths();
+
+    for (const auto &dir : pathList) {
+        auto file1 = dir + u"/"_s + name + u".lua"_s;
+        QFileInfo f1(file1);
+        if (f1.exists() && f1.isFile() && f1.isReadable()) {
+            return file1;
+        }
+        auto file2 = dir + u"/"_s + name + u"/init.lua"_s;
+        QFileInfo f2(file1);
+        if (f2.exists() && f2.isFile() && f2.isReadable()) {
+            return file2;
+        }
+    }
+
+    return {};
+}
+
+// Something like package.searchpath but not call it directly for performance
+int LuaBinding::rtpSearcher(lua_State *L)
+{
+    const char *modname = luaL_checkstring(L, 1);
+    auto name = QString::fromUtf8(modname).replace(u"."_s, u"/"_s);
+
+    auto path = searchRtpPath(L, name);
+    auto bytes = path.toUtf8();
+    auto *pathStr = bytes.constData();
+    if (path.isEmpty()) {
+        lua_pushstring(L, QString(u"rtpSearcher: module '%1' not found"_s).arg(modname).toUtf8().constData());
+        return 1;
+    }
+
+    if (luaL_loadfile(L, pathStr) == LUA_OK) {
+        lua_pushstring(L, pathStr);
+        return 2;
+    } else {
+        return luaL_error(L, "error loading module '%s' from file '%s':\n\t%s", lua_tostring(L, 1), pathStr, lua_tostring(L, -1));
     }
 }
