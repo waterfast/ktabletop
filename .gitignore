@@ -16,8 +16,13 @@ src/res.generated.qrc
 
 /ktabletop-app
 /ktabletop-server
-*.log
-repl-history.txt
 
 .direnv/
 flake.lock
+
+# created by app in APP_DATA_DIR
+/client/
+/server/
+/plugins/
+*.log
+repl-history.txt
