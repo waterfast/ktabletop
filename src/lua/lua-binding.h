@@ -26,6 +26,7 @@ public:
 
     // Execute the entry script for the role.
     void run();
+    void loadRuntimePlugins();
 
     Role role() const;
     // for GameThread role only

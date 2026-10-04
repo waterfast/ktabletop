@@ -3,12 +3,21 @@
 #include <QObject>
 #include <QSqlDatabase>
 
+struct PluginManifest {
+    bool valid = false;
+    QString name;
+
+    static PluginManifest fromJson(const QJsonObject &obj);
+};
+
 class PackMan : public QObject
 {
     Q_OBJECT
 
 public:
-    PackMan(QObject *parent = nullptr);
+    static PackMan *instance();
+    static bool initialized();
+    static void destroy();
     ~PackMan();
 
     QString getPackSummary();
@@ -22,15 +31,16 @@ public:
     void removePack(const QString &pack);
     QString listPackages();
 
+    QStringList listPluginPaths();
+
     void forceCheckoutMaster(const QString &pack);
 
     void syncCommitHashToDatabase();
 
 private:
+    explicit PackMan(QObject *parent = nullptr);
     QStringList disabled_packs;
     QSqlDatabase db;
 
     void sanitizePackageDb(const QString &packname);
 };
-
-extern PackMan *Pacman;

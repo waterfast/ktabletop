@@ -58,8 +58,32 @@ void LuaBinding::run()
         LuaVM::eval(L, u"require 'server.entry'"_s);
     } else if (m_role == GameThread) {
         LuaVM::eval(L, u"require 'gamethread.entry'"_s);
-    } else {
+    } else if (m_role == Client) {
         LuaVM::eval(L, u"require 'client.entry'"_s);
+    }
+
+    loadRuntimePlugins();
+}
+
+void LuaBinding::loadRuntimePlugins()
+{
+    for (const auto &dir : m_runtimePaths) {
+        QString file1 = dir + u"/plugin/init.lua"_s;
+        QString file2;
+        if (m_role == Server) {
+            file2 = dir + u"/plugin/init-server.lua"_s;
+        } else if (m_role == GameThread) {
+            file2 = dir + u"/plugin/init-gamethread.lua"_s;
+        } else if (m_role == Client) {
+            file2 = dir + u"/plugin/init-client.lua"_s;
+        }
+
+        if (QFileInfo f(file1); f.exists() && f.isFile() && f.isReadable()) {
+            LuaVM::dofile(L, file1);
+        }
+        if (QFileInfo f(file2); f.exists() && f.isFile() && f.isReadable()) {
+            LuaVM::dofile(L, file2);
+        }
     }
 }
 
@@ -222,14 +246,12 @@ static QString searchRtpPath(lua_State *L, const QString &name)
     const auto &pathList = binding->runtimePaths();
 
     for (const auto &dir : pathList) {
-        auto file1 = dir + u"/"_s + name + u".lua"_s;
-        QFileInfo f1(file1);
-        if (f1.exists() && f1.isFile() && f1.isReadable()) {
+        auto file1 = dir + u"/lua/"_s + name + u".lua"_s;
+        if (QFileInfo f1(file1); f1.exists() && f1.isFile() && f1.isReadable()) {
             return file1;
         }
-        auto file2 = dir + u"/"_s + name + u"/init.lua"_s;
-        QFileInfo f2(file1);
-        if (f2.exists() && f2.isFile() && f2.isReadable()) {
+        auto file2 = dir + u"/lua/"_s + name + u"/init.lua"_s;
+        if (QFileInfo f2(file1); f2.exists() && f2.isFile() && f2.isReadable()) {
             return file2;
         }
     }

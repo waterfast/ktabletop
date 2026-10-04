@@ -2,6 +2,7 @@
 
 #include "core/packman.h"
 #include "core/util.h"
+#include <QDebug>
 #include <QDir>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -15,7 +16,26 @@
 using namespace Qt::StringLiterals;
 using namespace KTabletopUtils;
 
-PackMan *Pacman = nullptr;
+static PackMan *packManInstance = nullptr;
+
+PackMan *PackMan::instance()
+{
+    if (!packManInstance) {
+        packManInstance = new PackMan;
+    }
+    return packManInstance;
+}
+
+bool PackMan::initialized()
+{
+    return packManInstance != nullptr;
+}
+
+void PackMan::destroy()
+{
+    delete packManInstance;
+    packManInstance = nullptr;
+}
 
 static QString extractPackName(const QString &u)
 {
@@ -606,6 +626,64 @@ QString PackMan::listPackages()
         arr.append(obj);
     }
     return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
+}
+
+PluginManifest PluginManifest::fromJson(const QJsonObject &obj)
+{
+    PluginManifest manifest;
+    if (obj.value(u"schemaVersion"_s).toInt() != 1) {
+        return manifest;
+    }
+
+    // TODO: add more REQUIRED fields
+    manifest.name = obj.value(u"name"_s).toString().trimmed();
+    manifest.valid = !manifest.name.isEmpty();
+    return manifest;
+}
+
+QStringList PackMan::listPluginPaths()
+{
+    QStringList paths;
+
+    QDir pluginsDir(u"plugins"_s);
+    if (!pluginsDir.exists()) {
+        return paths;
+    }
+
+    const auto entries = pluginsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const auto &entry : entries) {
+        const auto manifestPath = pluginsDir.absoluteFilePath(entry + u"/ktabletop.plugin.json"_s);
+        const auto text = readWholeFile(manifestPath);
+        if (text.isEmpty()) {
+            continue;
+        }
+
+        QJsonParseError err;
+        const auto doc = QJsonDocument::fromJson(text.toUtf8(), &err);
+        if (err.error != QJsonParseError::NoError || !doc.isObject()) {
+            qWarning().noquote() << u"Cannot parse plugin manifest %1, skipping: %2"_s.arg(manifestPath, err.errorString());
+            continue;
+        }
+
+        const auto manifest = PluginManifest::fromJson(doc.object());
+        if (!manifest.valid) {
+            qWarning().noquote() << u"Invalid plugin manifest %1, skipping"_s.arg(manifestPath);
+            continue;
+        }
+
+        auto query = execQuery(db, u"SELECT enabled FROM packages WHERE name = ?;"_s, entry);
+        if (query.next()) {
+            if (!query.value(0).toBool()) {
+                continue;
+            }
+        } else {
+            qWarning().noquote() << u"Plugin %1 is not registered in packages database"_s.arg(entry);
+        }
+
+        paths << QDir::cleanPath(pluginsDir.absoluteFilePath(entry));
+    }
+
+    return paths;
 }
 
 void PackMan::forceCheckoutMaster(const QString &pack)

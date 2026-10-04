@@ -44,6 +44,7 @@ void GameThread::run()
     connect(L, &LuaBinding::luaWarning, qobject_cast<Server *>(parent()), &Server::luaWarning);
     luaopen_ktabletop_common(L->state());
     luaopen_ktabletop_gamethread(L->state());
+    L->setRuntimePaths(Server::instance()->luaBinding()->runtimePaths());
     L->run();
 
     // TODO: seems overused luaEvent. maybe should give this a new name to post some events to main thread Lua

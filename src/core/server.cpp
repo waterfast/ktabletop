@@ -3,6 +3,7 @@
 
 #include "server.h"
 #include "common-lua.h"
+#include "core/packman.h"
 #include "db-thread.h"
 #include "game-thread.h"
 #include "lua/lua-binding.h"
@@ -58,6 +59,7 @@ Server::Server(QObject *parent)
     connect(L, &LuaBinding::luaWarning, this, &Server::luaWarning);
     luaopen_ktabletop_common(L->state());
     luaopen_ktabletop_server(L->state());
+    L->setRuntimePaths(PackMan::instance()->listPluginPaths());
 
     initAuthKeys();
 

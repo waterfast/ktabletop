@@ -4,6 +4,7 @@
 #include "client.h"
 #include "client-lua.h"
 #include "core/common-lua.h"
+#include "core/packman.h"
 #include "lua/lua-binding.h"
 #include "network/client-socket.h"
 #include "network/user-connection.h"
@@ -42,6 +43,7 @@ Client::Client(QObject *parent)
     L = new LuaBinding(this, LuaBinding::Client);
     luaopen_ktabletop_common(L->state());
     luaopen_ktabletop_client(L->state());
+    L->setRuntimePaths(PackMan::instance()->listPluginPaths());
 
     m_connection = new UserConnection(this, new ClientSocket);
     m_connection->setClientSide(true);
