@@ -3,8 +3,8 @@
 
 local async = require "corelib.async"
 
-local class = ktabletop.class
-local json = ktabletop.json
+local class = kt.class
+local json = kt.json
 
 ---@alias OnlineState "invalid"|"online"|"trust"|"run"|"robot"|"offline"
 
@@ -22,7 +22,6 @@ local User = class("User")
 function User:initialize(connId)
   self.connId = connId
   self.id = connId
-  self._cpp = ktabletop
   self.state = "invalid"
   self.ready = false
   self.handlingRequests = {}
@@ -34,7 +33,7 @@ end
 function User:notify(command, data, isJson)
   assert(type(data) ~= "table" or data[1] == nil, "do not use array as data!")
   if self.state ~= "online" then return end
-  self._cpp.notifySocket(self.connId, command, isJson and data or json.encode(data))
+  kt.c.notifySocket(self.connId, command, isJson and data or json.encode(data))
 end
 
 ---@param command string
@@ -47,7 +46,7 @@ function User:request(command, data, timeout, timestamp, isJson)
   assert(type(data) ~= "table" or data[1] == nil, "do not use array as data!")
   if self.state ~= "online" then return "" end
 
-  local requestFn = async.wrap(self._cpp.requestSocket)
+  local requestFn = async.wrap(kt.c.requestSocket)
   data = isJson and data or json.encode(data)
   local ok, ret = async.await(requestFn(self.connId, command, data, timeout or 10, timestamp or -1))
 
@@ -64,7 +63,7 @@ end
 ---@param data any
 ---@param isJson? boolean if true, should not json.encode here
 function User:reply(ok, requestId, data, isJson)
-  self._cpp.replySocket(self.connId, requestId, ok, isJson and data or json.encode(data))
+  kt.c.replySocket(self.connId, requestId, ok, isJson and data or json.encode(data))
 end
 
 return User

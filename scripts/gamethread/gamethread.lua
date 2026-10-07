@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-local class = ktabletop.class
+local class = kt.class
 
 ---@class GameThread: Object
 ---@field contexts table<integer, ServerGameContext>
@@ -30,10 +30,10 @@ end
 ---@param command string
 ---@param data any
 function GameThread:handleRequest(roomId, userId, command, data)
-  ktabletop.log.info(("HandleRequest: roomId=%d userId=%d command=%s data=%s"):format(roomId, userId, command, ktabletop.json.encode(data)))
+  kt.log.info(("HandleRequest: roomId=%d userId=%d command=%s data=%s"):format(roomId, userId, command, kt.json.encode(data)))
 
   if command == "newroom" then
-    local boardgame = ktabletop.boardgames:get("chess")
+    local boardgame = kt.engine:getGame("chess")
     self:registerContext(boardgame, data):run()
   end
 end

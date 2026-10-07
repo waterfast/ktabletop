@@ -2,7 +2,7 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local async = require "corelib.async"
-local class = ktabletop.class
+local class = kt.class
 local translateServerMessage = require "client.server-messages"
 
 local ClientUser = require "client.user"
@@ -73,7 +73,7 @@ function Client:enterLobby()
 
   self.lobby:setupViewModel()
 
-  ktabletop.luaEvent("Client::EnterLobby", {
+  kt.c.luaEvent("Client::EnterLobby", {
     viewModelName = self.lobby.vm._stringId,
   })
 end
@@ -90,7 +90,7 @@ function Client:enterRoom(_, data)
   room:setupViewModel()
 
   data.viewModelName = room.vm._stringId
-  ktabletop.luaEvent("Client::EnterRoom", data)
+  kt.c.luaEvent("Client::EnterRoom", data)
 end
 
 ---@param data table
@@ -104,14 +104,14 @@ end
 ---@param data table?
 function Client:enterGame(gameType, data)
   gameType = gameType or "chess"
-  local bg = ktabletop.boardgames:get(gameType)
+  local bg = kt.engine:getGame(gameType)
   local klass = bg and bg.clientContextClass
   assert(klass, ("no clientContextClass for boardgame '%s'"):format(gameType))
 
   self.gameContext = klass:new(gameType, data)
   self.gameContext:setupViewModel()
 
-  ktabletop.luaEvent("Client::EnterGame", {
+  kt.c.luaEvent("Client::EnterGame", {
     viewModelName = self.gameContext.vm._stringId,
     pageUrl = bg.page and bg.page.url or "",
   })
@@ -119,7 +119,7 @@ end
 
 function Client:leaveGame()
   self.gameContext = nil
-  ktabletop.luaEvent("Client::LeaveGame", nil)
+  kt.c.luaEvent("Client::LeaveGame", nil)
 end
 
 function Client:handleAuthRequest(_, _)
@@ -127,30 +127,30 @@ function Client:handleAuthRequest(_, _)
 end
 
 function Client:handleNonceRequest(_, _)
-  return ktabletop.getClientNonce()
+  return kt.c.getClientNonce()
 end
 
 function Client:handleExchangeKey(user, data)
-  local clientPub = ktabletop.verifyAuthChallenge(data.idPub, data.serverPub, data.sig)
+  local clientPub = kt.c.verifyAuthChallenge(data.idPub, data.serverPub, data.sig)
   if clientPub == "" then
-    ktabletop.disconnect(user.connId)
+    kt.c.disconnect(user.connId)
     return ""
   end
   return clientPub
 end
 
 function Client:startEncryption(_, _)
-  if not ktabletop.acceptServerKey() then
-    ktabletop.disconnect(0)
+  if not kt.c.acceptServerKey() then
+    kt.c.disconnect(0)
   end
 end
 
 function Client:showErrorDialog(message)
-  ktabletop.showErrorDialog(message)
+  kt.c.showErrorDialog(message)
 end
 
 function Client:showToast(message)
-  ktabletop.showToast(message)
+  kt.c.showToast(message)
 end
 
 function Client:handleErrorDialog(_, code)
@@ -167,7 +167,7 @@ end
 
 local function waitForRequestGot(tp)
   local ok, ret = async.await(async.wrap(function(cb)
-    ktabletop.client.waitForRequestGotCb = cb
+    kt.client.waitForRequestGotCb = cb
     return function() cb(async.CANCELLED) end
   end)())
   if not ok then return ok, ret end
@@ -179,26 +179,26 @@ end
 local function connectToHost(self, host, port)
   local ok, ret
   local success = false
-  ktabletop.startTask("connectToHost", ktabletop.i18n("Connecting to host..."), -1, true, async.abort())
+  kt.c.startTask("connectToHost", kt.c.i18n("Connecting to host..."), -1, true, async.abort())
   local defer <close> = setmetatable({}, { __close = function()
-    ktabletop.updateTask("connectToHost", 100)
+    kt.c.updateTask("connectToHost", 100)
     if success then return end
-    ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
+    kt.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
     self:disconnectFromHost()
   end})
-  ok, ret = async.await(async.wrap(ktabletop.connectToHost)(host, port))
+  ok, ret = async.await(async.wrap(kt.c.connectToHost)(host, port))
   if not ok then
-    -- ktabletop.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
+    -- kt.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
     return
   end
 
   ok, ret = waitForRequestGot("Auth::RequestNonce")
   if not ok then return end
-  ktabletop.updateTask("connectToHost", -1, ktabletop.i18n("Sending nonce to server..."))
+  kt.c.updateTask("connectToHost", -1, kt.c.i18n("Sending nonce to server..."))
 
   ok, ret = waitForRequestGot("Auth::ExchangeKey")
   if not ok then return end
-  ktabletop.updateTask("connectToHost", -1, ktabletop.i18n("Exchanging keys..."))
+  kt.c.updateTask("connectToHost", -1, kt.c.i18n("Exchanging keys..."))
 
   ok, ret = waitForRequestGot("Auth::RequestUsername")
   if not ok then return end
@@ -304,8 +304,8 @@ end
 ---@param message string
 function Client:onSocketError(message)
   -- self.uiHelper:showError(message, "network")
-  ktabletop.showToast(message)
-  ktabletop.luaEvent("Client::SocketError", nil)
+  kt.c.showToast(message)
+  kt.c.luaEvent("Client::SocketError", nil)
 
   -- TODO: should stop all async tasks here.
   if self.waitForRequestGotCb then
@@ -317,7 +317,7 @@ function Client:onSocketError(message)
 end
 
 function Client:disconnectFromHost()
-  ktabletop.disconnect(0)
+  kt.c.disconnect(0)
 end
 
 return Client

@@ -3,7 +3,7 @@
 
 local ServerUser = require "server.user"
 
-local class = ktabletop.class
+local class = kt.class
 
 ---@class UserManager: Object
 ---@field users table<integer, ServerUser>

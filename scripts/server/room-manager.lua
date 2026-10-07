@@ -4,7 +4,7 @@
 local Lobby = require "server.lobby"
 local Room = require "server.room"
 
-local class = ktabletop.class
+local class = kt.class
 
 ---@class RoomManager: Object
 ---@field rooms table<integer, Room>

@@ -1,4 +1,4 @@
-local class = ktabletop.class
+local class = kt.class
 
 ---@class ViewModelManager: Object
 local ViewModelManager = class("ViewModelManager")

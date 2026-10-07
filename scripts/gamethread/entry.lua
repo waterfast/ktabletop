@@ -5,10 +5,10 @@ require "ktabletop"
 
 local GameThread = require "gamethread.gamethread"
 
-ktabletop.gamethread = GameThread:new()
+kt.gamethread = GameThread:new()
 
-ktabletop.log.info("GameThread Lua VM started")
+kt.log.info("GameThread Lua VM started")
 
 function HandleRequest(roomId, userId, command, data)
-  ktabletop.gamethread:handleRequest(roomId, userId, command, data)
+  kt.gamethread:handleRequest(roomId, userId, command, data)
 end

@@ -36,7 +36,7 @@ local function unlock(mu)
   if not mu.locked then return end
   local owner = co.running()
   if mu.owner ~= owner then
-    ktabletop.log.warn("unlocking mutex from another coroutine")
+    kt.log.warn("unlocking mutex from another coroutine")
   end
 
   local entry = table.remove(mu, 1)

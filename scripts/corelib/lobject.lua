@@ -1,5 +1,5 @@
-local class = ktabletop.class
-local tablib = ktabletop.tablib
+local class = kt.class
+local tablib = kt.tablib
 
 --==========================
 -- Bindable property impl
@@ -238,7 +238,7 @@ end
 
 function LObject:emitSignal(sig, data)
   assert(self.class.__signals[sig], "Signals must be registered")
-  ktabletop.luaEvent("LObject::Signal", {
+  kt.c.luaEvent("LObject::Signal", {
     id = self._stringId,
     signal = sig,
     data = data,
@@ -313,7 +313,7 @@ function LObject:createCppObject()
   end
 
   self:setOnValueChanged(function(k)
-    ktabletop.luaEvent("LObject::ValueChanged", {
+    kt.c.luaEvent("LObject::ValueChanged", {
       id = self._stringId,
       key = k,
       value = self[k],

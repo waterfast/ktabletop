@@ -1,5 +1,5 @@
-local class = ktabletop.class
-local tablib = ktabletop.tablib
+local class = kt.class
+local tablib = kt.tablib
 local async = require "corelib.async"
 
 ---@class RoomBase: Object

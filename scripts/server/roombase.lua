@@ -1,7 +1,7 @@
 local RoomBase = require "core.room-base"
 
-local json = ktabletop.json
-local tablib = ktabletop.tablib
+local json = kt.json
+local tablib = kt.tablib
 local utf8 = require("utf8")
 
 local MAX_CHAT_LENGTH = 500

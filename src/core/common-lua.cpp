@@ -131,12 +131,15 @@ static luaL_Reg loggerTable[] = {
 extern "C" int luaopen_ktabletop_common(lua_State *L)
 {
     lua_newtable(L);
-    luaL_setfuncs(L, commonFuncTable, 0);
 
-    lua_newtable(L); // ktabletop.log
+    lua_newtable(L); // kt.c
+    luaL_setfuncs(L, commonFuncTable, 0);
+    lua_setfield(L, -2, "c");
+
+    lua_newtable(L); // kt.log
     luaL_setfuncs(L, loggerTable, 0);
     lua_setfield(L, -2, "log");
 
-    lua_setglobal(L, "ktabletop");
+    lua_setglobal(L, "kt");
     return 0;
 }

@@ -5,10 +5,10 @@ require "ktabletop"
 
 local Client = require "client.client"
 
-ktabletop.client = Client:new()
+kt.client = Client:new()
 
 for type, model in pairs {
   ["lobby"] = require "viewmodels.lobby",
   ["create-room"] = require "viewmodels.create-room",
   ["waiting-room"] = require "viewmodels.waiting-room",
-} do ktabletop.viewModelManager:registerType(type, model) end
+} do kt.viewModelManager:registerType(type, model) end

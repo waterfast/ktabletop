@@ -5,29 +5,29 @@
 
 -- ktabletop is set from C++ code as global table
 
-ktabletop.json = require "3rdparty.json"
-ktabletop.class = require "3rdparty.middleclass"
-ktabletop.inspect = require "3rdparty.inspect"
-ktabletop.rand = require "3rdparty.xoshiro256starstar"
+kt.json = require "3rdparty.json"
+kt.class = require "3rdparty.middleclass"
+kt.inspect = require "3rdparty.inspect"
+kt.rand = require "3rdparty.xoshiro256starstar"
 
-ktabletop.tablib = require "corelib.tablib"
-ktabletop.strlib = require "corelib.strlib"
+kt.tablib = require "corelib.tablib"
+kt.strlib = require "corelib.strlib"
 
 math.randomseed(os.time())
 
 local ViewModelManager = require "viewmodels.vm-manager"
-ktabletop.viewModelManager = ViewModelManager:new()
+kt.viewModelManager = ViewModelManager:new()
 
-local BoardGameManager = require "core.boardgame-manager"
-ktabletop.boardgames = BoardGameManager:new()
+local Engine = require "core.engine"
+kt.engine = Engine:new()
 
 -- require "demo.chess"
 
 --- Returns the game context currently in play, or nil.
 ---@return GameContextBase?
-function ktabletop.currentGameContext()
-  if ktabletop.client then
-    return ktabletop.client.gameContext
+function kt.currentGameContext()
+  if kt.client then
+    return kt.client.gameContext
   end
   return require("core.context-registry").current()
 end

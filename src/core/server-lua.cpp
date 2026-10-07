@@ -254,17 +254,19 @@ static luaL_Reg serverFuncTable[] = {
 
 extern "C" int luaopen_ktabletop_server(lua_State *L)
 {
-    lua_getglobal(L, "ktabletop");
+    lua_getglobal(L, "kt");
+    lua_getfield(L, -1, "c");
     luaL_setfuncs(L, socketFuncTable, 0);
     luaL_setfuncs(L, serverFuncTable, 0);
-    lua_pop(L, 1);
+    lua_pop(L, 2);
     return 0;
 }
 
 extern "C" int luaopen_ktabletop_gamethread(lua_State *L)
 {
-    lua_getglobal(L, "ktabletop");
+    lua_getglobal(L, "kt");
+    lua_getfield(L, -1, "c");
     luaL_setfuncs(L, socketFuncTable, 0);
-    lua_pop(L, 1);
+    lua_pop(L, 2);
     return 0;
 }

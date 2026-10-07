@@ -1,5 +1,5 @@
 local RoomBase = require "server.roombase"
-local tablib = ktabletop.tablib
+local tablib = kt.tablib
 
 ---@class Room: ServerRoomBase
 ---@field owner ServerUser
@@ -96,7 +96,7 @@ function Room:handleAddRobot(user)
     return nil, "room.full"
   end
 
-  local robot = ktabletop.server.userManager:createRobot()
+  local robot = kt.server.userManager:createRobot()
   self:addUser(robot)
 end
 
@@ -137,7 +137,7 @@ function Room:handleStartGame(user)
     return { connId = u.connId, id = u.id, username = u.username, state = u.state }
   end)
 
-  ktabletop.startGame(self.id, {
+  kt.c.startGame(self.id, {
     id = self.id,
     name = self.name,
     capacity = self.capacity,
@@ -150,7 +150,7 @@ function Room:handleQuitRoom(user)
   self:removeUser(user)
 
   -- TODO: check if is online
-  local lobby = ktabletop.server.roomManager.lobby
+  local lobby = kt.server.roomManager.lobby
   lobby:addUser(user)
 
   -- TODO: isOutdated
@@ -182,8 +182,8 @@ function Room:isAbandoned()
 end
 
 function Room:destroy()
-  local rm = ktabletop.server.roomManager
-  local um = ktabletop.server.userManager
+  local rm = kt.server.roomManager
+  local um = kt.server.userManager
 
   rm:removeRoom(self.id)
   for _, p in ipairs(self.users) do

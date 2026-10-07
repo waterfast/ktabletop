@@ -9,7 +9,7 @@ local translateServerMessage = require "client.server-messages"
 ---@field userCount integer
 ---@field lobby ClientLobby
 ---@field myself ClientUser
-local LobbyViewModel = ktabletop.class("LobbyViewModel")
+local LobbyViewModel = kt.class("LobbyViewModel")
 LobbyViewModel:include(LObject)
 
 LobbyViewModel:Property("userCount")
@@ -27,7 +27,7 @@ LobbyViewModel:Invokable("sendChatMessage")
 ---@param lobby ClientLobby
 function LobbyViewModel:initialize(lobby)
   self.lobby = lobby
-  self.myself = ktabletop.client.myself
+  self.myself = kt.client.myself
 
   self:setPropertyBinding("userCount", function()
     return self.lobby.userCount
@@ -44,7 +44,7 @@ function LobbyViewModel:initialize(lobby)
 end
 
 function LobbyViewModel:disconnectFromHost()
-  ktabletop.luaEvent("Client::DisconnectFromHost", nil)
+  kt.c.luaEvent("Client::DisconnectFromHost", nil)
 end
 
 function LobbyViewModel:fetchRooms()
@@ -58,7 +58,7 @@ end
 function LobbyViewModel:joinRoom(roomId)
   async.run(function()
     local _, err = self.myself:request("Room::Join", { id = roomId })
-    if err then ktabletop.showToast(translateServerMessage(err)) end
+    if err then kt.c.showToast(translateServerMessage(err)) end
   end)
 end
 
@@ -67,18 +67,18 @@ function LobbyViewModel:createRoom(data)
     local p = self.myself
     local roomId, err = p:request("Room::Create", data)
     if err then
-      ktabletop.showToast(translateServerMessage(err))
+      kt.c.showToast(translateServerMessage(err))
       return
     end
     _, err = p:request("Room::Join", { id = roomId })
-    if err then ktabletop.showToast(translateServerMessage(err)) end
+    if err then kt.c.showToast(translateServerMessage(err)) end
   end)
 end
 
 function LobbyViewModel:sendChatMessage(text)
   async.run(function()
     local _, err = self.myself:request("Room::Chat", { text = text })
-    if err then ktabletop.showToast(translateServerMessage(err)) end
+    if err then kt.c.showToast(translateServerMessage(err)) end
   end)
 end
 

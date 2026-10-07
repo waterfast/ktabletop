@@ -1,6 +1,6 @@
 local async = require "corelib.async"
-local class = ktabletop.class
-local json = ktabletop.json
+local class = kt.class
+local json = kt.json
 
 local UserManager = require "server.user-manager"
 local RoomManager = require "server.room-manager"
@@ -37,19 +37,19 @@ end
 ----------------------------------------------------------
 
 local handshake = async.async(function(connId)
-  local requestFn = async.wrap(ktabletop.requestSocket)
+  local requestFn = async.wrap(kt.c.requestSocket)
 
   local ok, ret = async.await(requestFn(connId, "Auth::RequestNonce", json.encode({}), 10, -1))
   if not ok then return "request nonce failed" end
   local nonce = json.decode(ret)
 
-  local challenge = ktabletop.makeAuthChallenge(connId, nonce)
+  local challenge = kt.c.makeAuthChallenge(connId, nonce)
   ok, ret = async.await(requestFn(connId, "Auth::ExchangeKey", json.encode(challenge), 10, -1))
   if not ok then return "key exchange failed" end
   local clientPub = json.decode(ret)
 
-  ktabletop.notifySocket(connId, "Auth::StartEncryption", "{}")
-  ok = ktabletop.acceptClientKey(connId, clientPub)
+  kt.c.notifySocket(connId, "Auth::StartEncryption", "{}")
+  ok = kt.c.acceptClientKey(connId, clientPub)
   if not ok then return "start encryption failed" end
 
   return nil
@@ -90,15 +90,15 @@ end
 ---@param connId integer
 function Server:processNewConnection(connId)
   async.run(function ()
-    local requestFn = async.wrap(ktabletop.requestSocket)
+    local requestFn = async.wrap(kt.c.requestSocket)
     local success = false
     local userErrCode = "auth.internal_error"
     local internal_errmsg
     local defer <close> = setmetatable({}, { __close = function()
       if success then return end
-      ktabletop.log.info(internal_errmsg or userErrCode)
-      ktabletop.notifySocket(connId, "App::ErrorDialog", json.encode(userErrCode))
-      ktabletop.disconnect(connId)
+      kt.log.info(internal_errmsg or userErrCode)
+      kt.c.notifySocket(connId, "App::ErrorDialog", json.encode(userErrCode))
+      kt.c.disconnect(connId)
     end})
 
     local ok, ret = async.await(handshake(connId))
@@ -120,7 +120,7 @@ function Server:processNewConnection(connId)
     end
 
     local row
-    ok, row = ktabletop.findUserByUsername(username)
+    ok, row = kt.c.findUserByUsername(username)
     if not ok then
       -- err branch: database lookup failed
       internal_errmsg = ("lookup username failed: %s"):format(tostring(row))
@@ -129,14 +129,14 @@ function Server:processNewConnection(connId)
     if row == nil then
       -- TODO: request the user to re-enter the password before registering
       local errReg
-      ok, errReg = ktabletop.registerUser(username, password)
+      ok, errReg = kt.c.registerUser(username, password)
       if not ok then
         internal_errmsg = ("register user failed: %s"):format(tostring(errReg))
         return
       end
     else
       local salt = row.salt or ""
-      local hash = ktabletop.sha256(password .. salt)
+      local hash = kt.c.sha256(password .. salt)
       if hash ~= row.password then
         userErrCode = "auth.wrong_password"
         return
@@ -154,11 +154,11 @@ end
 function Server:processDisconnected(connId)
   local user = self.userManager:findUser(connId)
   if not user then
-    ktabletop.log.info(string.format("ConnId %d disconnected", connId))
+    kt.log.info(string.format("ConnId %d disconnected", connId))
     return
   end
 
-  ktabletop.log.info(string.format("User %s disconnected", user.username))
+  kt.log.info(string.format("User %s disconnected", user.username))
 
   -- clear first so resumed dispatchers skip replying on a dead socket
   local requests = user.handlingRequests

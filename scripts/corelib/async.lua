@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
--- Async lib for KTabletop. For Lua 5.5
+-- Async lib for kt. For Lua 5.5
 -- Build on top of Qt event loop, but can be easily moved to other event loop system.
 -- Can wrap Boost-style async functions, that is, have a callback as its last param
 --   which looks like `fun(errCode, value)`.

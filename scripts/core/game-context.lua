@@ -1,8 +1,8 @@
 -- SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-local class = ktabletop.class
-local tablib = ktabletop.tablib
+local class = kt.class
+local tablib = kt.tablib
 local async = require "corelib.async"
 
 ---@class GameContextBase: Object

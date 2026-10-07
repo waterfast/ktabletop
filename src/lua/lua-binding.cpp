@@ -109,7 +109,7 @@ void LuaBinding::triggerLuaEvent(const QString &type, const QVariant &payload)
 
 QVariant LuaBinding::callKTabletopMethod(const QString &subtable, const QString &method, const QVariantList &args)
 {
-    LuaVM::getTableField(L, "ktabletop", subtable.toUtf8().constData());
+    LuaVM::getTableField(L, "kt", subtable.toUtf8().constData());
     auto result = LuaVM::callMethod(L, method, args);
     lua_pop(L, 1);
 
@@ -120,7 +120,7 @@ QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
 {
     QVariantMap result;
 
-    LuaVM::getTableField(L, "ktabletop", "viewModelManager");
+    LuaVM::getTableField(L, "kt", "viewModelManager");
     auto ref = LuaVM::callMethod(L, u"getViewModel"_s, {opts});
     lua_pop(L, 1);
     if (!ref.isValid()) {

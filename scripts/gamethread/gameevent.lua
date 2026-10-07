@@ -2,7 +2,7 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local async = require "corelib.async"
-local class = ktabletop.class
+local class = kt.class
 local contextRegistry = require "core.context-registry"
 
 -- TODO: event stack, recorder, cleaner, etc....

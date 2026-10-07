@@ -5,4 +5,4 @@ require "ktabletop"
 
 local Server = require "server.server"
 
-ktabletop.server = Server:new()
+kt.server = Server:new()

@@ -2,7 +2,7 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local async = require "corelib.async"
-local class = ktabletop.class
+local class = kt.class
 local GameEvent = require "gamethread.gameevent"
 
 ---@class GameLogic: Object
@@ -30,9 +30,9 @@ function GameLogic:start()
     if not ctx.gameFinished then
       -- root event may be killed by error?
       if not ok then
-        ktabletop.log.critical(errmsg)
+        kt.log.critical(errmsg)
       else
-        ktabletop.log.info("Game is over now because root event finished.")
+        kt.log.info("Game is over now because root event finished.")
       end
       ctx:gameOver()
     end
@@ -40,7 +40,7 @@ function GameLogic:start()
 end
 
 function GameLogic:run()
-  ktabletop.log.info("Hello, world!")
+  kt.log.info("Hello, world!")
 end
 
 return GameLogic

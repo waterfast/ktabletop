@@ -1,5 +1,5 @@
 local RoomBase = require "server.roombase"
-local tablib = ktabletop.tablib
+local tablib = kt.tablib
 
 ---@class Lobby: ServerRoomBase
 local Lobby = RoomBase:subclass("Lobby")
@@ -29,7 +29,7 @@ end
 
 function Lobby:updateOnlineInfo()
   local onlineUsers = 0
-  for _ in pairs(ktabletop.server.userManager.users) do
+  for _ in pairs(kt.server.userManager.users) do
     onlineUsers = onlineUsers + 1
   end
   self:broadcast("Lobby::UpdateOnlineInfo", {
@@ -41,7 +41,7 @@ function Lobby:updateOnlineInfo()
 end
 
 function Lobby:handleFetchRooms()
-  local rm = ktabletop.server.roomManager
+  local rm = kt.server.roomManager
   local rooms = {}
   for _, room in pairs(rm.rooms) do
     rooms[#rooms + 1] = {
@@ -56,7 +56,7 @@ function Lobby:handleFetchRooms()
 end
 
 function Lobby:handleCreateRoom(user, data)
-  local rm = ktabletop.server.roomManager
+  local rm = kt.server.roomManager
   local room = rm:createRoom(user, data.name, data.capacity)
   if not room then
     return nil, "lobby.create_room_failed"
@@ -66,7 +66,7 @@ function Lobby:handleCreateRoom(user, data)
 end
 
 function Lobby:handleJoinRoom(user, data)
-  local rm = ktabletop.server.roomManager
+  local rm = kt.server.roomManager
   local room = rm:findRoom(data.id)
   if not room then
     return nil, "lobby.no_such_room"

@@ -3,7 +3,7 @@
 
 local async = require "corelib.async"
 local ServerUser = require "server.user"
-local tablib = ktabletop.tablib
+local tablib = kt.tablib
 
 ---@class ServerGameContextMixin
 ---@field id integer
@@ -22,7 +22,7 @@ function ServerGameContextMixin:initialize(data)
   self.id = data.id
   self.rawUsers = data.users or {}
   self.gameFinished = false
-  self._rng = ktabletop.rand(math.random(os.time()))
+  self._rng = kt.rand(math.random(os.time()))
 end
 
 function ServerGameContextMixin:run()
@@ -47,10 +47,10 @@ function ServerGameContextMixin:gameOver(result)
   if self.gameFinished then return end
   self.gameFinished = true
 
-  ktabletop.luaEvent("gameOver", { roomId = self.id })
+  kt.c.luaEvent("gameOver", { roomId = self.id })
   self:broadcast("Room::GameOver", result or {})
 
-  ktabletop.gamethread:removeContext(self.id)
+  kt.gamethread:removeContext(self.id)
   if self.logic and self.logic.root then
     self.logic.root:shutdown()
   end
@@ -94,7 +94,7 @@ end
 
 ---@param ms integer
 function ServerGameContextMixin:delay(ms)
-  return async.await(async.wrap(ktabletop.delay)(ms))
+  return async.await(async.wrap(kt.c.delay)(ms))
 end
 
 ---@param m? integer

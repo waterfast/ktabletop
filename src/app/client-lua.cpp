@@ -353,9 +353,10 @@ static luaL_Reg i18nFuncTable[] = {
 
 extern "C" int luaopen_ktabletop_client(lua_State *L)
 {
-    lua_getglobal(L, "ktabletop");
+    lua_getglobal(L, "kt");
+    lua_getfield(L, -1, "c");
     luaL_setfuncs(L, clientFuncTable, 0);
     luaL_setfuncs(L, i18nFuncTable, 0);
-    lua_pop(L, 1);
+    lua_pop(L, 2);
     return 0;
 }

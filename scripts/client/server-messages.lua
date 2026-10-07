@@ -1,4 +1,4 @@
-local i18nc = ktabletop.i18nc
+local i18nc = kt.c.i18nc
 
 local t = {
   -- TODO: reason? maybe there will be some reason in the future.

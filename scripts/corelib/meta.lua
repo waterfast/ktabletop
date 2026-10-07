@@ -41,8 +41,10 @@ function Object:isSubclassOf(cls) end
 
 function Object:include(e) end
 
-ktabletop = {}
-ktabletop.log = {
+---@class ktabletop
+kt = {}
+kt.c = {}
+kt.log = {
   info = function(...) end,
   warn = function(...) end,
   debug = function(...) end,

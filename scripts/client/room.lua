@@ -26,7 +26,7 @@ end
 
 function ClientRoom:setupViewModel()
   ---@diagnostic disable-next-line
-  self.vm = ktabletop.viewModelManager:getViewModel({
+  self.vm = kt.viewModelManager:getViewModel({
     type = "waiting-room",
     params = { self },
   })
