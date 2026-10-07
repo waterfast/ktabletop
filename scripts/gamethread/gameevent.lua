@@ -3,7 +3,6 @@
 
 local async = require "corelib.async"
 local class = kt.class
-local contextRegistry = require "core.context-registry"
 
 -- TODO: event stack, recorder, cleaner, etc....
 
@@ -24,7 +23,7 @@ function GameEvent:main() end
 ---@return AsyncFunction
 function GameEvent:exec()
   self.func = async.async(self.main)(self)
-  contextRegistry.bind(self.func.coro, self.ctx)
+  kt.gamethread:bindCoroutineToContext(self.func.coro, self.ctx)
   return self.func
 end
 

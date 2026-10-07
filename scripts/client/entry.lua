@@ -4,8 +4,10 @@
 require "ktabletop"
 
 local Client = require "client.client"
-
 kt.client = Client:new()
+
+local ViewModelManager = require "viewmodels.vm-manager"
+kt.viewModelManager = ViewModelManager:new()
 
 for type, model in pairs {
   ["lobby"] = require "viewmodels.lobby",

@@ -89,7 +89,7 @@ LuaBinding *GameThread::lua() const
     return L;
 }
 
-void GameThread::call(QString func, QVariantList args)
+void GameThread::callLuaMethod(QString func, QVariantList args)
 {
     if (!L) {
         return;
@@ -97,12 +97,12 @@ void GameThread::call(QString func, QVariantList args)
     QMetaObject::invokeMethod(
         L,
         [this, func, args] {
-            LuaVM::call(L->state(), func, args);
+            L->callKTabletopMethod(u"gamethread"_s, func, args);
         },
         Qt::QueuedConnection);
 }
 
 void GameThread::pushRequest(int roomId, int userId, const QString &command, const QVariantMap &data)
 {
-    call(u"HandleRequest"_s, {roomId, userId, command, data});
+    callLuaMethod(u"handleRequest"_s, {roomId, userId, command, data});
 }

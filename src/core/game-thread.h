@@ -32,8 +32,8 @@ public:
 
     LuaBinding *lua() const;
 
-    // call something inside this thread.
-    void call(QString func, QVariantList args = {});
+    // call method of kt.gamethread
+    void callLuaMethod(QString func, QVariantList args = {});
 
     void pushRequest(int roomId, int userId, const QString &command, const QVariantMap &data = {});
 

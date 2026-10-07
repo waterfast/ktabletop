@@ -32,4 +32,16 @@ function Engine:getGame(name)
   return self.games[name]
 end
 
+--- Returns the game context currently in play, or nil.
+---@return GameContextBase
+function Engine:currentGameContext()
+  if kt.client then
+    return kt.client.gameContext
+  end
+  if kt.gamethread then
+    return kt.gamethread:currentGameContext()
+  ---@diagnostic disable-next-line
+  end
+end
+
 return Engine
