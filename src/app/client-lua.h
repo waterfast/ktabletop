@@ -4,5 +4,9 @@
 #pragma once
 
 struct lua_State;
+class LuaBinding;
+class QString;
+
+void injectI18nContext(LuaBinding *binding, const QString &pluginPath);
 
 extern "C" int luaopen_ktabletop_client(lua_State *L);

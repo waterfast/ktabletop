@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "client-lua.h"
+#include "catalog.h"
 #include "client.h"
 #include "lua/async-context.h"
 #include "lua/lua-binding.h"
@@ -9,15 +10,20 @@
 #include "network/client-socket.h"
 #include "network/crypto-util.h"
 #include "network/user-connection.h"
+#include "qml/i18n-context.h"
 
 #include <QAbstractSocket>
 #include <QTimer>
+#include <QUrl>
 
 #include <KLocalizedString>
 
 #include <lua.hpp>
 
+#include <memory>
+
 using namespace KTabletopCrypto;
+using namespace Qt::StringLiterals;
 using str = const char *;
 
 // args: int connId, string command, string jsonData
@@ -307,6 +313,24 @@ static QString subsLuaArgs(lua_State *L, KLocalizedString msg, int firstArg)
     return msg.toString();
 }
 
+static QString subsLuaArgs(lua_State *L, QString text, int firstArg)
+{
+    const int n = lua_gettop(L);
+    for (int i = firstArg; i <= n; i++) {
+        if (lua_isinteger(L, i)) {
+            text = text.arg(lua_tointeger(L, i));
+        } else if (lua_type(L, i) == LUA_TNUMBER) {
+            text = text.arg(lua_tonumber(L, i));
+        } else {
+            size_t len = 0;
+            const char *s = luaL_tolstring(L, i, &len);
+            text = text.arg(QString::fromUtf8(s, len));
+            lua_pop(L, 1);
+        }
+    }
+    return text;
+}
+
 static int luaI18n(lua_State *L)
 {
     const char *text = luaL_checkstring(L, 1);
@@ -350,6 +374,105 @@ static luaL_Reg i18nFuncTable[] = {
     {"i18ncp", luaI18ncp},
     {NULL, NULL},
 };
+
+static const char *i18nContextMeta = "KTabletop.I18nContext";
+
+struct LuaI18nContext {
+    Catalog catalog;
+    I18nContext ctx;
+
+    explicit LuaI18nContext(const QUrl &url)
+        : catalog(url)
+    {
+        ctx.setCatalog(&catalog);
+    }
+};
+
+static LuaI18nContext *checkI18nContext(lua_State *L)
+{
+    return static_cast<LuaI18nContext *>(luaL_checkudata(L, 1, i18nContextMeta));
+}
+
+static int udI18n(lua_State *L)
+{
+    auto *self = checkI18nContext(L);
+    const QString text = QString::fromUtf8(luaL_checkstring(L, 2));
+    lua_pushstring(L, subsLuaArgs(L, self->ctx.i18n(text), 3).toUtf8().constData());
+    return 1;
+}
+
+static int udI18nc(lua_State *L)
+{
+    auto *self = checkI18nContext(L);
+    const QString context = QString::fromUtf8(luaL_checkstring(L, 2));
+    const QString text = QString::fromUtf8(luaL_checkstring(L, 3));
+    lua_pushstring(L, subsLuaArgs(L, self->ctx.i18nc(context, text), 4).toUtf8().constData());
+    return 1;
+}
+
+static int udI18np(lua_State *L)
+{
+    auto *self = checkI18nContext(L);
+    const QString singular = QString::fromUtf8(luaL_checkstring(L, 2));
+    const QString plural = QString::fromUtf8(luaL_checkstring(L, 3));
+    const int n = static_cast<int>(luaL_optinteger(L, 4, 1));
+    lua_pushstring(L, subsLuaArgs(L, self->ctx.i18np(singular, plural, n), 4).toUtf8().constData());
+    return 1;
+}
+
+static int udI18ncp(lua_State *L)
+{
+    auto *self = checkI18nContext(L);
+    const QString context = QString::fromUtf8(luaL_checkstring(L, 2));
+    const QString singular = QString::fromUtf8(luaL_checkstring(L, 3));
+    const QString plural = QString::fromUtf8(luaL_checkstring(L, 4));
+    const int n = static_cast<int>(luaL_optinteger(L, 5, 1));
+    lua_pushstring(L, subsLuaArgs(L, self->ctx.i18ncp(context, singular, plural, n), 5).toUtf8().constData());
+    return 1;
+}
+
+static int udI18nGc(lua_State *L)
+{
+    auto *self = static_cast<LuaI18nContext *>(luaL_checkudata(L, 1, i18nContextMeta));
+    std::destroy_at(self);
+    return 0;
+}
+
+static luaL_Reg i18nContextFuncTable[] = {
+    {"i18n", udI18n},
+    {"i18nc", udI18nc},
+    {"i18np", udI18np},
+    {"i18ncp", udI18ncp},
+    {NULL, NULL},
+};
+
+static void pushI18nContext(lua_State *L, const QUrl &url)
+{
+    void *mem = lua_newuserdatauv(L, sizeof(LuaI18nContext), 0);
+    std::construct_at(static_cast<LuaI18nContext *>(mem), url);
+    if (luaL_newmetatable(L, i18nContextMeta)) {
+        lua_pushcfunction(L, udI18nGc);
+        lua_setfield(L, -2, "__gc");
+        luaL_newlib(L, i18nContextFuncTable);
+        lua_setfield(L, -2, "__index");
+    }
+    lua_setmetatable(L, -2);
+}
+
+void injectI18nContext(LuaBinding *binding, const QString &pluginPath)
+{
+    auto *L = binding->state();
+    auto plugin = binding->callKTabletopMethod(u"engine"_s, u"getPlugin"_s, {pluginPath});
+    auto ref = plugin.value<LuaRef>().index;
+    if (ref == LUA_NOREF) {
+        return;
+    }
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+    luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    pushI18nContext(L, QUrl::fromLocalFile(pluginPath));
+    lua_setfield(L, -2, "i18nContext");
+    lua_pop(L, 1);
+}
 
 extern "C" int luaopen_ktabletop_client(lua_State *L)
 {

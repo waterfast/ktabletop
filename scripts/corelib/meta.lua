@@ -50,3 +50,11 @@ kt.log = {
   debug = function(...) end,
   critical = function(...) end,
 }
+
+---@class I18nContext
+local I18nContext = {
+  i18n = function(text, ...) end,
+  i18nc = function(context, text, ...) end,
+  i18np = function(singular, plural, ...) end,
+  i18ncp = function(context, singular, plural, ...) end,
+}

@@ -45,6 +45,10 @@ Client::Client(QObject *parent)
     luaopen_ktabletop_client(L->state());
     L->setRuntimePaths(PackMan::instance()->listPluginPaths());
 
+    connect(L, &LuaBinding::beforeLoadPlugin, this, [this](const QString &path) {
+        injectI18nContext(this->L, path);
+    });
+
     m_connection = new UserConnection(this, new ClientSocket);
     m_connection->setClientSide(true);
 
