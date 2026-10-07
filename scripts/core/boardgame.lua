@@ -3,26 +3,23 @@
 
 local class = kt.class
 
----@class BoardGameSpec
+---@class BoardgameSpec
+---@field id string
+---@field name string?
+
+---@class Boardgame: Object, BoardgameSpec
 ---@field name string
----@field engine? table
----@field serverContextClass? Object
----@field logicClass? Object
----@field clientContextClass? Object
----@field page? { url?: string, uri?: string, name?: string }
+---@field serverContextClass Object
+---@field clientContextClass Object
+---@field page { url?: string, uri?: string, name?: string }
+---@field viewModelClass Object
+local Boardgame = class("Boardgame")
 
----@class BoardGame: Object
-local BoardGame = class("BoardGame")
-
-function BoardGame:initialize(spec)
-  assert(type(spec) == "table" and type(spec.name) == "string",
-    "boardgame spec must have a string 'name'")
-  self.name = spec.name
-  self.engine = spec.engine
-  self.serverContextClass = spec.serverContextClass
-  self.logicClass = spec.logicClass
-  self.clientContextClass = spec.clientContextClass
-  self.page = spec.page
+function Boardgame:initialize(spec)
+  assert(type(spec) == "table" and type(spec.id) == "string",
+    "boardgame spec must have a string 'id'")
+  self.id = spec.id
+  self.name = spec.name or spec.id
 end
 
-return BoardGame
+return Boardgame

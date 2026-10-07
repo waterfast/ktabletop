@@ -251,7 +251,7 @@ static QString searchRtpPath(lua_State *L, const QString &name)
             return file1;
         }
         auto file2 = dir + u"/lua/"_s + name + u"/init.lua"_s;
-        if (QFileInfo f2(file1); f2.exists() && f2.isFile() && f2.isReadable()) {
+        if (QFileInfo f2(file2); f2.exists() && f2.isFile() && f2.isReadable()) {
             return file2;
         }
     }

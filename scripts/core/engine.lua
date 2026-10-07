@@ -4,29 +4,25 @@
 -- Engine: manage boardgames and other global, static stuff.
 
 local class = kt.class
-local BoardGame = require "core.boardgame"
 
 ---@class Engine: Object
----@field games table<string, BoardGame>
+---@field games table<string, Boardgame>
 local Engine = class("Engine")
 
 function Engine:initialize()
   self.games = {}
 end
 
----@param spec BoardGameSpec
----@return BoardGame
-function Engine:registerGame(spec)
-  local game = BoardGame:new(spec)
-  if self.games[game.name] then
+---@param game Boardgame
+function Engine:registerGame(game)
+  if self.games[game.id] then
     kt.log.warn(("boardgame '%s' already registered, overwriting"):format(game.name))
   end
-  self.games[game.name] = game
-  return game
+  self.games[game.id] = game
 end
 
 ---@param name string?
----@return BoardGame?
+---@return Boardgame?
 function Engine:getGame(name)
   if type(name) ~= "string" then return nil end
   return self.games[name]

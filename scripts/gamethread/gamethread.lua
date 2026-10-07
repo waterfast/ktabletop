@@ -13,7 +13,7 @@ function GameThread:initialize()
   self.contextRegistry = setmetatable({}, { __mode = "k" })
 end
 
----@param boardgame BoardGame
+---@param boardgame Boardgame
 ---@param data table
 ---@return ServerGameContext
 function GameThread:registerContext(boardgame, data)
