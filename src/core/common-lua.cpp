@@ -73,6 +73,41 @@ static luaL_Reg commonFuncTable[] = {
     {NULL, NULL},
 };
 
+static int getPluginRoot(lua_State *L)
+{
+    auto [level] = LuaVM::readArgs<int>(L);
+    lua_Debug ar;
+    bool ok = lua_getstack(L, level, &ar);
+    if (!ok) {
+        lua_pushnil(L);
+        return 1;
+    }
+    lua_getinfo(L, "S", &ar);
+    const char *source = ar.source;
+    if (source[0] != '@') {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto path = QString::fromUtf8(source + 1);
+    auto *binding = LuaBinding::forState(L);
+    for (const auto &dir : binding->runtimePaths()) {
+        if (path.startsWith(dir)) {
+            lua_pushstring(L, dir.toUtf8().constData());
+            return 1;
+        }
+    }
+
+    lua_pushnil(L);
+    return 1;
+}
+
+static luaL_Reg pluginHelperFuncTable[] = {
+    {"getPluginRoot", getPluginRoot},
+
+    {NULL, NULL},
+};
+
 // --------------------------------------------
 //   ktabletop.log: logging functions
 // --------------------------------------------
@@ -134,6 +169,7 @@ extern "C" int luaopen_ktabletop_common(lua_State *L)
 
     lua_newtable(L); // kt.c
     luaL_setfuncs(L, commonFuncTable, 0);
+    luaL_setfuncs(L, pluginHelperFuncTable, 0);
     lua_setfield(L, -2, "c");
 
     lua_newtable(L); // kt.log

@@ -36,6 +36,8 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
     lua_rawseti(L, -2, 2);
     lua_pushcfunction(L, &LuaBinding::rtpSearcher);
     lua_rawseti(L, -2, 3);
+    lua_pushnil(L); // remove searcher[4] as well
+    lua_rawseti(L, -2, 4);
     lua_pop(L, 1);
 
     lua_setwarnf(L, &LuaBinding::warnf, this);
@@ -228,7 +230,7 @@ int LuaBinding::qrcSearcher(lua_State *L)
         lua_pushstring(L, QString(u"qrcSearcher: module '%1' open error"_s).arg(modname).toUtf8().constData());
         return 1;
     }
-    auto filenameBytes = filename.prepend(u"=qrc"_s).toUtf8();
+    auto filenameBytes = filename.prepend(u"="_s).toUtf8();
     auto *filenameStr = filenameBytes.constData();
     auto bytes = file.readAll();
     [[likely]] if (luaL_loadbuffer(L, bytes.constData(), bytes.length(), filenameStr) == LUA_OK) {

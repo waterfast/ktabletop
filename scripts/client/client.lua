@@ -113,7 +113,7 @@ function Client:enterGame(gameType, data)
 
   kt.c.luaEvent("Client::EnterGame", {
     viewModelName = self.gameContext.vm._stringId,
-    pageUrl = bg.page and bg.page.url or "",
+    pageUrl = bg.page and bg.pluginRoot .. "/" .. bg.page.url or "",
   })
 end
 

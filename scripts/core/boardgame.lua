@@ -7,13 +7,21 @@ local class = kt.class
 ---@field id string
 ---@field name string?
 
----@class Boardgame: Object, BoardgameSpec
+---@class Boardgame: Object
+---@field id string
 ---@field name string
+---@field pluginRoot string
 ---@field serverContextClass Object
 ---@field clientContextClass Object
 ---@field page { url?: string, uri?: string, name?: string }
 ---@field viewModelClass Object
 local Boardgame = class("Boardgame")
+
+function Boardgame.static:subclassed(subclass)
+  -- caller -> subclass -> subclassed
+  local path = kt.c.getPluginRoot(3)
+  subclass.pluginRoot = path
+end
 
 function Boardgame:initialize(spec)
   assert(type(spec) == "table" and type(spec.id) == "string",
