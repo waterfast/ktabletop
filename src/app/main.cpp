@@ -21,6 +21,7 @@
 #include <QDir>
 #include <QThread>
 
+#include "catalog.h"
 #include "core/logger.h"
 #include "qml-backend-controller.h"
 #include "qml/qml-backend.h"
@@ -77,7 +78,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    QmlBackendController controller(engine.singletonInstance<QmlBackend *>("org.kde.ktabletop", "Backend"));
+    auto *backend = engine.singletonInstance<QmlBackend *>("org.kde.ktabletop", "Backend");
+    backend->setCatalogFactory([](const QUrl &url, QObject *parent) {
+        return new Catalog(url, parent);
+    });
+
+    QmlBackendController controller(backend);
 
     return app.exec();
 }

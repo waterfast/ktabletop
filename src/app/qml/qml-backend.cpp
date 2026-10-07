@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "qml-backend.h"
+#include "abstract-catalog.h"
 #include "lobject-manager.h"
 #include "lobject-proxy.h"
 #include "main-view-model.h"
@@ -21,6 +22,19 @@ QmlBackend::~QmlBackend() = default;
 MainViewModel *QmlBackend::mainViewModel() const
 {
     return m_mainViewModel;
+}
+
+void QmlBackend::setCatalogFactory(CatalogFactory factory)
+{
+    m_catalogFactory = std::move(factory);
+}
+
+AbstractCatalog *QmlBackend::createCatalog(const QUrl &url, QObject *parent) const
+{
+    if (m_catalogFactory) {
+        return m_catalogFactory(url, parent);
+    }
+    return new AbstractCatalog(parent);
 }
 
 LObjectProxy *QmlBackend::getObservable(const QString &objectName) const

@@ -5,9 +5,13 @@
 
 #include <QMap>
 #include <QObject>
+#include <QUrl>
 #include <QVariant>
 #include <QtQml>
 
+#include <functional>
+
+class AbstractCatalog;
 class LObjectProxy;
 class MainViewModel;
 
@@ -20,10 +24,15 @@ class QmlBackend : public QObject
     Q_PROPERTY(MainViewModel *mainViewModel READ mainViewModel CONSTANT)
 
 public:
+    using CatalogFactory = std::function<AbstractCatalog *(const QUrl &url, QObject *parent)>;
+
     explicit QmlBackend(QObject *parent = nullptr);
     ~QmlBackend() override;
 
     MainViewModel *mainViewModel() const;
+
+    void setCatalogFactory(CatalogFactory factory);
+    AbstractCatalog *createCatalog(const QUrl &url, QObject *parent) const;
 
     Q_INVOKABLE LObjectProxy *getObservable(const QString &objectName) const;
 
@@ -37,4 +46,5 @@ Q_SIGNALS:
 
 private:
     MainViewModel *m_mainViewModel;
+    CatalogFactory m_catalogFactory;
 };

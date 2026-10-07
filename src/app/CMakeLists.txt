@@ -4,11 +4,14 @@
 add_subdirectory(qml)
 
 add_executable(ktabletop-app
+    catalog.cpp
     client.cpp
     client-lua.cpp
     qml-backend-controller.cpp
     main.cpp
 )
+
+kde_source_files_enable_exceptions(catalog.cpp)
 
 ecm_add_app_icon(KTABLETOP_ICON ICONS ${CMAKE_SOURCE_DIR}/128-logo.png)
 

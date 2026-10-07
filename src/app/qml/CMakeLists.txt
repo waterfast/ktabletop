@@ -19,6 +19,8 @@ ecm_add_qml_module(ktabletop_qml
         GameOverDialog.qml
         ChatPanel.qml
     SOURCES
+        abstract-catalog.cpp
+        i18n-qml-context.cpp
         qml-backend.cpp
         main-view-model.cpp
         lobject-manager.cpp

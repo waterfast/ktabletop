@@ -92,7 +92,7 @@ static int getPluginRoot(lua_State *L)
     auto path = QString::fromUtf8(source + 1);
     auto *binding = LuaBinding::forState(L);
     for (const auto &dir : binding->runtimePaths()) {
-        if (path.startsWith(dir)) {
+        if (path == dir || path.startsWith(dir + u'/')) {
             lua_pushstring(L, dir.toUtf8().constData());
             return 1;
         }
