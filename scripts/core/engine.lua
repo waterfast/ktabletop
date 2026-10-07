@@ -4,29 +4,45 @@
 -- Engine: manage boardgames and other global, static stuff.
 
 local class = kt.class
+local Plugin = require "core.plugin"
 
 ---@class Engine: Object
 ---@field games table<string, Boardgame>
+---@field plugins table<string, Plugin> Path->Plugin
 local Engine = class("Engine")
 
 function Engine:initialize()
   self.games = {}
+  self.plugins = {}
 end
 
 ---@param game Boardgame
 function Engine:registerGame(game)
   if self.games[game.id] then
-    kt.log.warn(("boardgame '%s' already registered, overwriting"):format(game.name))
+    kt.log.warn(("boardgame '%s' already registered, overwriting"):format(game.id))
   end
   self.games[game.id] = game
 end
 
----@param name string?
+---@param id string
 ---@return Boardgame?
-function Engine:getGame(name)
-  if type(name) ~= "string" then return nil end
-  return self.games[name]
+function Engine:getGame(id)
+  if type(id) ~= "string" then return nil end
+  return self.games[id]
 end
+
+---@param path string
+function Engine:registerNewPlugin(path)
+  self.plugins[path] = Plugin:new(path)
+end
+
+---@param path string
+---@return Plugin?
+function Engine:getPlugin(path)
+  if type(path) ~= "string" then return nil end
+  return self.plugins[path]
+end
+
 
 --- Returns the game context currently in play, or nil.
 ---@return GameContextBase

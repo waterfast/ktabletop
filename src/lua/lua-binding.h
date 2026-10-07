@@ -62,6 +62,8 @@ public Q_SLOTS:
 Q_SIGNALS:
     void luaEvent(const QString &type, const QVariant &payload);
     void luaWarning(QString message);
+    void beforeLoadPlugin(const QString &plugin);
+    void pluginLoaded(const QString &plugin);
 
 private:
     Role m_role;

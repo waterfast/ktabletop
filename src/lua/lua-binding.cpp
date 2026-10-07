@@ -70,6 +70,9 @@ void LuaBinding::run()
 void LuaBinding::loadRuntimePlugins()
 {
     for (const auto &dir : m_runtimePaths) {
+        callKTabletopMethod(u"engine"_s, u"registerNewPlugin"_s, {dir});
+        Q_EMIT beforeLoadPlugin(dir);
+
         QString file1 = dir + u"/plugin/init.lua"_s;
         QString file2;
         if (m_role == Server) {
@@ -86,6 +89,7 @@ void LuaBinding::loadRuntimePlugins()
         if (QFileInfo f(file2); f.exists() && f.isFile() && f.isReadable()) {
             LuaVM::dofile(L, file2);
         }
+        Q_EMIT pluginLoaded(dir);
     }
 }
 
