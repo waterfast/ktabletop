@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "catalog.h"
-#include "core/packman.h"
+#include "client.h"
+#include "lua/lua-binding.h"
 
 #include "3rdparty/spiritless_po.h"
 
@@ -24,14 +25,14 @@ static QHash<QString, std::weak_ptr<spiritless_po::Catalog>> s_catalogs;
 Catalog::Catalog(const QUrl &url, QObject *parent)
     : AbstractCatalog(parent)
 {
-    if (!url.isLocalFile() || !PackMan::initialized()) {
+    if (!url.isLocalFile() || !Client::initialized()) {
         return;
     }
 
     const QString path = QDir::cleanPath(url.toLocalFile());
 
     QString pluginRoot;
-    const QStringList pluginPaths = PackMan::instance()->listPluginPaths();
+    const QStringList pluginPaths = Client::instance()->luaBinding()->runtimePaths();
     for (const QString &root : pluginPaths) {
         if ((path == root || path.startsWith(root + u'/')) && root.size() > pluginRoot.size()) {
             pluginRoot = root;
@@ -42,7 +43,7 @@ Catalog::Catalog(const QUrl &url, QObject *parent)
     }
 
     const QString domain = u"ktabletop-plugin-%1"_s.arg(QFileInfo(pluginRoot).fileName());
-    const QString localeDir = pluginRoot + u"/locale"_s;
+    const QString localeDir = pluginRoot + u"/i18n"_s;
 
     const QStringList languages = KLocalizedString::languages();
     const QString key = pluginRoot + u'\n' + languages.join(u'\n');
