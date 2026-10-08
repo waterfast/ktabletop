@@ -213,6 +213,7 @@ void Server::startGameRoom(int roomId, const QVariantMap &data)
     auto *thread = getAvailableGameThread();
     thread->addRoom(roomId);
     thread->pushRequest(roomId, 0, u"newroom"_s, data);
+    dispatchLuaEvent(u"gameThreadAssigned"_s, QVariantMap{{u"roomId"_s, roomId}, {u"threadId"_s, thread->id()}});
 }
 
 void Server::dispatchLuaEvent(const QString &type, const QVariant &data)

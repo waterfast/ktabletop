@@ -14,6 +14,14 @@ local ServerRoomBase = RoomBase:subclass("ServerRoomBase")
 function ServerRoomBase:initialize()
   RoomBase.initialize(self)
     self:setRequestHandler("Room::Chat", self.handleChat)
+    self:setRequestHandler("PushRequest", self.handlePushRequest)
+end
+
+---@param user ServerUser
+---@param data { command: string, data: any }
+function ServerRoomBase:handlePushRequest(user, data)
+  if not self.gameThreadId then return end
+  kt.c.pushRequest(self.gameThreadId, self.id, user.id, data.command, data.data)
 end
 
 ---@param users User[]

@@ -47,7 +47,13 @@ function GameThread:handleRequest(roomId, userId, command, data)
   if command == "newroom" then
     local boardgame = kt.engine:getGame("chess")
     self:registerContext(boardgame, data):run()
+    return
   end
+
+  local ctx = self.contexts[roomId]
+  if not ctx then return end
+  local f = ctx.callbacks[command]
+  if f then f(ctx, ctx:getPlayerById(userId), data) end
 end
 
 return GameThread

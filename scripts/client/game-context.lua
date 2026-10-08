@@ -4,6 +4,7 @@
 local GameContextBase = require "core.game-context"
 local LObject = require "corelib.lobject"
 local ClientPlayer = require "client.player"
+local async = require "corelib.async"
 local tablib = kt.tablib
 
 ---@class ClientGameContext: GameContextBase, LObject
@@ -47,6 +48,14 @@ end
 function ClientGameContext:handlePublicAction(name, data)
   local ret = self.bg.publicActions[name](self, table.unpack(data))
   self.vm:onAction(name, data, ret)
+end
+
+---@param command string
+---@param data any
+function ClientGameContext:pushRequest(command, data)
+  async.run(function()
+    kt.client.myself:request("PushRequest", { command = command, data = data })
+  end)
 end
 
 function ClientGameContext:setupViewModel()

@@ -4,6 +4,7 @@
 #include "server-lua.h"
 #include "common-lua.h"
 #include "db-thread.h"
+#include "game-thread.h"
 #include "lua/async-context.h"
 #include "lua/lua-binding.h"
 #include "lua/lua-helper.h" // for LuaVM::readValue
@@ -98,6 +99,20 @@ static int startGame(lua_State *L)
     int roomId = luaL_checkinteger(L, 1);
     QVariantMap data = LuaVM::readValue(L, 2).toMap();
     Server::instance()->startGameRoom(roomId, data);
+    return 0;
+}
+
+// args: int threadId, int roomId, int userId, string command, table data
+static int pushRequest(lua_State *L)
+{
+    auto [threadId, roomId, userId, command] = LuaVM::readArgs<int, int, int, str>(L);
+    QVariantMap data = LuaVM::readValue(L, 5).toMap();
+
+    auto *thread = Server::instance()->getGameThread(threadId);
+    if (!thread) {
+        return luaL_error(L, "cannot find game thread %d", threadId);
+    }
+    thread->pushRequest(roomId, userId, QString::fromUtf8(command), data);
     return 0;
 }
 
@@ -241,6 +256,7 @@ static luaL_Reg socketFuncTable[] = {
 
 static luaL_Reg serverFuncTable[] = {
     {"startGame", startGame},
+    {"pushRequest", pushRequest},
 
     {"getServerPublicKey", getServerPublicKey},
     {"makeAuthChallenge", makeAuthChallenge},

@@ -247,6 +247,11 @@ eventHandlers["gameOver"] = function(self, data)
   room.gameStarted = false
 end
 
+eventHandlers["gameThreadAssigned"] = function(self, data)
+  local room = self.roomManager:findRoom(data.roomId)
+  if room then room.gameThreadId = data.threadId end
+end
+
 function Server:dispatchLuaEvent(type, data)
   local f = eventHandlers[type]
   if f then

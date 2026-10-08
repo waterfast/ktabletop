@@ -16,6 +16,7 @@ local tablib = kt.tablib
 ---@field logicClass any
 ---@field bg Boardgame
 ---@field secret table<string, any>
+---@field callbacks table<string, fun(ctx: ServerGameContext, player: ServerPlayer, data: any)>
 local ServerGameContext = GameContextBase:subclass("ServerGameContext")
 
 ---@param data table
@@ -27,6 +28,7 @@ function ServerGameContext:initialize(data, boardgame)
   self.gameFinished = false
   self.secret = {}
   self.secret.rng = kt.rand(math.random(os.time()))
+  self.callbacks = {}
 
   assert(boardgame and boardgame.logicClass,
     ("boardgame '%s' must define logicClass"):format(boardgame and boardgame.id or "?"))
@@ -82,6 +84,12 @@ function ServerGameContext:act(name, ...)
     ("unknown public action '%s'"):format(name))
   move(self, ...)
   self:broadcast(self.gameType .. "." .. name, { ... })
+end
+
+---@param command string
+---@param fn fun(ctx: ServerGameContext, player: ServerPlayer, data: any)
+function ServerGameContext:addCallback(command, fn)
+  self.callbacks[command] = fn
 end
 
 ---@param player ServerPlayer
