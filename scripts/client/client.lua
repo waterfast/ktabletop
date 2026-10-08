@@ -105,7 +105,7 @@ end
 function Client:enterGame(gameType, data)
   gameType = gameType or "chess"
   local bg = kt.engine:getGame(gameType)
-  local klass = bg and bg.clientContextClass
+  local klass = bg and (bg.clientContextClass or require "defaults.client.game-context")
   assert(klass, ("no clientContextClass for boardgame '%s'"):format(gameType))
 
   self.gameContext = klass:new(gameType, data)

@@ -13,6 +13,7 @@ local class = kt.class
 ---@field pluginRoot string
 ---@field serverContextClass Object
 ---@field clientContextClass Object
+---@field logicClass Object
 ---@field page { url?: string, uri?: string, name?: string }
 ---@field viewModelClass Object
 local Boardgame = class("Boardgame")

@@ -17,7 +17,8 @@ end
 ---@param data table
 ---@return ServerGameContext
 function GameThread:registerContext(boardgame, data)
-  local context = boardgame.serverContextClass:new(data)
+  local klass = boardgame.serverContextClass or require "defaults.gamethread.game-context"
+  local context = klass:new(data, boardgame)
   self.contexts[data.id] = context
   return context
 end
