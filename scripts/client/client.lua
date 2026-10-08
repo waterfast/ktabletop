@@ -8,6 +8,7 @@ local translateServerMessage = require "client.server-messages"
 local ClientUser = require "client.user"
 local ClientLobby = require "client.lobby"
 local ClientRoom = require "client.room"
+local ClientGameContext = require "client.game-context"
 
 ---@class Client: Object
 ---@field myself ClientUser
@@ -105,10 +106,9 @@ end
 function Client:enterGame(gameType, data)
   gameType = gameType or "chess"
   local bg = kt.engine:getGame(gameType)
-  local klass = bg and (bg.clientContextClass or require "defaults.client.game-context")
-  assert(klass, ("no clientContextClass for boardgame '%s'"):format(gameType))
+  assert(bg, ("unknown boardgame '%s'"):format(tostring(gameType)))
 
-  self.gameContext = klass:new(gameType, data)
+  self.gameContext = ClientGameContext:new(gameType, data)
   self.gameContext:setupViewModel()
 
   kt.c.luaEvent("Client::EnterGame", {

@@ -83,7 +83,7 @@ function GameLogic:start()
   async.run(function()
     local root = Game:new(self.ctx)
     self.root = root
-    self.ctx:broadcast("Room::StartGame", { gameType = "chess" })
+    self.ctx:broadcast("Room::StartGame", { gameType = self.ctx.gameType })
     local ok, errmsg = pcall(root.exec, root)
     local ctx = self.ctx
     if not ctx.gameFinished then

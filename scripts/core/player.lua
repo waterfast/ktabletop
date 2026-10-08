@@ -9,7 +9,8 @@ local class = kt.class
 ---@field role string
 ---@field seat integer
 ---@field next Player
----@field mark table<string, any>
+---@field G table<string, any> public state of this player
+---@field secret table<string, any> private state, only synced to this player
 local Player = class("Player")
 
 function Player:initialize()
@@ -17,19 +18,8 @@ function Player:initialize()
   self.role = ""
   self.seat = 0
   self.next = nil
-  self.mark = {}
-end
-
----@param name string
----@return any
-function Player:getMark(name)
-  return self.mark[name]
-end
-
----@param name string
----@param value any
-function Player:setMark(name, value)
-  self.mark[name] = value
+  self.G = {}
+  self.secret = {}
 end
 
 return Player

@@ -2,36 +2,42 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local async = require "corelib.async"
+local GameContextBase = require "core.game-context"
 local ServerUser = require "server.user"
+local ServerPlayer = require "gamethread.player"
 local tablib = kt.tablib
 
----@class ServerGameContextMixin
+---@class ServerGameContext: GameContextBase
 ---@field id integer
 ---@field rawUsers table[]
 ---@field logic GameLogic
 ---@field gameFinished boolean
----@field playerClass any
+---@field gameType string
 ---@field logicClass any
----@field _rng any
-local ServerGameContextMixin = {}
-
----@class ServerGameContext: GameContextBase, ServerGameContextMixin
+local ServerGameContext = GameContextBase:subclass("ServerGameContext")
 
 ---@param data table
-function ServerGameContextMixin:initialize(data)
+---@param boardgame Boardgame
+function ServerGameContext:initialize(data, boardgame)
+  GameContextBase.initialize(self)
   self.id = data.id
   self.rawUsers = data.users or {}
   self.gameFinished = false
-  self._rng = kt.rand(math.random(os.time()))
+  self.secret.rng = kt.rand(math.random(os.time()))
+
+  assert(boardgame and boardgame.logicClass,
+    ("boardgame '%s' must define logicClass"):format(boardgame and boardgame.id or "?"))
+  self.gameType = boardgame.id
+  self.logicClass = boardgame.logicClass
 end
 
-function ServerGameContextMixin:run()
+function ServerGameContext:run()
   self.players = tablib.map(self.rawUsers, function(u)
     local user = ServerUser:new(u.connId)
     user.id = u.id
     user.username = u.username
     user.state = u.state or "online"
-    local player = self.playerClass:new(user)
+    local player = ServerPlayer:new(user)
     player.ctx = self
     return player
   end)
@@ -43,7 +49,7 @@ end
 ---@field winners integer[]? winning player ids, empty or nil means a draw
 
 ---@param result? GameOverResult
-function ServerGameContextMixin:gameOver(result)
+function ServerGameContext:gameOver(result)
   if self.gameFinished then return end
   self.gameFinished = true
 
@@ -59,7 +65,7 @@ end
 ---@param command string
 ---@param data any
 ---@param players? ServerPlayer[]
-function ServerGameContextMixin:broadcast(command, data, players)
+function ServerGameContext:broadcast(command, data, players)
   players = players or self.players
   for _, player in ipairs(players) do
     player:notify(command, data)
@@ -69,19 +75,19 @@ end
 ---@param player ServerPlayer
 ---@param property string
 ---@param value any
-function ServerGameContextMixin:setPlayerProperty(player, property, value)
-  player[property] = value
+function ServerGameContext:setPlayerProperty(player, property, value)
+  player.G[property] = value
   self:broadcastProperty(player, property)
 end
 
 ---@param player ServerPlayer
 ---@param property string
-function ServerGameContextMixin:broadcastProperty(player, property)
-  self:broadcast("PropertyUpdate", { id = player.id, property = property, value = player[property] })
+function ServerGameContext:broadcastProperty(player, property)
+  self:broadcast("PropertyUpdate", { id = player.id, property = property, value = player.G[property] })
 end
 
 ---@param players? ServerPlayer[]
-function ServerGameContextMixin:arrangeSeats(players)
+function ServerGameContext:arrangeSeats(players)
   players = players or self.players
   self.players = players
   for i = 1, #players do
@@ -93,26 +99,26 @@ function ServerGameContextMixin:arrangeSeats(players)
 end
 
 ---@param ms integer
-function ServerGameContextMixin:delay(ms)
+function ServerGameContext:delay(ms)
   return async.await(async.wrap(kt.c.delay)(ms))
 end
 
 ---@param m? integer
 ---@param n? integer
 ---@return any
-function ServerGameContextMixin:random(m, n)
-  return self._rng:random(m, n)
+function ServerGameContext:random(m, n)
+  return self.secret.rng:random(m, n)
 end
 
 ---@param x? integer
 ---@param y? integer
-function ServerGameContextMixin:randomseed(x, y)
-  return self._rng:randomseed(x, y)
+function ServerGameContext:randomseed(x, y)
+  return self.secret.rng:randomseed(x, y)
 end
 
 ---@generic T
 ---@param t T[]
-function ServerGameContextMixin:shuffleTable(t)
+function ServerGameContext:shuffleTable(t)
   if #t == 2 then
     if self:random() < 0.5 then
       t[1], t[2] = t[2], t[1]
@@ -129,7 +135,7 @@ end
 ---@param t T[]
 ---@param n? integer
 ---@return T|T[]
-function ServerGameContextMixin:tableRandomPick(t, n)
+function ServerGameContext:tableRandomPick(t, n)
   local n0 = n
   n = n or 1
   if #t == 0 then return n0 ~= nil and {} or nil end
@@ -143,4 +149,4 @@ function ServerGameContextMixin:tableRandomPick(t, n)
   return n0 == nil and ret[1] or ret
 end
 
-return ServerGameContextMixin
+return ServerGameContext

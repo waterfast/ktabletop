@@ -11,8 +11,6 @@ local class = kt.class
 ---@field id string
 ---@field name string
 ---@field pluginRoot string
----@field serverContextClass Object
----@field clientContextClass Object
 ---@field logicClass Object
 ---@field page { url?: string, uri?: string, name?: string }
 ---@field viewModelClass Object

@@ -2,6 +2,7 @@
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
 local class = kt.class
+local ServerGameContext = require "gamethread.game-context"
 
 ---@class GameThread: Object
 ---@field contexts table<integer, ServerGameContext>
@@ -17,8 +18,7 @@ end
 ---@param data table
 ---@return ServerGameContext
 function GameThread:registerContext(boardgame, data)
-  local klass = boardgame.serverContextClass or require "defaults.gamethread.game-context"
-  local context = klass:new(data, boardgame)
+  local context = ServerGameContext:new(data, boardgame)
   self.contexts[data.id] = context
   return context
 end
