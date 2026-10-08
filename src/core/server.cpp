@@ -66,10 +66,27 @@ Server::Server(QObject *parent)
     server = new ServerSocket(this);
     connect(server, &ServerSocket::newConnection, this, &Server::processNewConnection);
 
-    m_usersDb = new DbThread(this, u"usersDb"_s, u"./server/users.db"_s);
-    m_usersDb->execMultiSql(usersDbSchema);
+    initUsersDb();
 
     m_shell = new StdinAdapter(this);
+}
+
+void Server::initUsersDb()
+{
+    delete m_usersDb;
+    m_usersDb = new DbThread(this, u"usersDb"_s, u"%1/users.db"_s.arg(m_dataPath));
+    m_usersDb->execMultiSql(usersDbSchema);
+}
+
+void Server::setDataPath(const QString &path)
+{
+    if (m_dataPath == path) {
+        return;
+    }
+
+    m_dataPath = path;
+    initAuthKeys();
+    initUsersDb();
 }
 
 Server::~Server()
@@ -80,8 +97,11 @@ Server::~Server()
 
 void Server::initAuthKeys()
 {
-    static const QString privPath = u"./server/ed25519.key"_s;
-    static const QString pubPath = u"./server/ed25519.key.pub"_s;
+    EVP_PKEY_free(m_authPrivateKey);
+    m_authPrivateKey = nullptr;
+
+    const QString privPath = u"%1/ed25519.key"_s.arg(m_dataPath);
+    const QString pubPath = u"%1/ed25519.key.pub"_s.arg(m_dataPath);
 
     if (!QFile::exists(privPath) || !QFile::exists(pubPath)) {
         EVP_PKEY *pkey = generateEd25519KeyPairs();
@@ -90,7 +110,7 @@ void Server::initAuthKeys()
         }
         if (!writeKeyPair(privPath, pubPath, pkey)) {
             EVP_PKEY_free(pkey);
-            qFatal("Failed to write Ed25519 key pair to server/");
+            qFatal("Failed to write Ed25519 key pair to %s", qPrintable(m_dataPath));
         }
         EVP_PKEY_free(pkey);
         qInfo() << "Generated Ed25519 key pair at" << privPath;

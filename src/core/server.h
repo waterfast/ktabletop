@@ -58,6 +58,8 @@ public:
     DbThread *usersDb() const;
     StdinAdapter *shell() const;
 
+    void setDataPath(const QString &path);
+
 Q_SIGNALS:
     void luaWarning(QString message);
 
@@ -69,13 +71,16 @@ private:
     QHash<int, UserConnection *> connections;
     QHash<int, GameThread *> gameThreads;
 
-    DbThread *m_usersDb;
+    DbThread *m_usersDb = nullptr;
 
     StdinAdapter *m_shell;
+
+    QString m_dataPath = QStringLiteral("./server");
 
     QString m_authPublicKey;
     EVP_PKEY *m_authPrivateKey = nullptr;
 
     void initAuthKeys();
+    void initUsersDb();
     void processNewConnection(ClientSocket *client);
 };

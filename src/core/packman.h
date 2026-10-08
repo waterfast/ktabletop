@@ -1,7 +1,9 @@
 #pragma once
 
 #include <QObject>
-#include <QSqlDatabase>
+#include <QString>
+
+class DbThread;
 
 struct PluginManifest {
     bool valid = false;
@@ -31,6 +33,8 @@ public:
     void removePack(const QString &pack);
     QString listPackages();
 
+    void setPluginsPath(const QString &path);
+
     QStringList listPluginPaths();
 
     void forceCheckoutMaster(const QString &pack);
@@ -40,7 +44,10 @@ public:
 private:
     explicit PackMan(QObject *parent = nullptr);
     QStringList disabled_packs;
-    QSqlDatabase db;
+    DbThread *m_pluginsDb = nullptr;
 
+    QString m_pluginsPath = QStringLiteral("./plugins");
+
+    void initDatabase();
     void sanitizePackageDb(const QString &packname);
 };

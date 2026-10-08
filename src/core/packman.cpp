@@ -2,13 +2,13 @@
 
 #include "core/packman.h"
 #include "core/util.h"
+#include "db-thread.h"
 #include <QDebug>
 #include <QDir>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSqlError>
-#include <QSqlRecord>
 #include <QThread>
 #include <QUrl>
 #include <git2.h>
@@ -62,8 +62,13 @@ static QString extractPackName(const QString &u)
 // Simple wrapper around libgit2
 struct GitRepo {
     git_repository *repo = nullptr;
+    QString pluginsPath;
 
     GitRepo() noexcept = default;
+    explicit GitRepo(const QString &pluginsPath)
+        : pluginsPath(pluginsPath)
+    {
+    }
     GitRepo(GitRepo &) = delete;
     GitRepo(GitRepo &&) = delete;
     ~GitRepo()
@@ -91,7 +96,7 @@ struct GitRepo {
 int GitRepo::open(const QString &name)
 {
     git_repository *raw = nullptr;
-    auto path = u"plugins/%1"_s.arg(name).toUtf8();
+    auto path = u"%1/%2"_s.arg(pluginsPath, name).toUtf8();
     int err = git_repository_open(&raw, path.constData());
     if (err < 0) {
         GIT_FAIL;
@@ -140,7 +145,7 @@ static int transfer_progress_cb(const git_indexer_progress *stats, void *payload
 int GitRepo::clone(const QString &u)
 {
     QString fileName = extractPackName(u);
-    QString clonePath = u"plugins/%1"_s.arg(fileName);
+    QString clonePath = u"%1/%2"_s.arg(pluginsPath, fileName);
 
     git_repository *raw = nullptr;
     git_clone_options opt = GIT_CLONE_OPTIONS_INIT;
@@ -380,25 +385,28 @@ PackMan::PackMan(QObject *parent)
 {
     git_libgit2_init();
 
-    db = QSqlDatabase::addDatabase(u"QSQLITE"_s, u"pluginsDb"_s);
-    db.setDatabaseName(u"./plugins/plugins.db"_s);
-    if (!db.open()) {
-        qFatal("Cannot open packages database: %s", qPrintable(db.lastError().text()));
-    }
-
-    auto schemaQuery = execQuery(db, pluginsDbSchema);
-    if (schemaQuery.lastError().isValid()) {
-        qFatal("Cannot initialize packages database: %s", qPrintable(schemaQuery.lastError().text()));
-    }
-
-    auto query = execQuery(db, u"SELECT name FROM packages WHERE enabled = 0;"_s);
-    while (query.next()) {
-        disabled_packs << query.value(0).toString();
-    }
+    initDatabase();
 
 #ifdef Q_OS_ANDROID
     git_libgit2_opts(GIT_OPT_SET_SSL_CERT_LOCATIONS, NULL, "./certs");
 #endif
+}
+
+void PackMan::initDatabase()
+{
+    delete m_pluginsDb;
+    m_pluginsDb = new DbThread(this, u"pluginsDb"_s, u"%1/plugins.db"_s.arg(m_pluginsPath));
+
+    const auto schemaResult = m_pluginsDb->execQuerySync(pluginsDbSchema);
+    if (schemaResult.first.isValid()) {
+        qFatal("Cannot initialize packages database: %s", qPrintable(schemaResult.first.text()));
+    }
+
+    disabled_packs.clear();
+    const auto result = m_pluginsDb->execQuerySync(u"SELECT name FROM packages WHERE enabled = 0;"_s);
+    for (const auto &row : result.second) {
+        disabled_packs << row.value(0).toString();
+    }
 }
 
 PackMan::~PackMan()
@@ -411,15 +419,25 @@ QStringList PackMan::getDisabledPacks()
     return disabled_packs;
 }
 
+void PackMan::setPluginsPath(const QString &path)
+{
+    if (m_pluginsPath == path) {
+        return;
+    }
+
+    m_pluginsPath = path;
+    initDatabase();
+}
+
 QString PackMan::getPackSummary()
 {
     QJsonArray arr;
-    auto query = execQuery(db, u"SELECT name, url, hash FROM packages WHERE enabled = 1;"_s);
-    while (query.next()) {
+    const auto result = m_pluginsDb->execQuerySync(u"SELECT name, url, hash FROM packages WHERE enabled = 1;"_s);
+    for (const auto &row : result.second) {
         QJsonObject obj;
-        obj[u"name"_s] = query.value(0).toString();
-        obj[u"url"_s] = query.value(1).toString();
-        obj[u"hash"_s] = query.value(2).toString();
+        obj[u"name"_s] = row.value(0).toString();
+        obj[u"url"_s] = row.value(1).toString();
+        obj[u"hash"_s] = row.value(2).toString();
         arr.append(obj);
     }
     return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
@@ -429,9 +447,9 @@ void PackMan::loadSummary(const QString &jsonData, bool useThread)
 {
     auto f = [=, this] {
         // First, disable all packages
-        auto query = execQuery(db, u"SELECT name, url, hash FROM packages WHERE enabled = 1;"_s);
-        while (query.next()) {
-            disablePack(query.value(0).toString());
+        const auto enabledResult = m_pluginsDb->execQuerySync(u"SELECT name, url, hash FROM packages WHERE enabled = 1;"_s);
+        for (const auto &row : enabledResult.second) {
+            disablePack(row.value(0).toString());
         }
 
         // Then read conf from string
@@ -449,8 +467,8 @@ void PackMan::loadSummary(const QString &jsonData, bool useThread)
             // First sync DB with disk state, then decide clone or pull
             sanitizePackageDb(name);
 
-            auto existsQuery = execQuery(db, u"SELECT name FROM packages WHERE name = ?;"_s, name);
-            if (!existsQuery.next()) {
+            auto existsResult = m_pluginsDb->execQuerySync(u"SELECT name FROM packages WHERE name = ?;"_s, name);
+            if (existsResult.second.isEmpty()) {
                 err = downloadNewPack(url);
                 if (err != 0) {
                     QString msg;
@@ -467,7 +485,7 @@ void PackMan::loadSummary(const QString &jsonData, bool useThread)
 
             enablePack(name);
 
-            GitRepo head_repo;
+            GitRepo head_repo(m_pluginsPath);
             if (head_repo.open(name) == 0 && head_repo.head() != obj[u"hash"_s].toString()) {
                 err = updatePack(name, obj[u"hash"_s].toString());
                 if (err != 0) {
@@ -483,7 +501,7 @@ void PackMan::loadSummary(const QString &jsonData, bool useThread)
                 }
             }
 
-            execQuery(db, u"UPDATE packages SET hash = ? WHERE name = ?;"_s, obj[u"hash"_s].toString(), name);
+            m_pluginsDb->execQuerySync(u"UPDATE packages SET hash = ? WHERE name = ?;"_s, obj[u"hash"_s].toString(), name);
         }
     };
     if (useThread) {
@@ -498,7 +516,7 @@ void PackMan::loadSummary(const QString &jsonData, bool useThread)
 int PackMan::downloadNewPack(const QString &url, bool useThread)
 {
     auto threadFunc = [=, this] {
-        GitRepo raii_repo;
+        GitRepo raii_repo(m_pluginsPath);
         int err = raii_repo.clone(url);
         if (err < 0) {
             sanitizePackageDb(extractPackName(url));
@@ -507,14 +525,14 @@ int PackMan::downloadNewPack(const QString &url, bool useThread)
 
         auto fileName = extractPackName(url);
 
-        auto existsQuery = execQuery(db, u"SELECT name FROM packages WHERE name = ?;"_s, fileName);
-        if (!existsQuery.next()) {
-            execQuery(db,
-                      u"INSERT INTO packages (name, url, hash, enabled) "
-                      "VALUES (?, ?, ?, 1);"_s,
-                      fileName,
-                      url,
-                      raii_repo.head());
+        auto existsResult = m_pluginsDb->execQuerySync(u"SELECT name FROM packages WHERE name = ?;"_s, fileName);
+        if (existsResult.second.isEmpty()) {
+            m_pluginsDb->execQuerySync(
+                u"INSERT INTO packages (name, url, hash, enabled) "
+                "VALUES (?, ?, ?, 1);"_s,
+                fileName,
+                url,
+                raii_repo.head());
         }
 
         return err;
@@ -531,14 +549,14 @@ int PackMan::downloadNewPack(const QString &url, bool useThread)
 
 void PackMan::enablePack(const QString &pack)
 {
-    execQuery(db, u"UPDATE packages SET enabled = 1 WHERE name = ?;"_s, pack);
+    m_pluginsDb->execQuerySync(u"UPDATE packages SET enabled = 1 WHERE name = ?;"_s, pack);
 
     disabled_packs.removeOne(pack);
 }
 
 void PackMan::disablePack(const QString &pack)
 {
-    execQuery(db, u"UPDATE packages SET enabled = 0 WHERE name = ?;"_s, pack);
+    m_pluginsDb->execQuerySync(u"UPDATE packages SET enabled = 0 WHERE name = ?;"_s, pack);
 
     if (!disabled_packs.contains(pack))
         disabled_packs << pack;
@@ -546,7 +564,7 @@ void PackMan::disablePack(const QString &pack)
 
 int PackMan::updatePack(const QString &pack, const QString &hash)
 {
-    GitRepo repo;
+    GitRepo repo(m_pluginsPath);
     int err = repo.open(pack);
     if (err < 0) {
         sanitizePackageDb(pack);
@@ -573,7 +591,7 @@ int PackMan::updatePack(const QString &pack, const QString &hash)
 
 int PackMan::upgradePack(const QString &pack)
 {
-    GitRepo repo;
+    GitRepo repo(m_pluginsPath);
     int err = repo.open(pack);
     if (err < 0) {
         sanitizePackageDb(pack);
@@ -597,32 +615,32 @@ int PackMan::upgradePack(const QString &pack)
     if (err < 0)
         return err;
 
-    execQuery(db, u"UPDATE packages SET hash = ? WHERE name = ?;"_s, repo.head(), pack);
+    m_pluginsDb->execQuerySync(u"UPDATE packages SET hash = ? WHERE name = ?;"_s, repo.head(), pack);
     return 0;
 }
 
 void PackMan::removePack(const QString &pack)
 {
-    auto query = execQuery(db, u"SELECT enabled FROM packages WHERE name = ?;"_s, pack);
-    if (!query.next())
+    const auto result = m_pluginsDb->execQuerySync(u"SELECT enabled FROM packages WHERE name = ?;"_s, pack);
+    if (result.second.isEmpty())
         return;
 
-    execQuery(db, u"DELETE FROM packages WHERE name = ?;"_s, pack);
+    m_pluginsDb->execQuerySync(u"DELETE FROM packages WHERE name = ?;"_s, pack);
 
-    QDir d(u"plugins/%1"_s.arg(pack));
+    QDir d(u"%1/%2"_s.arg(m_pluginsPath, pack));
     d.removeRecursively();
 }
 
 QString PackMan::listPackages()
 {
     QJsonArray arr;
-    auto query = execQuery(db, u"SELECT * FROM packages;"_s);
-    while (query.next()) {
+    const auto result = m_pluginsDb->execQuerySync(u"SELECT name, url, hash, enabled FROM packages;"_s);
+    for (const auto &row : result.second) {
         QJsonObject obj;
-        const auto record = query.record();
-        for (int i = 0; i < record.count(); ++i) {
-            obj[record.fieldName(i)] = query.value(i).toString();
-        }
+        obj[u"name"_s] = row.value(0).toString();
+        obj[u"url"_s] = row.value(1).toString();
+        obj[u"hash"_s] = row.value(2).toString();
+        obj[u"enabled"_s] = row.value(3).toString();
         arr.append(obj);
     }
     return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
@@ -645,7 +663,7 @@ QStringList PackMan::listPluginPaths()
 {
     QStringList paths;
 
-    QDir pluginsDir(u"plugins"_s);
+    QDir pluginsDir(m_pluginsPath);
     if (!pluginsDir.exists()) {
         return paths;
     }
@@ -671,9 +689,9 @@ QStringList PackMan::listPluginPaths()
             continue;
         }
 
-        auto query = execQuery(db, u"SELECT enabled FROM packages WHERE name = ?;"_s, entry);
-        if (query.next()) {
-            if (!query.value(0).toBool()) {
+        const auto enabledResult = m_pluginsDb->execQuerySync(u"SELECT enabled FROM packages WHERE name = ?;"_s, entry);
+        if (!enabledResult.second.isEmpty()) {
+            if (!enabledResult.second.first().value(0).toBool()) {
                 continue;
             }
         } else {
@@ -688,7 +706,7 @@ QStringList PackMan::listPluginPaths()
 
 void PackMan::forceCheckoutMaster(const QString &pack)
 {
-    GitRepo repo;
+    GitRepo repo(m_pluginsPath);
     int err = repo.open(pack);
     if (err < 0) {
         sanitizePackageDb(pack);
@@ -700,44 +718,44 @@ void PackMan::forceCheckoutMaster(const QString &pack)
 void PackMan::syncCommitHashToDatabase()
 {
     QStringList packs;
-    auto selectQuery = execQuery(db, u"SELECT name FROM packages;"_s);
-    while (selectQuery.next())
-        packs << selectQuery.value(0).toString();
+    const auto selectResult = m_pluginsDb->execQuerySync(u"SELECT name FROM packages;"_s);
+    for (const auto &row : selectResult.second)
+        packs << row.value(0).toString();
 
     for (const auto &pack : packs) {
-        GitRepo repo;
+        GitRepo repo(m_pluginsPath);
         int err = repo.open(pack);
         if (err < 0) {
             sanitizePackageDb(pack);
             continue;
         }
 
-        execQuery(db, u"UPDATE packages SET hash = ? WHERE name = ?;"_s, repo.head(), pack);
+        m_pluginsDb->execQuerySync(u"UPDATE packages SET hash = ? WHERE name = ?;"_s, repo.head(), pack);
     }
 }
 
 void PackMan::sanitizePackageDb(const QString &packname)
 {
-    QString dirPath = u"plugins/%1"_s.arg(packname);
+    QString dirPath = u"%1/%2"_s.arg(m_pluginsPath, packname);
     QDir dir(dirPath);
     bool dirExists = dir.exists();
 
-    auto existsQuery = execQuery(db, u"SELECT name FROM packages WHERE name = ?;"_s, packname);
-    bool dbHasRecord = existsQuery.next();
+    const auto existsResult = m_pluginsDb->execQuerySync(u"SELECT name FROM packages WHERE name = ?;"_s, packname);
+    bool dbHasRecord = !existsResult.second.isEmpty();
 
     if (!dirExists && dbHasRecord) {
-        execQuery(db, u"DELETE FROM packages WHERE name = ?;"_s, packname);
+        m_pluginsDb->execQuerySync(u"DELETE FROM packages WHERE name = ?;"_s, packname);
         return;
     }
 
     if (dirExists && !dbHasRecord) {
-        GitRepo repo;
+        GitRepo repo(m_pluginsPath);
         if (repo.open(packname) != 0)
             return;
 
         QString url = repo.remoteUrl();
         QString hash = repo.head();
 
-        execQuery(db, u"INSERT INTO packages (name, url, hash, enabled) VALUES (?, ?, ?, 1);"_s, packname, url, hash);
+        m_pluginsDb->execQuerySync(u"INSERT INTO packages (name, url, hash, enabled) VALUES (?, ?, ?, 1);"_s, packname, url, hash);
     }
 }

@@ -71,6 +71,15 @@ int main(int argc, char *argv[])
     KLocalization::setupLocalizedContext(&engine);
 
     auto *config = KTabletopConfig::self();
+    auto configPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    QDir dir;
+    if (!configPath.isEmpty()) {
+        if (!dir.exists(configPath)) {
+            dir.mkpath(configPath);
+        }
+    } else {
+        qFatal("Cannot find a writable location to store config, quitting!");
+    }
     config->setSharedConfig(KSharedConfig::openConfig(u"ktabletoprc"_s, KConfig::SimpleConfig, QStandardPaths::AppConfigLocation));
     config->load();
     qmlRegisterSingletonInstance("org.kde.ktabletop", 1, 0, "KTabletopConfig", config);
