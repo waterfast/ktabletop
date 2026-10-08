@@ -23,6 +23,7 @@
 
 #include "catalog.h"
 #include "core/logger.h"
+#include "ktabletopconfig.h"
 #include "qml-backend-controller.h"
 #include "qml/qml-backend.h"
 
@@ -65,6 +66,11 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
 
     KLocalization::setupLocalizedContext(&engine);
+
+    auto *config = KTabletopConfig::self();
+    config->setSharedConfig(KSharedConfig::openConfig(u"ktabletoprc"_s, KConfig::SimpleConfig, QStandardPaths::AppConfigLocation));
+    config->load();
+    qmlRegisterSingletonInstance("org.kde.ktabletop", 1, 0, "KTabletopConfig", config);
 
     {
         QCommandLineParser parser;
