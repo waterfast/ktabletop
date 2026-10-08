@@ -31,7 +31,6 @@ end
 ---@param data any
 ---@param isJson? boolean if true, should not json.encode here
 function User:notify(command, data, isJson)
-  assert(type(data) ~= "table" or data[1] == nil, "do not use array as data!")
   if self.state ~= "online" then return end
   kt.c.notifySocket(self.connId, command, isJson and data or json.encode(data))
 end
@@ -43,7 +42,6 @@ end
 ---@param isJson? boolean if true, should not json.encode here
 ---@return any
 function User:request(command, data, timeout, timestamp, isJson)
-  assert(type(data) ~= "table" or data[1] == nil, "do not use array as data!")
   if self.state ~= "online" then return "" end
 
   local requestFn = async.wrap(kt.c.requestSocket)

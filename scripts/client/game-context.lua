@@ -10,6 +10,7 @@ local tablib = kt.tablib
 ---@field vm LObject?
 ---@field gameType string
 ---@field viewModelClass any
+---@field bg Boardgame
 local ClientGameContext = GameContextBase:subclass("ClientGameContext")
 ClientGameContext:include(LObject)
 
@@ -26,12 +27,26 @@ function ClientGameContext:initialize(gameType, data)
   assert(bg.viewModelClass,
     ("boardgame '%s' must define viewModelClass"):format(gameType))
   self.viewModelClass = bg.viewModelClass
+  self.bg = bg
 
   self.players = tablib.map(data and data.users or {}, function(u)
     local player = ClientPlayer:new(u)
     player.ctx = self
     return player
   end)
+
+  for name in pairs(bg.publicActions) do
+    self:setCallback(gameType .. "." .. name, function(_, _, d)
+      self:handlePublicAction(name, d)
+    end)
+  end
+end
+
+---@param name string
+---@param data table
+function ClientGameContext:handlePublicAction(name, data)
+  local ret = self.bg.publicActions[name](self, table.unpack(data))
+  self.vm:onAction(name, data, ret)
 end
 
 function ClientGameContext:setupViewModel()

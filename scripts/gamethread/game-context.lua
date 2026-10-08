@@ -14,6 +14,8 @@ local tablib = kt.tablib
 ---@field gameFinished boolean
 ---@field gameType string
 ---@field logicClass any
+---@field bg Boardgame
+---@field secret table<string, any>
 local ServerGameContext = GameContextBase:subclass("ServerGameContext")
 
 ---@param data table
@@ -23,10 +25,12 @@ function ServerGameContext:initialize(data, boardgame)
   self.id = data.id
   self.rawUsers = data.users or {}
   self.gameFinished = false
+  self.secret = {}
   self.secret.rng = kt.rand(math.random(os.time()))
 
   assert(boardgame and boardgame.logicClass,
     ("boardgame '%s' must define logicClass"):format(boardgame and boardgame.id or "?"))
+  self.bg = boardgame
   self.gameType = boardgame.id
   self.logicClass = boardgame.logicClass
 end
@@ -70,6 +74,14 @@ function ServerGameContext:broadcast(command, data, players)
   for _, player in ipairs(players) do
     player:notify(command, data)
   end
+end
+
+---@param name string
+function ServerGameContext:act(name, ...)
+  local move = assert(self.bg.publicActions[name],
+    ("unknown public action '%s'"):format(name))
+  move(self, ...)
+  self:broadcast(self.gameType .. "." .. name, { ... })
 end
 
 ---@param player ServerPlayer

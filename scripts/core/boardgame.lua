@@ -14,6 +14,7 @@ local class = kt.class
 ---@field logicClass Object
 ---@field page { url?: string, uri?: string, name?: string }
 ---@field viewModelClass Object
+---@field publicActions table<string, fun(ctx: GameContextBase, ...): any>
 local Boardgame = class("Boardgame")
 
 function Boardgame.static:subclassed(subclass)
@@ -27,6 +28,13 @@ function Boardgame:initialize(spec)
     "boardgame spec must have a string 'id'")
   self.id = spec.id
   self.name = spec.name or spec.id
+  self.publicActions = {}
+end
+
+---@param name string
+---@param fn fun(ctx: GameContextBase, ...): any
+function Boardgame:addPublicAction(name, fn)
+  self.publicActions[name] = fn
 end
 
 return Boardgame

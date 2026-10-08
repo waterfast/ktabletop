@@ -12,7 +12,6 @@ local async = require "corelib.async"
 ---@field capacity integer
 ---@field timeout integer
 ---@field G table<string, any> public state shared by both sides
----@field secret table<string, any> private state, never synced to clients
 local GameContextBase = class("GameContextBase")
 
 function GameContextBase:initialize()
@@ -22,7 +21,6 @@ function GameContextBase:initialize()
   self.capacity = 0
   self.timeout = 0
   self.G = {}
-  self.secret = {}
 
   self._notificationHandlers = {}
   self._requestHandlers = {}
