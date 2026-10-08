@@ -41,6 +41,22 @@ function Object:isSubclassOf(cls) end
 
 function Object:include(e) end
 
+---@class LObject: Object
+local LObject = {}
+
+--- STATIC METHOD: register property to the class
+---@param key string
+---@param opts PropertyOpts?
+function LObject:Property(key, opts) end
+
+--- STATIC METHOD: register invokable to the class
+---@param key string
+function LObject:Invokable(key) end
+
+--- STATIC METHOD: register signal to the class
+---@param key string
+function LObject:Signal(key) end
+
 ---@class ktabletop
 kt = {}
 kt.c = {}

@@ -151,9 +151,14 @@ local LObject = {
 
 function LObject:included(klass)
   klass.static.__properties = {}
-  -- note: they don't support subclassing now
   klass.static.__invokables = {} -- callable from QML: invoke(method, params)
   klass.static.__signals = {} -- when called, call QML function onSignal
+end
+
+function LObject.static:subclassed(subclass)
+  subclass.static.__properties = {}
+  subclass.static.__invokables = {}
+  subclass.static.__signals = {}
 end
 
 ---@param name string
@@ -271,29 +276,6 @@ function LObject.static:Signal(key)
   local t = self.static.__signals
   t[key] = true
 end
-
----@diagnostic disable
-
---- STATIC METHOD: register property to the class
----@param key string
----@param opts PropertyOpts?
-function LObject:Property(key, opts)
-  error("This is a static method, please call with <Class>:Property")
-end
-
---- STATIC METHOD: register invokable to the class
----@param key string
-function LObject:Invokable(key)
-  error("This is a static method, please call with <Class>:Invokable")
-end
-
---- STATIC METHOD: register signal to the class
----@param key string
-function LObject:Signal(key)
-  error("This is a static method, please call with <Class>:Signal")
-end
-
----@diagnostic enable
 
 function LObject:createCppObject()
   assert(self._stringId)
