@@ -43,8 +43,6 @@ end
 ---@param command string
 ---@param data any
 function GameThread:handleRequest(roomId, userId, command, data)
-  kt.log.info(("HandleRequest: roomId=%d userId=%d command=%s data=%s"):format(roomId, userId, command, kt.json.encode(data)))
-
   if command == "newroom" then
     local boardgame = kt.engine:getGame("chess")
     self:registerContext(boardgame, data):run()

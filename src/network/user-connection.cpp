@@ -139,10 +139,25 @@ QByteArray UserConnection::makeIv(bool fromClient, quint64 counter)
     return iv;
 }
 
-QByteArray UserConnection::encryptData(const QByteArray &data, int &type)
+QByteArray UserConnection::makeEnvelope(const QCborArray &body)
+{
+    QByteArray msg = body.toCborValue().toCbor();
+    int flag = 0;
+    if (msg.size() > COMPRESSION_THRESHOLD) {
+        msg = qCompress(msg);
+        flag |= DataCompressed;
+    }
+    if (m_encrypted) {
+        msg = encryptData(msg, flag);
+    }
+    QCborArray envelope{flag, msg};
+    return envelope.toCborValue().toCbor();
+}
+
+QByteArray UserConnection::encryptData(const QByteArray &data, int &flag)
 {
     const QByteArray iv = makeIv(m_clientSide, m_sendCounter++);
-    type |= DataEncrypted;
+    flag |= DataEncrypted;
     return aesGcmEncrypt(m_aesKey, iv, data);
 }
 
@@ -155,20 +170,12 @@ QByteArray UserConnection::decryptData(const QByteArray &data)
 int UserConnection::request(const QByteArray &command, const QByteArray &jsonData, int timeout, qint64 timestamp, ReplyCallback callback)
 {
     const int id = nextRequestId();
-    auto data = jsonData;
     int type = UserConnection::TypeRequest;
-    if (jsonData.size() > COMPRESSION_THRESHOLD) {
-        data = qCompress(jsonData);
-        type |= UserConnection::DataCompressed;
-    }
-    if (m_encrypted) {
-        data = encryptData(data, type);
-    }
     if (timestamp <= 0) {
         timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch();
     }
-    QCborArray body{id, type, command, data, timeout, timestamp};
-    auto msg = body.toCborValue().toCbor();
+    QCborArray body{id, type, command, jsonData, timeout, timestamp};
+    QByteArray msg = makeEnvelope(body);
 
     if (!callback) {
         sendMessage(msg);
@@ -209,43 +216,26 @@ int UserConnection::request(const QByteArray &command, const QByteArray &jsonDat
 
 void UserConnection::reply(int requestId, bool ok, const QByteArray &jsonData)
 {
-    auto data = jsonData;
     int type = TypeReply;
-    if (jsonData.size() > COMPRESSION_THRESHOLD) {
-        data = qCompress(jsonData);
-        type |= DataCompressed;
-    }
-    if (m_encrypted) {
-        data = encryptData(data, type);
-    }
-
     if (ok) {
         type |= ReplyOk;
     } else {
         type |= ReplyError;
     }
 
-    QCborArray body{requestId, type, QByteArray(), data};
+    QCborArray body{requestId, type, QByteArray(), jsonData};
 
-    sendMessage(body.toCborValue().toCbor());
+    sendMessage(makeEnvelope(body));
     m_receivedRequests.remove(requestId);
 }
 
 void UserConnection::notify(const QByteArray &command, const QByteArray &jsonData)
 {
-    auto data = jsonData;
     int type = TypeNotification;
-    if (jsonData.size() > COMPRESSION_THRESHOLD) {
-        data = qCompress(jsonData);
-        type |= DataCompressed;
-    }
-    if (m_encrypted) {
-        data = encryptData(data, type);
-    }
 
-    QCborArray body{-2, type, command, data};
+    QCborArray body{-2, type, command, jsonData};
 
-    sendMessage(body.toCborValue().toCbor());
+    sendMessage(makeEnvelope(body));
 }
 
 UserConnection::ReceivedRequest UserConnection::receivedRequest(int requestId) const
@@ -266,14 +256,15 @@ void UserConnection::cancelRequest(int requestId)
 
 void UserConnection::handlePacket(const QCborArray &packet)
 {
-    int requestId = packet[0].toInteger();
-    int type = packet[1].toInteger();
-    auto command = packet[2].toByteArray();
-    auto jsonData = packet[3].toByteArray();
+    if (packet.size() < 2)
+        return;
 
-    if (type & DataEncrypted) {
-        jsonData = decryptData(jsonData);
-        if (jsonData.isEmpty()) {
+    const int flag = packet[0].toInteger();
+    QByteArray payload = packet[1].toByteArray();
+
+    if (flag & DataEncrypted) {
+        payload = decryptData(payload);
+        if (payload.isEmpty()) {
             if (m_socket && m_socket->socket()) {
                 m_socket->socket()->disconnectFromHost();
             }
@@ -281,14 +272,27 @@ void UserConnection::handlePacket(const QCborArray &packet)
         }
     }
 
-    if (type & DataCompressed) {
-        jsonData = qUncompress(jsonData);
+    if (flag & DataCompressed) {
+        payload = qUncompress(payload);
     }
+
+    const QCborValue inner = QCborValue::fromCbor(payload);
+    if (!inner.isArray())
+        return;
+
+    const QCborArray body = inner.toArray();
+    if (body.size() < 4)
+        return;
+
+    int requestId = body[0].toInteger();
+    int type = body[1].toInteger();
+    auto command = body[2].toByteArray();
+    auto jsonData = body[3].toByteArray();
 
     if (type & TypeNotification) {
         Q_EMIT notificationGot(command, jsonData);
     } else if (type & TypeRequest) {
-        ReceivedRequest rr{requestId, command, jsonData, int(packet[4].toInteger()), packet[5].toInteger()};
+        ReceivedRequest rr{requestId, command, jsonData, int(body[4].toInteger()), body[5].toInteger()};
         m_receivedRequests.insert(requestId, rr);
         Q_EMIT requestGot(requestId);
     } else if (type & TypeReply) {

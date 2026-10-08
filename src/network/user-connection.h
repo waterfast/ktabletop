@@ -20,10 +20,12 @@ class UserConnection : public QObject
     Q_OBJECT
 
 public:
-    enum PacketType {
-        DataCompressed = 0x1000,
-        DataEncrypted = 0x2000,
+    enum EnvelopeFlag {
+        DataCompressed = 0x01,
+        DataEncrypted = 0x02,
+    };
 
+    enum PacketType {
         TypeRequest = 0x100,
         TypeReply = 0x200,
         TypeNotification = 0x400,
@@ -109,7 +111,8 @@ private:
     void sendMessage(const QByteArray &msg);
 
     static QByteArray makeIv(bool fromClient, quint64 counter);
-    QByteArray encryptData(const QByteArray &data, int &type);
+    QByteArray makeEnvelope(const QCborArray &body);
+    QByteArray encryptData(const QByteArray &data, int &flag);
     QByteArray decryptData(const QByteArray &data);
 
     static int nextRequestId();
