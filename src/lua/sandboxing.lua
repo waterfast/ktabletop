@@ -25,8 +25,11 @@ string.load = nil
 
 -- NOTE: not possible to implement read-only table in standard Lua.
 
--- disabled because it's used by C++ code
-warn = nil
+local rawWarn = warn
+warn = function(msg, ...)
+  if type(msg) == "string" and msg:sub(1, 1) == "@" then return end
+  return rawWarn(msg, ...)
+end
 
 local cl = collectgarbage
 collectgarbage = function(opt)

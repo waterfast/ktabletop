@@ -8,7 +8,7 @@ local tablib = kt.tablib
 ---@class ServerGameContextMixin
 ---@field id integer
 ---@field rawUsers table[]
----@field logic GameLogic?
+---@field logic GameLogic
 ---@field gameFinished boolean
 ---@field playerClass any
 ---@field logicClass any
