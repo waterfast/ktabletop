@@ -17,6 +17,7 @@
 
 #include <QJsonDocument>
 #include <QJsonValue>
+#include <QSettings>
 
 #include <QFile>
 
@@ -63,6 +64,8 @@ Server::Server(QObject *parent)
 
     initAuthKeys();
 
+    initConfig();
+
     server = new ServerSocket(this);
     connect(server, &ServerSocket::newConnection, this, &Server::processNewConnection);
 
@@ -78,6 +81,12 @@ void Server::initUsersDb()
     m_usersDb->execMultiSql(usersDbSchema);
 }
 
+void Server::initConfig()
+{
+    delete m_config;
+    m_config = new QSettings(u"%1/config.ini"_s.arg(m_dataPath), QSettings::IniFormat, this);
+}
+
 void Server::setDataPath(const QString &path)
 {
     if (m_dataPath == path) {
@@ -87,6 +96,19 @@ void Server::setDataPath(const QString &path)
     m_dataPath = path;
     initAuthKeys();
     initUsersDb();
+    initConfig();
+}
+
+QSettings *Server::config() const
+{
+    return m_config;
+}
+
+void Server::reloadConfig()
+{
+    if (m_config) {
+        m_config->sync();
+    }
 }
 
 Server::~Server()

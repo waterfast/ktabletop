@@ -16,6 +16,7 @@ class ServerSocket;
 class UserConnection;
 class GameThread;
 class DbThread;
+class QSettings;
 
 // TODO: Handle command from UserConnection::request. most times that user should be OP
 class UserRequestAdapter;
@@ -58,6 +59,9 @@ public:
     DbThread *usersDb() const;
     StdinAdapter *shell() const;
 
+    QSettings *config() const;
+    void reloadConfig();
+
     void setDataPath(const QString &path);
 
 Q_SIGNALS:
@@ -75,6 +79,8 @@ private:
 
     StdinAdapter *m_shell;
 
+    QSettings *m_config = nullptr;
+
     QString m_dataPath = QStringLiteral("./server");
 
     QString m_authPublicKey;
@@ -82,5 +88,6 @@ private:
 
     void initAuthKeys();
     void initUsersDb();
+    void initConfig();
     void processNewConnection(ClientSocket *client);
 };
