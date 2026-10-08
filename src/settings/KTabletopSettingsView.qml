@@ -10,6 +10,12 @@ KirigamiSettings.ConfigurationView {
 
     modules: [
         KirigamiSettings.ConfigurationModule {
+            moduleId: "appearance"
+            text: i18n("Appearance")
+            icon.name: "preferences-desktop-theme-global-symbolic"
+            page: () => Qt.createComponent("org.kde.ktabletop.settings", "AppearanceSettingsPage")
+        },
+        KirigamiSettings.ConfigurationModule {
             moduleId: "aboutKTabletop"
             text: i18n("About KTabletop")
             icon.name: "help-about-symbolic"

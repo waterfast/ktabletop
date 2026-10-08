@@ -3,7 +3,7 @@
 
 add_subdirectory(qml)
 
-add_executable(ktabletop-app
+add_executable(ktabletop
     catalog.cpp
     client.cpp
     client-lua.cpp
@@ -15,12 +15,12 @@ kde_source_files_enable_exceptions(catalog.cpp)
 
 ecm_add_app_icon(KTABLETOP_ICON ICONS ${CMAKE_SOURCE_DIR}/128-logo.png)
 
-target_sources(ktabletop-app PRIVATE ${KTABLETOP_ICON})
+target_sources(ktabletop PRIVATE ${KTABLETOP_ICON})
 
-target_link_libraries(ktabletop-app PRIVATE
+target_link_libraries(ktabletop PRIVATE
     ktabletop_qmlplugin
 )
-target_link_libraries(ktabletop-app PUBLIC
+target_link_libraries(ktabletop PUBLIC
     Qt6::Widgets
     Qt6::Quick
     KF6::CoreAddons
@@ -34,7 +34,7 @@ target_link_libraries(ktabletop-app PUBLIC
     ktabletop_core
 )
 
-kconfig_target_kcfg_file(ktabletop-app FILE ktabletopconfig.kcfg
+kconfig_target_kcfg_file(ktabletop FILE ktabletopconfig.kcfg
     CLASS_NAME KTabletopConfig
     MUTATORS
     GENERATE_PROPERTIES

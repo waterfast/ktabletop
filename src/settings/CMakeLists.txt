@@ -11,4 +11,13 @@ qt_add_qml_module(ktabletop_settings
     # GENERATE_PLUGIN_SOURCE
     QML_FILES
         KTabletopSettingsView.qml
+        AppearanceSettingsPage.qml
+        ColorScheme.qml
+    SOURCES
+        colorschemer.cpp
+)
+
+target_link_libraries(ktabletop_settings PRIVATE
+    KF6::ColorScheme
+    KF6::I18n
 )

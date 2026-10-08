@@ -26,6 +26,7 @@
 #include "ktabletopconfig.h"
 #include "qml-backend-controller.h"
 #include "qml/qml-backend.h"
+#include "settings/colorschemer.h"
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -62,6 +63,8 @@ int main(int argc, char *argv[])
     aboutData.setTranslator(i18nc("NAME OF TRANSLATORS", "Your names"), i18nc("EMAIL OF TRANSLATORS", "Your emails"));
     KAboutData::setApplicationData(aboutData);
     QGuiApplication::setWindowIcon(QIcon::fromTheme(u"org.kde.ktabletop"_s));
+
+    ColorSchemer colorscheme;
 
     QQmlApplicationEngine engine;
 

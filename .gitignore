@@ -14,6 +14,7 @@ cmake-build-*
 src/res.generated.qrc
 .qmlls.ini
 
+/ktabletop
 /ktabletop-app
 /ktabletop-server
 
