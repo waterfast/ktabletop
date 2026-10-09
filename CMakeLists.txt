@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
 # SPDX-License-Identifier: BSD-2-Clause
 
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 4.3)
 
 project(KTabletop VERSION 0.0.1)
 
