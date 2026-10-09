@@ -83,12 +83,14 @@ void LuaBinding::loadRuntimePlugins()
             file2 = dir + u"/plugin/init-client.lua"_s;
         }
 
+        m_currentPluginRoot = dir;
         if (QFileInfo f(file1); f.exists() && f.isFile() && f.isReadable()) {
             LuaVM::dofile(L, file1);
         }
         if (QFileInfo f(file2); f.exists() && f.isFile() && f.isReadable()) {
             LuaVM::dofile(L, file2);
         }
+        m_currentPluginRoot.clear();
         Q_EMIT pluginLoaded(dir);
     }
 }
@@ -179,6 +181,11 @@ const QStringList &LuaBinding::runtimePaths() const
 void LuaBinding::setRuntimePaths(const QStringList &paths)
 {
     m_runtimePaths = paths;
+}
+
+const QString &LuaBinding::currentPluginRoot() const
+{
+    return m_currentPluginRoot;
 }
 
 LuaBinding *LuaBinding::forState(lua_State *state)

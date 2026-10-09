@@ -75,30 +75,19 @@ static luaL_Reg commonFuncTable[] = {
 
 static int getPluginRoot(lua_State *L)
 {
-    auto [level] = LuaVM::readArgs<int>(L);
-    lua_Debug ar;
-    bool ok = lua_getstack(L, level, &ar);
-    if (!ok) {
-        lua_pushnil(L);
-        return 1;
-    }
-    lua_getinfo(L, "S", &ar);
-    const char *source = ar.source;
-    if (source[0] != '@') {
-        lua_pushnil(L);
-        return 1;
-    }
-
-    auto path = QString::fromUtf8(source + 1);
     auto *binding = LuaBinding::forState(L);
-    for (const auto &dir : binding->runtimePaths()) {
-        if (path == dir || path.startsWith(dir + u'/')) {
-            lua_pushstring(L, dir.toUtf8().constData());
-            return 1;
-        }
+    if (!binding) {
+        lua_pushnil(L);
+        return 1;
     }
 
-    lua_pushnil(L);
+    const auto &root = binding->currentPluginRoot();
+    if (root.isEmpty()) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    lua_pushstring(L, root.toUtf8().constData());
     return 1;
 }
 

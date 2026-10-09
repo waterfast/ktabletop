@@ -17,12 +17,6 @@ local class = kt.class
 ---@field publicActions table<string, fun(ctx: GameContextBase, ...): any>
 local Boardgame = class("Boardgame")
 
-function Boardgame.static:subclassed(subclass)
-  -- caller -> subclass -> subclassed
-  local path = kt.c.getPluginRoot(3)
-  subclass.pluginRoot = path
-end
-
 function Boardgame:initialize(spec)
   assert(type(spec) == "table" and type(spec.id) == "string",
     "boardgame spec must have a string 'id'")

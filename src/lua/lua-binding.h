@@ -52,6 +52,8 @@ public:
     const QStringList &runtimePaths() const;
     void setRuntimePaths(const QStringList &paths);
 
+    const QString &currentPluginRoot() const;
+
     static LuaBinding *forState(lua_State *state);
     static int pushAsyncCancelToken(lua_State *L, AsyncContext *ctx);
 
@@ -70,6 +72,7 @@ private:
     int m_gameThreadId = 0;
     lua_State *L;
     QStringList m_runtimePaths;
+    QString m_currentPluginRoot;
 
     static void warnf(void *ud, const char *msg, int tocont);
     static int qrcSearcher(lua_State *L);

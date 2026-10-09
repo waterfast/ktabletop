@@ -21,6 +21,7 @@ function Engine:registerGame(game)
   if self.games[game.id] then
     kt.log.warn(("boardgame '%s' already registered, overwriting"):format(game.id))
   end
+  game.pluginRoot = kt.c.getPluginRoot()
   self.games[game.id] = game
 end
 
