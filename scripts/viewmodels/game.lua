@@ -5,6 +5,7 @@ local LObject = require "corelib.lobject"
 local async = require "corelib.async"
 
 ---@class GameViewModel: Object, LObject
+---@field ctx ClientGameContext
 ---@field actionHandler table<string, fun(vm: GameViewModel, data: table, ret: any)>
 local GameViewModel = kt.class("GameViewModel")
 GameViewModel:include(LObject)
@@ -13,7 +14,9 @@ GameViewModel:Invokable("leaveGame")
 GameViewModel:Invokable("leaveToRoom")
 GameViewModel:Invokable("leaveToLobby")
 
-function GameViewModel:initialize()
+---@param ctx ClientGameContext
+function GameViewModel:initialize(ctx)
+  self.ctx = ctx
   self.actionHandler = {}
 end
 

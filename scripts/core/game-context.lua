@@ -20,7 +20,6 @@ function GameContextBase:initialize()
   self.current = nil
   self.capacity = 0
   self.timeout = 0
-  self.G = {}
 
   self._notificationHandlers = {}
   self._requestHandlers = {}
@@ -42,7 +41,7 @@ end
 
 ---@param id integer
 ---@return Player
-function GameContextBase:getPlayerById(id)
+function GameContextBase:getPlayer(id)
   ---@diagnostic disable-next-line
   return tablib.find(self.players, function(p) return p.id == id end)
 end
@@ -50,8 +49,23 @@ end
 ---@param seat integer
 ---@return Player
 function GameContextBase:getPlayerBySeat(seat)
+  local try = self.players[seat]
+  if try and try.seat == seat then
+    return try
+  end
   ---@diagnostic disable-next-line
   return tablib.find(self.players, function(p) return p.seat == seat end)
+end
+
+---@param ids integer[]
+function GameContextBase:arrangeSeats(ids)
+  local players = {}
+  for i, id in ipairs(ids) do
+    local player = self:getPlayer(id)
+    player.seat = i
+    players[i] = player
+  end
+  self.players = players
 end
 
 return GameContextBase

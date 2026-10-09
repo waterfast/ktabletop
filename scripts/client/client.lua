@@ -108,7 +108,7 @@ function Client:enterGame(gameType, data)
   local bg = kt.engine:getGame(gameType)
   assert(bg, ("unknown boardgame '%s'"):format(tostring(gameType)))
 
-  self.gameContext = ClientGameContext:new(gameType, data)
+  self.gameContext = ClientGameContext:new(bg, data)
   self.gameContext:setupViewModel()
 
   kt.c.luaEvent("Client::EnterGame", {

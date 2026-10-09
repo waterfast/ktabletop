@@ -8,33 +8,34 @@ local ServerPlayer = require "gamethread.player"
 local tablib = kt.tablib
 
 ---@class ServerGameContext: GameContextBase
+---@field players ServerPlayer[]
+---@field observers ServerPlayer[]
+---@field current ServerPlayer
+---@field getPlayer fun(self, id): ServerPlayer
+---@field getPlayerBySeat fun(self, seat): ServerPlayer
 ---@field id integer
 ---@field rawUsers table[]
 ---@field logic GameLogic
 ---@field gameFinished boolean
----@field gameType string
----@field logicClass any
 ---@field bg Boardgame
 ---@field secret table<string, any>
 ---@field callbacks table<string, fun(ctx: ServerGameContext, player: ServerPlayer, data: any)>
 local ServerGameContext = GameContextBase:subclass("ServerGameContext")
 
----@param data table
 ---@param boardgame Boardgame
-function ServerGameContext:initialize(data, boardgame)
+---@param data table
+function ServerGameContext:initialize(boardgame, data)
   GameContextBase.initialize(self)
+  self.G = {}
+  self.secret = { rng = kt.rand(math.random(os.time())) }
+
   self.id = data.id
   self.rawUsers = data.users or {}
   self.gameFinished = false
-  self.secret = {}
-  self.secret.rng = kt.rand(math.random(os.time()))
   self.callbacks = {}
 
-  assert(boardgame and boardgame.logicClass,
-    ("boardgame '%s' must define logicClass"):format(boardgame and boardgame.id or "?"))
+  assert(boardgame.logicClass, ("boardgame '%s' must define logicClass"):format(boardgame.id))
   self.bg = boardgame
-  self.gameType = boardgame.id
-  self.logicClass = boardgame.logicClass
 end
 
 function ServerGameContext:run()
@@ -47,7 +48,7 @@ function ServerGameContext:run()
     player.ctx = self
     return player
   end)
-  self.logic = self.logicClass:new(self)
+  self.logic = self.bg.logicClass:new(self)
   self.logic:start()
 end
 
@@ -80,10 +81,9 @@ end
 
 ---@param name string
 function ServerGameContext:act(name, ...)
-  local move = assert(self.bg.publicActions[name],
-    ("unknown public action '%s'"):format(name))
+  local move = assert(self.bg.publicActions[name], ("unknown public action '%s'"):format(name))
   move(self, ...)
-  self:broadcast(self.gameType .. "." .. name, { ... })
+  self:broadcast(self.bg.id .. "." .. name, { ... })
 end
 
 ---@param command string
@@ -92,30 +92,23 @@ function ServerGameContext:addCallback(command, fn)
   self.callbacks[command] = fn
 end
 
----@param player ServerPlayer
----@param property string
----@param value any
-function ServerGameContext:setPlayerProperty(player, property, value)
-  player.G[property] = value
-  self:broadcastProperty(player, property)
+function ServerGameContext:setG(k, v)
+  self.G[k] = v
+  self:broadcast("Game::setG", { k = k, v = v })
 end
 
 ---@param player ServerPlayer
----@param property string
-function ServerGameContext:broadcastProperty(player, property)
-  self:broadcast("PropertyUpdate", { id = player.id, property = property, value = player.G[property] })
+function ServerGameContext:setPlayerG(player, k, v)
+  player.G[k] = v
+  self:broadcast("Game::setPlayerG", { id = player.id, k = k, v = v })
 end
 
 ---@param players? ServerPlayer[]
 function ServerGameContext:arrangeSeats(players)
   players = players or self.players
-  self.players = players
-  for i = 1, #players do
-    players[i].seat = i
-    players[i].next = players[i + 1] or players[1]
-  end
   local ids = tablib.map(players, function(player) return player.id end)
-  self:broadcast("ArrangeSeats", { ids = ids })
+  GameContextBase.arrangeSeats(self, ids)
+  self:broadcast("Game::ArrangeSeats", { ids = ids })
 end
 
 ---@param ms integer

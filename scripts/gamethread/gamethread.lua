@@ -18,7 +18,7 @@ end
 ---@param data table
 ---@return ServerGameContext
 function GameThread:registerContext(boardgame, data)
-  local context = ServerGameContext:new(data, boardgame)
+  local context = ServerGameContext:new(boardgame, data)
   self.contexts[data.id] = context
   return context
 end
@@ -45,7 +45,11 @@ end
 ---@param data any
 function GameThread:handleRequest(roomId, userId, command, data)
   if command == "newroom" then
-    local boardgame = kt.engine:getGame("chess")
+    local gameType = "chess"
+    local boardgame = kt.engine:getGame(gameType)
+    if not boardgame then
+      error(("unknown boardgame '%s', cannot create new room"):format(gameType))
+    end
     self:registerContext(boardgame, data):run()
     return
   end
@@ -53,7 +57,7 @@ function GameThread:handleRequest(roomId, userId, command, data)
   local ctx = self.contexts[roomId]
   if not ctx then return end
   local f = ctx.callbacks[command]
-  if f then f(ctx, ctx:getPlayerById(userId), data) end
+  if f then f(ctx, ctx:getPlayer(userId), data) end
 end
 
 return GameThread

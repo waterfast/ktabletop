@@ -44,13 +44,16 @@ function propertyManager:recordGetting(prop)
 end
 
 ---@param prop Property
-function propertyManager:propertyChanged(prop)
+---@param force? boolean propagate even when a dependent recomputes to the same value
+function propertyManager:propertyChanged(prop, force)
   for dep in pairs(prop.dependents) do
     dep.dirty = true
+    local changed = false
     if dep.binding then
-      if self:evalProperty(dep) then
-        self:propertyChanged(dep)
-      end
+      changed = self:evalProperty(dep)
+    end
+    if changed or force then
+      self:propertyChanged(dep, force)
     end
   end
 
@@ -183,8 +186,13 @@ function LObject:_getProp(key)
   end
   if not props[key] then
     local def = findPropertyDef(self.class, key)
-    if not def then return nil end
-    props[key] = Property:new(def.name, def.defaultValue)
+    if def then
+      props[key] = Property:new(def.name, def.defaultValue)
+    elseif self.class.__dynamicProps then
+      props[key] = Property:new(key, nil)
+    else
+      return nil
+    end
   end
   return props[key]
 end
@@ -238,7 +246,7 @@ end
 -- use this after altering table-type properties
 function LObject:notifyPropertyChanged(name)
   local p = self:_getProp(name)
-  if p then propertyManager:propertyChanged(p) end
+  if p then propertyManager:propertyChanged(p, true) end
 end
 
 function LObject:emitSignal(sig, data)
@@ -255,7 +263,7 @@ local reservedProperties = {
   "id", "objectName", "parent",
 
   -- KTabletop internal
-  "opts", "invoke", "signalEmitted", "onSignalEmitted", "refIndex",
+  "opts", "invoke", "signalEmitted", "onSignalEmitted", "refIndex", "snapshot",
 }
 
 ---@param key string
@@ -275,6 +283,11 @@ end
 function LObject.static:Signal(key)
   local t = self.static.__signals
   t[key] = true
+end
+
+--- STATIC METHOD: allow undeclared keys to be created on demand as properties
+function LObject.static:EnableDynamicProperties()
+  self.static.__dynamicProps = true
 end
 
 function LObject:createCppObject()

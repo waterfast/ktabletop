@@ -3,32 +3,33 @@
 
 local GameContextBase = require "core.game-context"
 local LObject = require "corelib.lobject"
+local ObservableTable = require "corelib.observable"
 local ClientPlayer = require "client.player"
 local async = require "corelib.async"
 local tablib = kt.tablib
 
 ---@class ClientGameContext: GameContextBase, LObject
----@field vm LObject?
----@field gameType string
----@field viewModelClass any
+---@field players ClientPlayer[]
+---@field observers ClientPlayer[]
+---@field current ClientPlayer
+---@field getPlayer fun(self, id): ClientPlayer
+---@field getPlayerBySeat fun(self, seat): ClientPlayer
+---@field vm GameViewModel
 ---@field bg Boardgame
 local ClientGameContext = GameContextBase:subclass("ClientGameContext")
 ClientGameContext:include(LObject)
 
 ClientGameContext:Property("players")
+ClientGameContext:Property("gameOver")
 
----@param gameType string
+---@param boardgame Boardgame
 ---@param data table
-function ClientGameContext:initialize(gameType, data)
+function ClientGameContext:initialize(boardgame, data)
   GameContextBase.initialize(self)
-  self.gameType = gameType
+  self.G = ObservableTable:new()
 
-  local bg = assert(kt.engine:getGame(gameType),
-    ("unknown boardgame '%s'"):format(tostring(gameType)))
-  assert(bg.viewModelClass,
-    ("boardgame '%s' must define viewModelClass"):format(gameType))
-  self.viewModelClass = bg.viewModelClass
-  self.bg = bg
+  assert(boardgame.viewModelClass, ("boardgame '%s' must define viewModelClass"):format(boardgame.id))
+  self.bg = boardgame
 
   self.players = tablib.map(data and data.users or {}, function(u)
     local player = ClientPlayer:new(u)
@@ -36,11 +37,16 @@ function ClientGameContext:initialize(gameType, data)
     return player
   end)
 
-  for name in pairs(bg.publicActions) do
-    self:setCallback(gameType .. "." .. name, function(_, _, d)
+  for name in pairs(boardgame.publicActions) do
+    self:setCallback(boardgame.id .. "." .. name, function(_, _, d)
       self:handlePublicAction(name, d)
     end)
   end
+
+  self:setCallback("Game::setG", self.handleSetG)
+  self:setCallback("Game::setPlayerG", self.handleSetPlayerG)
+  self:setCallback("Game::ArrangeSeats", self.handleArrangeSeats)
+  self:setCallback("Room::GameOver", function(_, u, d) self:handleGameOver(u, d) end)
 end
 
 ---@param name string
@@ -59,34 +65,43 @@ function ClientGameContext:pushRequest(command, data)
 end
 
 function ClientGameContext:setupViewModel()
-  kt.viewModelManager:registerType(self.gameType, self.viewModelClass)
+  kt.viewModelManager:registerType(self.bg.id, self.bg.viewModelClass)
   self.vm = kt.viewModelManager:getViewModel({
-    type = self.gameType,
+    type = self.bg.id,
     params = { self },
   })
 end
 
----@param player ClientPlayer
----@param property string
----@param value any
-function ClientGameContext:setPlayerProperty(player, property, value)
-  player.G[property] = value
+function ClientGameContext:handleSetG(_, data)
+  self.G[data.k] = data.v
 end
 
----@param ids integer[]
-function ClientGameContext:arrangeSeats(ids)
-  local players = {}
-  for i, id in ipairs(ids) do
-    local player = self:getPlayerById(id)
-    if player then
-      player.seat = i
-      players[i] = player
-    end
+function ClientGameContext:handleSetPlayerG(_, data)
+  local player = self:getPlayer(data.id)
+  player.G[data.k] = data.v
+end
+
+function ClientGameContext:handleArrangeSeats(_, data)
+  GameContextBase.arrangeSeats(self, data.ids)
+  self:notifyPropertyChanged("players")
+end
+
+---@param data { winners: integer[]? }
+function ClientGameContext:handleGameOver(_, data)
+  local winners = (data and data.winners) or {}
+  local selfId = kt.client.myself.id
+  local selfWon = false
+  local names = {}
+  for _, id in ipairs(winners) do
+    if id == selfId then selfWon = true end
+    local p = self:getPlayer(id)
+    names[#names + 1] = p and p.username or tostring(id)
   end
-  for i = 1, #players do
-    players[i].next = players[i + 1] or players[1]
-  end
-  self.players = players
+
+  self.gameOver = {
+    result = (#winners == 0) and "draw" or (selfWon and "win" or "lose"),
+    winners = names,
+  }
 end
 
 return ClientGameContext

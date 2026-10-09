@@ -4,6 +4,8 @@
 local Player = require "core.player"
 
 ---@class ServerPlayer: Player
+---@field getNext fun(self): ServerPlayer
+---@field getPrev fun(self): ServerPlayer
 ---@field user ServerUser
 ---@field ctx ServerGameContext
 local ServerPlayer = Player:subclass("ServerPlayer")
@@ -11,6 +13,9 @@ local ServerPlayer = Player:subclass("ServerPlayer")
 ---@param user ServerUser
 function ServerPlayer:initialize(user)
   Player.initialize(self)
+  self.G = {}
+  self.secret = {}
+
   self.user = user
   self.id = user.id
   self.username = user.username

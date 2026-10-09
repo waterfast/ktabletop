@@ -4,22 +4,34 @@
 local class = kt.class
 
 ---@class Player: Object
+---@field ctx GameContextBase
 ---@field id integer
 ---@field username string
----@field role string
 ---@field seat integer
----@field next Player
 ---@field G table<string, any> public state of this player
 ---@field secret table<string, any> private state, only synced to this player
 local Player = class("Player")
 
 function Player:initialize()
   self.id = 0
-  self.role = ""
   self.seat = 0
-  self.next = nil
-  self.G = {}
-  self.secret = {}
+end
+
+---@return Player
+function Player:getNext()
+  local ctx = self.ctx
+  local n = #ctx.players
+  local seat = self.seat % n + 1
+  return ctx:getPlayerBySeat(seat)
+end
+
+---@return Player
+function Player:getPrev()
+  local ctx = self.ctx
+  local n = #ctx.players
+  local seat = self.seat - 1
+  if seat == 0 then seat = n end
+  return ctx:getPlayerBySeat(seat)
 end
 
 return Player

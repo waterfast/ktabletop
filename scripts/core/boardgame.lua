@@ -11,9 +11,9 @@ local class = kt.class
 ---@field id string
 ---@field name string
 ---@field pluginRoot string
----@field logicClass Object
+---@field logicClass GameLogic
 ---@field page { url?: string, uri?: string, name?: string }
----@field viewModelClass Object
+---@field viewModelClass GameViewModel
 ---@field publicActions table<string, fun(ctx: GameContextBase, ...): any>
 local Boardgame = class("Boardgame")
 
