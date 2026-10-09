@@ -84,11 +84,14 @@ void LuaBinding::loadRuntimePlugins()
         }
 
         m_currentPluginRoot = dir;
-        if (QFileInfo f(file1); f.exists() && f.isFile() && f.isReadable()) {
-            LuaVM::dofile(L, file1);
-        }
-        if (QFileInfo f(file2); f.exists() && f.isFile() && f.isReadable()) {
-            LuaVM::dofile(L, file2);
+        const bool hasEnv = pushPluginEnv(dir);
+        const int envIndex = hasEnv ? lua_gettop(L) : 0;
+
+        doPluginFile(file1, envIndex);
+        doPluginFile(file2, envIndex);
+
+        if (hasEnv) {
+            lua_pop(L, 1);
         }
         m_currentPluginRoot.clear();
         Q_EMIT pluginLoaded(dir);
@@ -188,6 +191,53 @@ const QString &LuaBinding::currentPluginRoot() const
     return m_currentPluginRoot;
 }
 
+void LuaBinding::doPluginFile(const QString &path, int envIndex)
+{
+    QFileInfo f(path);
+    if (!(f.exists() && f.isFile() && f.isReadable())) {
+        return;
+    }
+    if (luaL_loadfile(L, path.toUtf8().constData()) != LUA_OK) {
+        lua_warning(L, lua_tostring(L, -1), false);
+        lua_pop(L, 1);
+        return;
+    }
+    // use the plugin's private global environment as the chunk's `_ENV`
+    if (envIndex != 0) {
+        lua_pushvalue(L, envIndex);
+        lua_setupvalue(L, -2, 1);
+    }
+    LuaVM::call(L);
+}
+
+bool LuaBinding::pushPluginEnv(const QString &pluginRoot)
+{
+    if (pluginRoot.isEmpty()) {
+        return false;
+    }
+
+    // call `kt.engine:getPluginEnv(pluginRoot)`
+    LuaVM::getTableField(L, "kt", "engine");
+    lua_getfield(L, -1, "getPluginEnv");
+    lua_pushvalue(L, -2);
+    auto bytes = pluginRoot.toUtf8();
+    lua_pushlstring(L, bytes.constData(), bytes.size());
+
+    if (lua_pcall(L, 2, 1, 0) != LUA_OK) {
+        lua_warning(L, lua_tostring(L, -1), false);
+        lua_pop(L, 2); // error message, engine
+        return false;
+    }
+
+    // stack: engine, result
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 2); // result, engine
+        return false;
+    }
+    lua_remove(L, -2); // drop engine, leave the env table
+    return true;
+}
+
 LuaBinding *LuaBinding::forState(lua_State *state)
 {
     lua_rawgetp(state, LUA_REGISTRYINDEX, &regKey);
@@ -253,7 +303,7 @@ int LuaBinding::qrcSearcher(lua_State *L)
     }
 }
 
-static QString searchRtpPath(lua_State *L, const QString &name)
+static QString searchRtpPath(lua_State *L, const QString &name, QString *pluginRoot)
 {
     auto *binding = LuaBinding::forState(L);
     const auto &pathList = binding->runtimePaths();
@@ -261,10 +311,12 @@ static QString searchRtpPath(lua_State *L, const QString &name)
     for (const auto &dir : pathList) {
         auto file1 = dir + u"/lua/"_s + name + u".lua"_s;
         if (QFileInfo f1(file1); f1.exists() && f1.isFile() && f1.isReadable()) {
+            *pluginRoot = dir;
             return file1;
         }
         auto file2 = dir + u"/lua/"_s + name + u"/init.lua"_s;
         if (QFileInfo f2(file2); f2.exists() && f2.isFile() && f2.isReadable()) {
+            *pluginRoot = dir;
             return file2;
         }
     }
@@ -278,7 +330,8 @@ int LuaBinding::rtpSearcher(lua_State *L)
     const char *modname = luaL_checkstring(L, 1);
     auto name = QString::fromUtf8(modname).replace(u"."_s, u"/"_s);
 
-    auto path = searchRtpPath(L, name);
+    QString pluginRoot;
+    auto path = searchRtpPath(L, name, &pluginRoot);
     auto bytes = path.toUtf8();
     auto *pathStr = bytes.constData();
     if (path.isEmpty()) {
@@ -287,6 +340,10 @@ int LuaBinding::rtpSearcher(lua_State *L)
     }
 
     if (luaL_loadfile(L, pathStr) == LUA_OK) {
+        // give the module the private global environment of its plugin
+        if (auto *binding = LuaBinding::forState(L); binding && binding->pushPluginEnv(pluginRoot)) {
+            lua_setupvalue(L, -2, 1);
+        }
         lua_pushstring(L, pathStr);
         return 2;
     } else {

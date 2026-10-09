@@ -44,6 +44,15 @@ function Engine:getPlugin(path)
   return self.plugins[path]
 end
 
+--- Returns the private global environment of the plugin at `path`, or nil.
+---@param path string
+---@return table?
+function Engine:getPluginEnv(path)
+  if type(path) ~= "string" then return nil end
+  local plugin = self.plugins[path]
+  return plugin and plugin.env or nil
+end
+
 
 --- Returns the game context currently in play, or nil.
 ---@return GameContextBase

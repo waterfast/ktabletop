@@ -74,6 +74,9 @@ private:
     QStringList m_runtimePaths;
     QString m_currentPluginRoot;
 
+    void doPluginFile(const QString &path, int envIndex);
+    bool pushPluginEnv(const QString &pluginRoot);
+
     static void warnf(void *ud, const char *msg, int tocont);
     static int qrcSearcher(lua_State *L);
     static int rtpSearcher(lua_State *L);
