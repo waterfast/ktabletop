@@ -21,6 +21,7 @@ function GameLogic:initialize(ctx)
   self.allGameEvents = {}
   self.eventRecorder = {}
   self.currentEventId = 0
+  self.taskScope = async.newscope()
 end
 
 ---@param event GameEvent
@@ -80,7 +81,7 @@ function Game:main()
 end
 
 function GameLogic:start()
-  async.run(function()
+  self.taskScope:spawn(function()
     local root = Game:new(self.ctx)
     self.root = root
     self.ctx:broadcast("Room::StartGame", { gameType = self.ctx.gameType })

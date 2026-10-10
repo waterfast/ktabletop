@@ -28,6 +28,7 @@ LobbyViewModel:Invokable("sendChatMessage")
 function LobbyViewModel:initialize(lobby)
   self.lobby = lobby
   self.myself = kt.client.myself
+  self.taskScope = async.newscope()
 
   self:setPropertyBinding("userCount", function()
     return self.lobby.userCount
@@ -48,7 +49,7 @@ function LobbyViewModel:disconnectFromHost()
 end
 
 function LobbyViewModel:fetchRooms()
-  async.run(function()
+  self.taskScope:spawn(function()
     local rooms = self.myself:request("Lobby::FetchRooms", {})
     table.sort(rooms, function(a, b) return a.id < b.id end)
     self.lobby.rooms = rooms
@@ -56,14 +57,14 @@ function LobbyViewModel:fetchRooms()
 end
 
 function LobbyViewModel:joinRoom(roomId)
-  async.run(function()
+  self.taskScope:spawn(function()
     local _, err = self.myself:request("Room::Join", { id = roomId })
     if err then kt.c.showToast(translateServerMessage(err)) end
   end)
 end
 
 function LobbyViewModel:createRoom(data)
-  async.run(function()
+  self.taskScope:spawn(function()
     local p = self.myself
     local roomId, err = p:request("Room::Create", data)
     if err then
@@ -76,7 +77,7 @@ function LobbyViewModel:createRoom(data)
 end
 
 function LobbyViewModel:sendChatMessage(text)
-  async.run(function()
+  self.taskScope:spawn(function()
     local _, err = self.myself:request("Room::Chat", { text = text })
     if err then kt.c.showToast(translateServerMessage(err)) end
   end)

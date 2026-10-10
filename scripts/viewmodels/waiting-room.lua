@@ -26,6 +26,7 @@ WaitingRoomViewModel:Invokable("sendChatMessage")
 function WaitingRoomViewModel:initialize(room)
   self.room = room
   self.myself = kt.client.myself
+  self.taskScope = async.newscope()
 
   self:setPropertyBinding("name", function()
     return self.room.name
@@ -51,27 +52,27 @@ function WaitingRoomViewModel:initialize(room)
 end
 
 function WaitingRoomViewModel:addRobot()
-  async.run(function()
+  self.taskScope:spawn(function()
     local _, err = self.myself:request("Room::AddRobot", {})
     if err then kt.c.showToast(translateServerMessage(err)) end
   end)
 end
 
 function WaitingRoomViewModel:startGame()
-  async.run(function()
+  self.taskScope:spawn(function()
     local _, err = self.myself:request("Room::StartGame", {})
     if err then kt.c.showToast(translateServerMessage(err)) end
   end)
 end
 
 function WaitingRoomViewModel:quitRoom()
-  async.run(function()
+  self.taskScope:spawn(function()
     self.myself:request("Room::Quit", {})
   end)
 end
 
 function WaitingRoomViewModel:toggleReady()
-  async.run(function()
+  self.taskScope:spawn(function()
     local _, err = self.myself:request("Room::Ready", {})
     if err then kt.c.showToast(translateServerMessage(err)) end
   end)
@@ -79,7 +80,7 @@ end
 
 
 function WaitingRoomViewModel:sendChatMessage(text)
-  async.run(function()
+  self.taskScope:spawn(function()
     local _, err = self.myself:request("Room::Chat", { text = text })
     if err then kt.c.showToast(translateServerMessage(err)) end
   end)

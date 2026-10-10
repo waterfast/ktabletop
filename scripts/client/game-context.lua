@@ -47,6 +47,8 @@ function ClientGameContext:initialize(boardgame, data)
   self:setCallback("Game::setPlayerG", self.handleSetPlayerG)
   self:setCallback("Game::ArrangeSeats", self.handleArrangeSeats)
   self:setCallback("Room::GameOver", function(_, u, d) self:handleGameOver(u, d) end)
+
+  self.taskScope = async.newscope()
 end
 
 ---@param name string
@@ -59,7 +61,7 @@ end
 ---@param command string
 ---@param data any
 function ClientGameContext:pushRequest(command, data)
-  async.run(function()
+  self.taskScope:spawn(function()
     kt.client.myself:request("PushRequest", { command = command, data = data })
   end)
 end

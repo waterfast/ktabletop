@@ -40,9 +40,7 @@ function RoomBase:handleCancelRequest(user, data)
   local requestId = data and data.requestId
   if not requestId then return end
 
-  local f = user.handlingRequests[requestId]
-  user.handlingRequests[requestId] = nil
-  if f then async.cancel(f) end
+  user.taskScope:cancel(requestId)
 end
 
 ---@param user User

@@ -15,7 +15,7 @@ local json = kt.json
 ---@field roomId integer
 ---@field state OnlineState
 ---@field ready boolean
----@field handlingRequests table<integer, AsyncFunction> requestId -> running handler
+---@field taskScope TaskScope
 local User = class("User")
 
 ---@param connId integer
@@ -24,7 +24,7 @@ function User:initialize(connId)
   self.id = connId
   self.state = "invalid"
   self.ready = false
-  self.handlingRequests = {}
+  self.taskScope = async.newscope()
 end
 
 ---@param command string

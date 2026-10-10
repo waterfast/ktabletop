@@ -13,6 +13,7 @@ local Server = class("Server")
 function Server:initialize()
   self._notificationHandlers = {}
   self._requestHandlers = {}
+  self.taskScope = async.newscope()
 
   self.userManager = UserManager:new(self)
   self.roomManager = RoomManager:new()
@@ -89,7 +90,7 @@ end
 
 ---@param connId integer
 function Server:processNewConnection(connId)
-  async.run(function ()
+  self.taskScope:spawn(function ()
     local requestFn = async.wrap(kt.c.requestSocket)
     local success = false
     local userErrCode = "auth.internal_error"
@@ -147,11 +148,13 @@ function Server:processNewConnection(connId)
     self.roomManager.lobby:addUser(user)
 
     success = true
-  end)
+  end, connId)
 end
 
 ---@param connId integer
 function Server:processDisconnected(connId)
+  self.taskScope:cancel(connId)
+
   local user = self.userManager:findUser(connId)
   if not user then
     kt.log.info(string.format("ConnId %d disconnected", connId))
@@ -160,12 +163,7 @@ function Server:processDisconnected(connId)
 
   kt.log.info(string.format("User %s disconnected", user.username))
 
-  -- clear first so resumed dispatchers skip replying on a dead socket
-  local requests = user.handlingRequests
-  user.handlingRequests = {}
-  for _, f in pairs(requests) do
-    async.cancel(f)
-  end
+  user.taskScope:destroy()
 
   local room = self.roomManager:findRoomOrLobby(user.roomId)
   if room then room:removeUser(user) end
@@ -193,7 +191,7 @@ function Server:processNotification(connId, command, data)
   end
 end
 
-local requestDispatcher = async.async(function(server, user, requestId, command, data, timeout)
+local function requestDispatcher(server, user, requestId, command, data, timeout)
   local fn = server._requestHandlers[command]
   local arg1 = server
   if not fn then
@@ -211,21 +209,14 @@ local requestDispatcher = async.async(function(server, user, requestId, command,
   end
 
   local handler = fn(arg1, user, data, timeout)
-  user.handlingRequests[requestId] = handler
   local ok, reply = async.await(handler)
-
-  -- canceled by the peer: the registry entry has been removed, do not reply
-  if user.handlingRequests[requestId] == nil then
-    return
-  end
-  user.handlingRequests[requestId] = nil
 
   if not ok then
     user:reply(false, requestId, reply)
   else
     user:reply(true, requestId, reply)
   end
-end)
+end
 
 ---@param connId integer
 ---@param requestId integer
@@ -234,7 +225,9 @@ end)
 function Server:processRequest(connId, requestId, command, data, timeout)
   local user = self.userManager:findUser(connId)
   if not user then return end
-  requestDispatcher(self, user, requestId, command, data, timeout)
+  user.taskScope:spawn(function()
+    requestDispatcher(self, user, requestId, command, data, timeout)
+  end, requestId)
 end
 
 ---@type table<string, fun(self: Server, data: any)>

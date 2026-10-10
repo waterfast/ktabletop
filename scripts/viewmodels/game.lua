@@ -18,6 +18,7 @@ GameViewModel:Invokable("leaveToLobby")
 function GameViewModel:initialize(ctx)
   self.ctx = ctx
   self.actionHandler = {}
+  self.taskScope = async.newscope()
 end
 
 ---@param name string
@@ -57,7 +58,7 @@ function GameViewModel:leaveToLobby()
   local client = kt.client
   client.gameContext = nil
 
-  async.run(function()
+  self.taskScope:spawn(function()
     client.myself:request("Room::Quit", {})
   end)
 end

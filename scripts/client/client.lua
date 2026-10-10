@@ -22,6 +22,7 @@ function Client:initialize()
   self._requestHandlers = {}
   self.pendingUsername = ""
   self.pendingPassword = ""
+  self.taskScope = async.newscope()
 
   self.myself = ClientUser:new()
   self.lobby = ClientLobby:new()
@@ -211,7 +212,12 @@ end
 function Client:connectToHost(host, port, username, password)
   self.pendingUsername = username or ""
   self.pendingPassword = password or ""
-  async.run(connectToHost, self, host, port)
+  if self.taskScope.destroyed then
+    self.taskScope = async.newscope()
+  end
+  self.taskScope:spawn(function()
+    connectToHost(self, host, port)
+  end)
 end
 
 -- TODO: use similar logic of server side
@@ -245,7 +251,7 @@ function Client:processNotification(connId, command, data)
   end
 end
 
-local requestDispatcher = async.async(function(client, connId, requestId, command, data, timeout)
+local function requestDispatcher(client, connId, requestId, command, data, timeout)
   local user = client.myself
   assert(user, ("cannot find user of connId %d in request #%d"):format(connId, requestId))
   user.connId = connId
@@ -277,28 +283,23 @@ local requestDispatcher = async.async(function(client, connId, requestId, comman
   end
 
   local handler = fn(arg1, user, data, timeout)
-  user.handlingRequests[requestId] = handler
   local ok, reply = async.await(handler)
-
-  -- canceled by the peer: the registry entry has been removed, do not reply
-  if user.handlingRequests[requestId] == nil then
-    return
-  end
-  user.handlingRequests[requestId] = nil
 
   if not ok then
     user:reply(false, requestId, reply)
   else
     user:reply(true, requestId, reply)
   end
-end)
+end
 
 ---@param connId integer
 ---@param requestId integer
 ---@param command string
 ---@param data any
 function Client:processRequest(connId, requestId, command, data, timeout)
-  requestDispatcher(self, connId, requestId, command, data, timeout)
+  self.taskScope:spawn(function()
+    requestDispatcher(self, connId, requestId, command, data, timeout)
+  end, requestId)
 end
 
 ---@param message string
@@ -307,13 +308,13 @@ function Client:onSocketError(message)
   kt.c.showToast(message)
   kt.c.luaEvent("Client::SocketError", nil)
 
-  -- TODO: should stop all async tasks here.
   if self.waitForRequestGotCb then
     local cb = self.waitForRequestGotCb
     self.waitForRequestGotCb = nil
     cb(message)
   end
 
+  self.taskScope:destroy()
 end
 
 function Client:disconnectFromHost()

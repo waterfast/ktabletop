@@ -100,7 +100,6 @@ end
 function scheduler:finish(fn)
   self.coroutineMap[fn.coro] = nil
   local a = fn.caller
-  -- calling async function in sync code like async.run(func, ...)
   if not a then
     if fn.state == "error" and fn.errmsg ~= CANCELLED then
       error(fn.errmsg)
@@ -162,6 +161,8 @@ end
 ---@field callee Awaitable?
 ---@field cancelled boolean?
 ---@field waitGroup AwaitGroup?
+---@field scope TaskScope?
+---@field key any
 local AsyncFunction = {}
 AsyncFunction.__index = AsyncFunction
 
@@ -220,6 +221,68 @@ function AsyncFunction:step(...)
   return ok, ret
 end
 
+---@class TaskScope
+---@field tasks table<AsyncFunction, true>
+---@field named table<any, AsyncFunction>
+---@field destroyed boolean
+local TaskScope = {}
+TaskScope.__index = TaskScope
+
+---@return TaskScope
+function TaskScope.new()
+  return setmetatable({
+    tasks = setmetatable({}, { __mode = "k" }),
+    named = setmetatable({}, { __mode = "v" }),
+    destroyed = false,
+  }, TaskScope)
+end
+
+---@param fn fun()
+---@param key any
+function TaskScope:spawn(fn, key)
+  assert(not self.destroyed, "cannot spawn a task into a destroyed TaskScope")
+  assert(scheduler:current() == nil, "TaskScope:spawn must be called from sync context")
+
+  if key ~= nil then
+    local prev = self.named[key]
+    assert(prev == nil or prev.state == "done" or prev.state == "error",
+      "duplicate task key " .. tostring(key))
+  end
+
+  local task = AsyncFunction.new(fn, pack())
+  task.scope = self
+  task.key = key
+  self.tasks[task] = true
+  if key ~= nil then self.named[key] = task end
+  task()
+end
+
+---@param key any
+---@return AsyncFunction?
+function TaskScope:get(key)
+  local task = self.named[key]
+  if task and task.state ~= "done" and task.state ~= "error" then
+    return task
+  end
+end
+
+---@param key any
+function TaskScope:cancel(key)
+  local task = self.named[key]
+  if task then
+    self.named[key] = nil
+    scheduler:cancel(task)
+  end
+end
+
+function TaskScope:destroy()
+  if self.destroyed then return end
+  self.destroyed = true
+  for task in pairs(self.tasks) do
+    scheduler:cancel(task)
+  end
+end
+
 ---@class AsyncFunctionFactory
 ---@field fn fun(...): any
 local AsyncFunctionFactory = {}
@@ -233,11 +296,8 @@ end
 
 function AsyncFunctionFactory:__call(...args)
   local f = AsyncFunction.new(self.fn, args)
-  local current = co.running()
-  local fn = scheduler.coroutineMap[current]
-  -- When calling a async function in sync code, running immediately until return or await.
-  if not fn then
-    return f()
+  if not scheduler.coroutineMap[co.running()] then
+    error("cannot call an async function from sync context; use TaskScope:spawn instead")
   end
   return f
 end
@@ -370,10 +430,9 @@ function M.async(fn)
   return AsyncFunctionFactory.new(fn)
 end
 
---- start an async function from sync context.
----@param fn fun(...): any
-function M.run(fn, ...)
-  return M.async(fn)(...)
+---@return TaskScope
+function M.newscope()
+  return TaskScope.new()
 end
 
 --- await for another async func, or wrapped awaitable func.
