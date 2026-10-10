@@ -15,6 +15,7 @@ ecm_add_qml_module(ktabletop_qml
         lobby/TodoPage.qml
         lobby/CreateRoomDialog.qml
         WaitingRoomPage.qml
+        GamePage.qml
         TaskAndErrorDialog.qml
         GameOverDialog.qml
         ChatPanel.qml

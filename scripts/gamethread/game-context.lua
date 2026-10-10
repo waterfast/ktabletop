@@ -62,6 +62,7 @@ function ServerGameContext:gameOver(result)
 
   kt.c.luaEvent("gameOver", { roomId = self.id })
   self:broadcast("Room::GameOver", result or {})
+  kt.log.info(("[GameOver] roomId=%d"):format(self.id))
 
   kt.gamethread:removeContext(self.id)
   if self.logic and self.logic.root then
