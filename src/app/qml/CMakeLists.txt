@@ -36,6 +36,7 @@ target_link_libraries(ktabletop_qml PUBLIC
     KF6::CoreAddons
     KF6::ConfigGui
 
+    ktabletop_controls
     ktabletop_settings
 )
 

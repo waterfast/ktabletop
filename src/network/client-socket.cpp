@@ -46,6 +46,7 @@ void ClientSocket::getMessage()
             messageGot(a);
         return;
     } else {
+        qWarning("Disconnect: CliectSocket::getMessage failed!");
         m_socket->disconnectFromHost();
         return;
     }

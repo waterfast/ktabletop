@@ -109,9 +109,10 @@ private:
     };
 
     void sendMessage(const QByteArray &msg);
+    void sendEnvelope(const QByteArray &msg);
 
     static QByteArray makeIv(bool fromClient, quint64 counter);
-    QByteArray makeEnvelope(const QCborArray &body);
+    QByteArray makeEnvelope(const QByteArray &body);
     QByteArray encryptData(const QByteArray &data, int &flag);
     QByteArray decryptData(const QByteArray &data);
 

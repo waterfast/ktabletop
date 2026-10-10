@@ -22,6 +22,8 @@ UserConnection::UserConnection(QObject *parent, ClientSocket *socket)
 {
     qRegisterMetaType<ReplyCallback>("UserConnection::ReplyCallback");
 
+    connect(this, &UserConnection::messageReady, this, &UserConnection::sendEnvelope);
+
     setSocket(socket);
 
     static int nextConnId = 1000;
@@ -101,7 +103,6 @@ void UserConnection::setSocket(ClientSocket *socket)
 
     m_socket = nullptr;
     if (socket != nullptr) {
-        connect(this, &UserConnection::messageReady, socket, &ClientSocket::send);
         connect(socket, &ClientSocket::messageGot, this, &UserConnection::handlePacket);
         connect(socket, &ClientSocket::disconnected, this, &UserConnection::disconnected);
         socket->setParent(this);
@@ -139,9 +140,9 @@ QByteArray UserConnection::makeIv(bool fromClient, quint64 counter)
     return iv;
 }
 
-QByteArray UserConnection::makeEnvelope(const QCborArray &body)
+QByteArray UserConnection::makeEnvelope(const QByteArray &body)
 {
-    QByteArray msg = body.toCborValue().toCbor();
+    QByteArray msg = body;
     int flag = 0;
     if (msg.size() > COMPRESSION_THRESHOLD) {
         msg = qCompress(msg);
@@ -175,7 +176,7 @@ int UserConnection::request(const QByteArray &command, const QByteArray &jsonDat
         timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch();
     }
     QCborArray body{id, type, command, jsonData, timeout, timestamp};
-    QByteArray msg = makeEnvelope(body);
+    QByteArray msg = body.toCborValue().toCbor();
 
     if (!callback) {
         sendMessage(msg);
@@ -225,7 +226,7 @@ void UserConnection::reply(int requestId, bool ok, const QByteArray &jsonData)
 
     QCborArray body{requestId, type, QByteArray(), jsonData};
 
-    sendMessage(makeEnvelope(body));
+    sendMessage(body.toCborValue().toCbor());
     m_receivedRequests.remove(requestId);
 }
 
@@ -235,7 +236,7 @@ void UserConnection::notify(const QByteArray &command, const QByteArray &jsonDat
 
     QCborArray body{-2, type, command, jsonData};
 
-    sendMessage(makeEnvelope(body));
+    sendMessage(body.toCborValue().toCbor());
 }
 
 UserConnection::ReceivedRequest UserConnection::receivedRequest(int requestId) const
@@ -266,6 +267,7 @@ void UserConnection::handlePacket(const QCborArray &packet)
         payload = decryptData(payload);
         if (payload.isEmpty()) {
             if (m_socket && m_socket->socket()) {
+                qWarning("Disconnect: payload decryption failed!");
                 m_socket->socket()->disconnectFromHost();
             }
             return;
@@ -316,4 +318,11 @@ void UserConnection::handlePacket(const QCborArray &packet)
 void UserConnection::sendMessage(const QByteArray &msg)
 {
     Q_EMIT messageReady(msg);
+}
+
+void UserConnection::sendEnvelope(const QByteArray &msg)
+{
+    if (m_socket == nullptr)
+        return;
+    m_socket->send(makeEnvelope(msg));
 }

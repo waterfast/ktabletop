@@ -6,6 +6,7 @@ add_subdirectory(lua)
 add_subdirectory(network)
 
 if (BUILD_KTABLETOP_APP)
+    add_subdirectory(controls)
     add_subdirectory(settings)
     add_subdirectory(app)
 endif()
