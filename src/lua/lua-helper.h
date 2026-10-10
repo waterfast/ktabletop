@@ -22,11 +22,11 @@ struct LuaRefRAII {
     {
     }
     LuaRefRAII(LuaRefRAII &) = delete;
-    LuaRefRAII(LuaRefRAII &&other)
+    LuaRefRAII(LuaRefRAII &&other) noexcept
         : L(other.L)
         , index(other.index)
     {
-        this->index = LUA_NOREF;
+        other.index = LUA_NOREF;
     }
 
     ~LuaRefRAII()
@@ -48,6 +48,8 @@ struct LuaStk {
 
 namespace LuaVM
 {
+
+int loadfile(lua_State *L, const QString &path);
 
 void dofile(lua_State *L, const QString &path);
 

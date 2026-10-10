@@ -4,6 +4,28 @@
 #include "lua-helper.h"
 #include <QFile>
 
+int LuaVM::loadfile(lua_State *L, const QString &path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        lua_pushfstring(L, "cannot open %s", path.toUtf8().constData());
+        return LUA_ERRFILE;
+    }
+    QByteArray bytes = file.readAll();
+
+    // skip BOM & shebang as luaL_loadfile
+    if (bytes.startsWith("\xEF\xBB\xBF")) {
+        bytes.remove(0, 3);
+    }
+    if (bytes.startsWith('#')) {
+        int nl = bytes.indexOf('\n');
+        bytes.remove(0, nl < 0 ? bytes.size() : nl);
+    }
+
+    QByteArray chunkName = "@" + path.toUtf8();
+    return luaL_loadbuffer(L, bytes.constData(), bytes.size(), chunkName.constData());
+}
+
 void LuaVM::dofile(lua_State *L, const QString &path)
 {
     if (!QFile::exists(path)) {
@@ -11,7 +33,7 @@ void LuaVM::dofile(lua_State *L, const QString &path)
         return;
     }
 
-    luaL_loadfile(L, path.toUtf8().constData());
+    loadfile(L, path);
     call(L);
 }
 

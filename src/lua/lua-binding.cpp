@@ -197,7 +197,7 @@ void LuaBinding::doPluginFile(const QString &path, int envIndex)
     if (!(f.exists() && f.isFile() && f.isReadable())) {
         return;
     }
-    if (luaL_loadfile(L, path.toUtf8().constData()) != LUA_OK) {
+    if (LuaVM::loadfile(L, path) != LUA_OK) {
         lua_warning(L, lua_tostring(L, -1), false);
         lua_pop(L, 1);
         return;
@@ -339,7 +339,7 @@ int LuaBinding::rtpSearcher(lua_State *L)
         return 1;
     }
 
-    if (luaL_loadfile(L, pathStr) == LUA_OK) {
+    if (LuaVM::loadfile(L, path) == LUA_OK) {
         // give the module the private global environment of its plugin
         if (auto *binding = LuaBinding::forState(L); binding && binding->pushPluginEnv(pluginRoot)) {
             lua_setupvalue(L, -2, 1);
