@@ -5,6 +5,7 @@
 
 #include <QHash>
 #include <QHostAddress>
+#include <QMutex>
 #include <QObject>
 #include <QVariantMap>
 
@@ -47,6 +48,7 @@ public:
     GameThread *getGameThread(int id) const;
     void removeGameThread(int id);
     GameThread *getAvailableGameThread();
+    void removeGameRoom(int threadId, int roomId);
 
     // TODO
     void startGameRoom(int roomId, const QVariantMap &data);
@@ -73,6 +75,10 @@ private:
     LuaBinding *L;
     ServerSocket *server;
     QHash<int, UserConnection *> connections;
+    // Guards `connections`: findConnection() is reachable from GameThread
+    // threads (via kt.c socket bindings), while connections are added/removed
+    // on the main thread.
+    mutable QMutex m_connectionsLock;
     QHash<int, GameThread *> gameThreads;
 
     DbThread *m_usersDb = nullptr;

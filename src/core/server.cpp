@@ -171,6 +171,7 @@ bool Server::listen(const QHostAddress &address, ushort port)
 
 UserConnection *Server::findConnection(int connId) const
 {
+    const QMutexLocker locker(&m_connectionsLock);
     return connections.value(connId);
 }
 
@@ -215,6 +216,14 @@ void Server::startGameRoom(int roomId, const QVariantMap &data)
     thread->pushRequest(roomId, 0, u"newroom"_s, data);
 }
 
+void Server::removeGameRoom(int threadId, int roomId)
+{
+    auto *thr = gameThreads.value(threadId);
+    if (thr) {
+        thr->removeRoom(roomId);
+    }
+}
+
 void Server::dispatchLuaEvent(const QString &type, const QVariant &data)
 {
     L->callKTabletopMethod(u"server"_s, u"dispatchLuaEvent"_s, {type, data});
@@ -237,8 +246,12 @@ void Server::processNewConnection(ClientSocket *client)
 
     auto *conn = new UserConnection(this, client);
     auto connId = conn->connId();
-    connections[connId] = conn;
+    {
+        const QMutexLocker locker(&m_connectionsLock);
+        connections[connId] = conn;
+    }
     connect(conn, &QObject::destroyed, this, [this, connId] {
+        const QMutexLocker locker(&m_connectionsLock);
         connections.remove(connId);
     });
 

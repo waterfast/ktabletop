@@ -102,6 +102,14 @@ static int startGame(lua_State *L)
     return 0;
 }
 
+// args: int threadId, int roomId
+static int removeRoom(lua_State *L)
+{
+    auto [threadId, roomId] = LuaVM::readArgs<int, int>(L);
+    Server::instance()->removeGameRoom(threadId, roomId);
+    return 0;
+}
+
 // args: int threadId, int roomId, int userId, string command, table data
 static int pushRequest(lua_State *L)
 {
@@ -264,6 +272,7 @@ static luaL_Reg socketFuncTable[] = {
 static luaL_Reg serverFuncTable[] = {
     {"startGame", startGame},
     {"pushRequest", pushRequest},
+    {"removeRoom", removeRoom},
 
     {"getServerPublicKey", getServerPublicKey},
     {"makeAuthChallenge", makeAuthChallenge},

@@ -231,6 +231,7 @@ function Room:destroy()
 end
 
 function Room:gameOver()
+  kt.c.removeRoom(self.gameThreadId, self.id)
   self.gameThreadId = nil
 
   local users = self.users
