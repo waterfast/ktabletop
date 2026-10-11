@@ -66,6 +66,16 @@ int main(int argc, char *argv[])
 
     ColorSchemer colorscheme;
 
+    QCommandLineParser parser;
+    parser.setApplicationDescription(i18n("Play boardgames online"));
+
+    // QCommandLineOption qmlPreviewOption(u"qmlpreview"_s, i18n("Preview QML file that depends on ktabletop"), u"file"_s);
+    // parser.addOption(qmlPreviewOption);
+
+    aboutData.setupCommandLine(&parser);
+    parser.process(app);
+    aboutData.processCommandLine(&parser);
+
     QQmlApplicationEngine engine;
 
     KLocalization::setupLocalizedContext(&engine);
@@ -83,13 +93,6 @@ int main(int argc, char *argv[])
     config->setSharedConfig(KSharedConfig::openConfig(u"ktabletoprc"_s, KConfig::SimpleConfig, QStandardPaths::AppConfigLocation));
     config->load();
     qmlRegisterSingletonInstance("org.kde.ktabletop", 1, 0, "KTabletopConfig", config);
-
-    {
-        QCommandLineParser parser;
-        aboutData.setupCommandLine(&parser);
-        parser.process(app);
-        aboutData.processCommandLine(&parser);
-    }
 
     engine.loadFromModule("org.kde.ktabletop", u"Main"_s);
     if (engine.rootObjects().isEmpty()) {
