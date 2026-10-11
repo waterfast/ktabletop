@@ -149,8 +149,6 @@ QVariantMap LuaBinding::createLObject(const QVariantMap &opts)
     result = obj.toMap();
     result[u"refIndex"_s] = ref.value<LuaRef>().index;
 
-    lua_rawgeti(L, LUA_REGISTRYINDEX, ref.value<LuaRef>().index);
-
     return result;
 }
 
@@ -160,14 +158,11 @@ QVariant LuaBinding::invokeLObject(int ref, const QString &method, const QVarian
     auto result = LuaVM::callMethod(L, method, args);
     lua_pop(L, 1);
 
-    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-
     return result;
 }
 
 void LuaBinding::releaseLObject(int ref)
 {
-    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
     luaL_unref(L, LUA_REGISTRYINDEX, ref);
 }
 
