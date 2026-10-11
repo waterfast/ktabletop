@@ -105,7 +105,14 @@ static int startGame(lua_State *L)
 // args: int threadId, int roomId, int userId, string command, table data
 static int pushRequest(lua_State *L)
 {
-    auto [threadId, roomId, userId, command] = LuaVM::readArgs<int, int, int, str>(L);
+    int nargs = lua_gettop(L);
+    if (nargs != 5) {
+        return luaL_error(L, "expected %d arguments, got %d", 5, nargs);
+    }
+    int threadId = luaL_checkinteger(L, 1);
+    int roomId = luaL_checkinteger(L, 2);
+    int userId = luaL_checkinteger(L, 3);
+    const char *command = luaL_checkstring(L, 4);
     QVariantMap data = LuaVM::readValue(L, 5).toMap();
 
     auto *thread = Server::instance()->getGameThread(threadId);

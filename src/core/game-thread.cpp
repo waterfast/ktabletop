@@ -46,8 +46,8 @@ void GameThread::run()
     luaopen_ktabletop_gamethread(L->state());
     L->setRuntimePaths(Server::instance()->luaBinding()->runtimePaths());
     L->run();
+    L->callKTabletopMethod(u"gamethread"_s, u"setId"_s, {m_id});
 
-    // TODO: seems overused luaEvent. maybe should give this a new name to post some events to main thread Lua
     connect(L, &LuaBinding::luaEvent, Server::instance(), &Server::dispatchLuaEvent, Qt::UniqueConnection);
 
     Q_EMIT ready();

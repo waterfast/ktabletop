@@ -197,8 +197,13 @@ QVariant LuaVM::readValue(lua_State *L, int index, QHash<const void *, bool> sta
         return QVariant::fromValue(nullptr);
     case LUA_TBOOLEAN:
         return QVariant((bool)lua_toboolean(L, index));
-    case LUA_TNUMBER:
-        return QVariant(lua_tonumber(L, index));
+    case LUA_TNUMBER: {
+        if (lua_isinteger(L, index)) {
+            return QVariant(lua_tointeger(L, index));
+        } else {
+            return QVariant(lua_tonumber(L, index));
+        }
+    }
     case LUA_TSTRING: {
         return QString::fromUtf8(lua_tostring(L, index));
     }

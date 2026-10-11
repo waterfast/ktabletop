@@ -29,8 +29,10 @@ end
 
 function Lobby:updateOnlineInfo()
   local onlineUsers = 0
-  for _ in pairs(kt.server.userManager.users) do
-    onlineUsers = onlineUsers + 1
+  for _, u in pairs(kt.server.userManager.users) do
+    if u.state == "online" then
+      onlineUsers = onlineUsers + 1
+    end
   end
   self:broadcast("Lobby::UpdateOnlineInfo", {
     onlineUsers = onlineUsers,

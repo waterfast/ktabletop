@@ -82,11 +82,17 @@ end
 
 function GameLogic:start()
   self.taskScope:spawn(function()
-    local root = Game:new(self.ctx)
-    self.root = root
-    self.ctx:broadcast("Room::StartGame", { gameType = self.ctx.gameType })
-    local ok, errmsg = pcall(root.exec, root)
     local ctx = self.ctx
+    kt.c.luaEvent("gameStart", { roomId = ctx.id, threadId = kt.gamethread.id })
+    local _ <close> = setmetatable({}, { __close = function()
+      kt.c.luaEvent("gameOver", { roomId = ctx.id })
+    end })
+
+    local root = Game:new(ctx)
+    self.root = root
+    ctx:broadcast("Room::StartGame", { gameType = ctx.bg.id })
+
+    local ok, errmsg = pcall(root.exec, root)
     if not ctx.gameFinished then
       -- root event may be killed by error?
       if not ok then

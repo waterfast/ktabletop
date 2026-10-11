@@ -5,6 +5,7 @@ local class = kt.class
 local ServerGameContext = require "gamethread.game-context"
 
 ---@class GameThread: Object
+---@field id integer
 ---@field contexts table<integer, ServerGameContext>
 ---@field contextRegistry table<thread, ServerGameContext>
 local GameThread = class("GameThread")
@@ -12,6 +13,11 @@ local GameThread = class("GameThread")
 function GameThread:initialize()
   self.contexts = {}
   self.contextRegistry = setmetatable({}, { __mode = "k" })
+end
+
+-- called from C++...
+function GameThread:setId(id)
+  self.id = id
 end
 
 ---@param boardgame Boardgame
@@ -52,6 +58,13 @@ function GameThread:handleRequest(roomId, userId, command, data)
     end
     self:registerContext(boardgame, data):run()
     return
+  elseif command == "setUserState" then
+    local ctx = self.contexts[roomId]
+    if not ctx then return end
+    local p = ctx:getPlayer(userId)
+    p.user.state = data.state
+    p.user.connId = data.connId
+    ctx:checkNoHuman()
   end
 
   local ctx = self.contexts[roomId]

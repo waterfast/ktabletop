@@ -12,7 +12,7 @@ local UserManager = class("UserManager")
 ---@param server Server
 function UserManager:initialize(server)
   self.server = server
-  self.users = {}
+  self.users = setmetatable({}, { __mode = "v" })
 end
 
 ---@param connId integer
@@ -20,11 +20,10 @@ end
 function UserManager:createNewUser(connId, username)
   local user = ServerUser:new(connId)
   user.id = connId
-  user.username = (username ~= nil and username ~= "") and username or ("guest" .. connId)
+  user.username = username
   user.state = "online"
 
   self:addUser(user)
-  user:notify("User::Setup", { id = user.id, username = user.username })
   return user
 end
 

@@ -144,7 +144,10 @@ function Server:processNewConnection(connId)
       end
     end
 
+    -- TODO: banned check, etc..
+
     local user = self.userManager:createNewUser(connId, username)
+    user:notify("User::Setup", { id = user.id, username = user.username })
     self.roomManager.lobby:addUser(user)
 
     success = true
@@ -161,7 +164,7 @@ function Server:processDisconnected(connId)
     return
   end
 
-  kt.log.info(string.format("User %s disconnected", user.username))
+  kt.log.info(string.format("User %s (connId=%d) disconnected", user.username, connId))
 
   user.taskScope:destroy()
 
@@ -208,10 +211,13 @@ local function requestDispatcher(server, user, requestId, command, data, timeout
     return
   end
 
-  local handler = fn(arg1, user, data, timeout)
+  local handler = fn(arg1, user, data, timeout) --[[@as AsyncFunction]]
   local ok, reply = async.await(handler)
 
   if not ok then
+    if handler.errmsg and handler.errmsg ~= async.CANCELLED then
+      warn(debug.traceback(handler.coro, handler.errmsg))
+    end
     user:reply(false, requestId, reply)
   else
     user:reply(true, requestId, reply)
@@ -232,17 +238,14 @@ end
 
 ---@type table<string, fun(self: Server, data: any)>
 local eventHandlers = {}
-eventHandlers["gameOver"] = function(self, data)
-  local roomId = data.roomId
-  local rm = self.roomManager
-  local room = rm:findRoom(roomId)
-  if not room then return end
-  room.gameStarted = false
-end
-
-eventHandlers["gameThreadAssigned"] = function(self, data)
+eventHandlers["gameStart"] = function(self, data)
   local room = self.roomManager:findRoom(data.roomId)
   if room then room.gameThreadId = data.threadId end
+end
+
+eventHandlers["gameOver"] = function(self, data)
+  local room = self.roomManager:findRoom(data.roomId)
+  if room then room:gameOver() end
 end
 
 function Server:dispatchLuaEvent(type, data)

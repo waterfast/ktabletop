@@ -286,6 +286,9 @@ local function requestDispatcher(client, connId, requestId, command, data, timeo
   local ok, reply = async.await(handler)
 
   if not ok then
+    if handler.errmsg and handler.errmsg ~= async.CANCELLED then
+      warn(debug.traceback(handler.coro, handler.errmsg))
+    end
     user:reply(false, requestId, reply)
   else
     user:reply(true, requestId, reply)

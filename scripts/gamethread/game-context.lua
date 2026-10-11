@@ -52,6 +52,21 @@ function ServerGameContext:run()
   self.logic:start()
 end
 
+function ServerGameContext:checkNoHuman(chkOnly)
+  if #self.players == 0 then return end
+  for _, p in ipairs(self.players) do
+    local state = p.user.state
+    if state == "online" or state == "trust" then
+      return
+    end
+  end
+
+  if not chkOnly then
+    self:gameOver()
+  end
+  return true
+end
+
 ---@class GameOverResult
 ---@field winners integer[]? winning player ids, empty or nil means a draw
 
@@ -60,7 +75,6 @@ function ServerGameContext:gameOver(result)
   if self.gameFinished then return end
   self.gameFinished = true
 
-  kt.c.luaEvent("gameOver", { roomId = self.id })
   self:broadcast("Room::GameOver", result or {})
   kt.log.info(("[GameOver] roomId=%d"):format(self.id))
 

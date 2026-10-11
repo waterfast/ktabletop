@@ -3,7 +3,7 @@ local tablib = kt.tablib
 
 ---@class Room: ServerRoomBase
 ---@field owner ServerUser
----@field gameStarted boolean
+---@field gameThreadId integer?
 local Room = RoomBase:subclass("Room")
 
 local nextRoomId = 1
@@ -15,12 +15,15 @@ function Room:initialize()
   self.owner = nil
   self.name = ""
   self.capacity = 0
-  self.gameStarted = false
 
   self:setRequestHandler("Room::AddRobot", self.handleAddRobot)
   self:setRequestHandler("Room::Quit", self.handleQuitRoom)
   self:setRequestHandler("Room::StartGame", self.handleStartGame)
   self:setRequestHandler("Room::Ready", self.handleReady)
+
+  self:setRequestHandler("PushRequest", function(user, data)
+    self:pushRequest(user, data.command, data.data)
+  end)
 end
 
 function Room:isFull()
@@ -37,6 +40,10 @@ function Room:allReady()
   return true
 end
 
+function Room:isStarted()
+  return self.gameThreadId ~= nil
+end
+
 ---@param user ServerUser
 function Room:setOwner(user)
   self.owner = user
@@ -45,7 +52,7 @@ end
 
 ---@param user ServerUser
 function Room:addUser(user)
-  if self:isFull() or self.gameStarted then
+  if self:isFull() or self:isStarted() then
     user:notify("App::ShowToast", "room.full")
     return
   end
@@ -115,7 +122,7 @@ function Room:handleStartGame(user)
     return nil, "room.not_owner_start"
   end
 
-  if self.gameStarted then
+  if self:isStarted() then
     return nil, "room.already_started"
   end
 
@@ -126,8 +133,6 @@ function Room:handleStartGame(user)
   if not self:allReady() then
     return nil, "room.not_all_ready"
   end
-
-  self.gameStarted = true
 
   for _, p in ipairs(self.users) do
     p.ready = (p == self.owner) or (p.state == "robot")
@@ -149,7 +154,6 @@ end
 function Room:handleQuitRoom(user)
   self:removeUser(user)
 
-  -- TODO: check if is online
   local lobby = kt.server.roomManager.lobby
   lobby:addUser(user)
 
@@ -157,12 +161,42 @@ function Room:handleQuitRoom(user)
 end
 
 ---@param user ServerUser
-function Room:removeUser(user)
-  if not RoomBase.removeUser(self, user) then
-    return
-  end
+---@param data { command: string, data: any }
+function Room:pushRequest(user, command, data)
+  if not self.gameThreadId then return end
+  kt.c.pushRequest(self.gameThreadId, self.id, user.id, command, data)
+end
 
-  self:broadcast("Room::RemoveUser", { id = user.id })
+---@param user ServerUser
+---@param state OnlineState
+function Room:setUserState(user, state)
+  user.state = state
+  self:pushRequest(user, "setUserState", { state = state, connId = user.connId })
+end
+
+function Room:replaceRunnedUser(user)
+  local um = kt.server.userManager
+  local runned = um:createNewUser(0, user.username)
+  runned.state = "run"
+
+  for i, u in ipairs(self.users) do
+    if u == user then
+      self.users[i] = runned
+      user.state = "online"
+      return
+    end
+  end
+end
+
+---@param user ServerUser
+function Room:removeUser(user)
+  if not self:isStarted() then
+    RoomBase.removeUser(self, user)
+    self:broadcast("Room::RemoveUser", { id = user.id })
+  else
+    self:setUserState(user, "run")
+    self:replaceRunnedUser(user)
+  end
 
   if self:isAbandoned() then
     self:destroy()
@@ -177,7 +211,7 @@ end
 
 function Room:isAbandoned()
   return not tablib.find(self.users, function(p)
-    return p.state == "online" or p.state == "trust"
+    return p.state == "online"
   end)
 end
 
@@ -187,11 +221,25 @@ function Room:destroy()
 
   rm:removeRoom(self.id)
   for _, p in ipairs(self.users) do
-    if p.state == "online" or p.state == "trust" then
+    if p.state == "online" then
       self:removeUser(p)
       rm.lobby:addUser(p)
     else
       um:removeUser(p.connId)
+    end
+  end
+end
+
+function Room:gameOver()
+  self.gameThreadId = nil
+
+  local users = self.users
+  local um = kt.server.userManager
+  for i = #users, 1, -1 do
+    local user = users[i]
+    if user.state ~= "online" then
+      self:removeUser(user)
+      um:removeUser(user.id)
     end
   end
 end
