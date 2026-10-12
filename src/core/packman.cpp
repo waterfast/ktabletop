@@ -49,13 +49,9 @@ static QString extractPackName(const QString &u)
     return fileName;
 }
 
-#define GIT_FAIL                                                                                                                                               \
-    const git_error *e = git_error_last();                                                                                                                     \
-    qCritical("Error %d/%d: %s\n", err, e->klass, e->message)
-
 #define GIT_CHK_CLEAN                                                                                                                                          \
     if (err < 0) {                                                                                                                                             \
-        GIT_FAIL;                                                                                                                                              \
+        reportError(err);                                                                                                                                      \
         goto clean;                                                                                                                                            \
     }
 
@@ -63,6 +59,24 @@ static QString extractPackName(const QString &u)
 struct GitRepo {
     git_repository *repo = nullptr;
     QString pluginsPath;
+
+    QString op;
+    QString target;
+    QString repoName = "(null)"_L1;
+
+    void reportError(int err, const QString &detail = QString()) const
+    {
+        QString text = u"GitRepo::%1(%2) of plugin %3 failed!\n    "_s.arg(op.isEmpty() ? u"unknownOp"_s : op, target, repoName);
+
+        if (detail.isEmpty()) {
+            const git_error *e = git_error_last();
+            text += u"Error %1/%2: %3"_s.arg(err).arg(e->klass).arg(QString::fromUtf8(e->message));
+        } else {
+            text += detail;
+        }
+
+        Q_EMIT PackMan::instance()->errorOccurred(text);
+    }
 
     GitRepo() noexcept = default;
     explicit GitRepo(const QString &pluginsPath)
@@ -95,14 +109,18 @@ struct GitRepo {
 
 int GitRepo::open(const QString &name)
 {
+    op = u"open"_s;
+
     git_repository *raw = nullptr;
-    auto path = u"%1/%2"_s.arg(pluginsPath, name).toUtf8();
-    int err = git_repository_open(&raw, path.constData());
+    auto path = u"%1/%2"_s.arg(pluginsPath, name);
+    target = path;
+    int err = git_repository_open(&raw, path.toUtf8().constData());
     if (err < 0) {
-        GIT_FAIL;
+        reportError(err);
         return err;
     }
     repo = raw;
+    repoName = name;
     return 0;
 }
 
@@ -144,6 +162,9 @@ static int transfer_progress_cb(const git_indexer_progress *stats, void *payload
 
 int GitRepo::clone(const QString &u)
 {
+    op = u"clone"_s;
+    target = u;
+
     QString fileName = extractPackName(u);
     QString clonePath = u"%1/%2"_s.arg(pluginsPath, fileName);
 
@@ -154,9 +175,10 @@ int GitRepo::clone(const QString &u)
     int err = git_clone(&raw, u.toUtf8().constData(), clonePath.toUtf8().constData(), &opt);
     if (err < 0) {
         QDir(clonePath).removeRecursively();
-        GIT_FAIL;
+        reportError(err);
     } else {
         repo = raw;
+        repoName = fileName;
         // if (Backend == nullptr)
         printf("\n");
     }
@@ -166,6 +188,9 @@ int GitRepo::clone(const QString &u)
 // git fetch && git checkout FETCH_HEAD -f
 int GitRepo::pull()
 {
+    op = u"pull"_s;
+    target = u""_s;
+
     int err;
     git_remote *remote = NULL;
     git_fetch_options opt = GIT_FETCH_OPTIONS_INIT;
@@ -199,6 +224,9 @@ clean:
 
 int GitRepo::hasCommit(const QString &hash)
 {
+    op = u"hasCommit"_s;
+    target = hash;
+
     int err;
     git_oid oid = {0};
     git_commit *commit = NULL;
@@ -217,6 +245,9 @@ clean:
 
 int GitRepo::checkout(const QString &hash)
 {
+    op = u"checkout"_s;
+    target = hash;
+
     int err;
     git_oid oid = {0};
     git_checkout_options opt = GIT_CHECKOUT_OPTIONS_INIT;
@@ -236,6 +267,9 @@ clean:
 // git checkout -B branch origin/branch --force
 int GitRepo::checkoutBranch(const QString &branch)
 {
+    op = u"checkoutBranch"_s;
+    target = branch;
+
     git_oid oid = {0};
     int err;
     git_object *obj = NULL;
@@ -292,6 +326,9 @@ clean:
 
 int GitRepo::status()
 {
+    op = u"status"_s;
+    target = u""_s;
+
     int err;
     git_status_list *status_list = NULL;
     size_t i, maxi;
@@ -300,7 +337,6 @@ int GitRepo::status()
     GIT_CHK_CLEAN;
     maxi = git_status_list_entrycount(status_list);
     for (i = 0; i < maxi; ++i) {
-        char *istatus = NULL;
         s = git_status_byindex(status_list, i);
         if (s->status != GIT_STATUS_CURRENT && s->status != GIT_STATUS_IGNORED) {
             git_status_list_free(status_list);
@@ -317,15 +353,15 @@ int GitRepo::status()
                     checkout_opts.checkout_strategy = GIT_CHECKOUT_FORCE;
                     err = git_checkout_head(repo, &checkout_opts);
                     if (err == 0) {
-                        qInfo("Auto-recovered from interrupted set_head.");
+                        qInfo("GitRepo %s: Auto-recovering from interrupted set_head.", qPrintable(repoName));
                         return 0;
                     }
-                    GIT_FAIL;
+                    reportError(err);
                     return err;
                 }
             }
 
-            qCritical("Workspace is dirty.");
+            reportError(100, u"workspace is dirty, refusing to overwrite local changes"_s);
             return 100;
         }
     }
@@ -337,6 +373,9 @@ clean:
 
 QString GitRepo::head()
 {
+    op = u"head"_s;
+    target = u""_s;
+
     int err;
     git_object *obj = NULL;
     const git_oid *oid;
@@ -365,7 +404,6 @@ QString GitRepo::remoteUrl(const QString &name)
     return url;
 }
 
-#undef GIT_FAIL
 #undef GIT_CHK_CLEAN
 
 // ----------------------------------------------------
@@ -386,6 +424,10 @@ PackMan::PackMan(QObject *parent)
     git_libgit2_init();
 
     m_pluginsPath = u"%1/plugins"_s.arg(runtimeDataDir());
+
+    connect(this, &PackMan::errorOccurred, this, [](const QString &message) {
+        qCritical().noquote() << message;
+    });
 
     initDatabase();
 

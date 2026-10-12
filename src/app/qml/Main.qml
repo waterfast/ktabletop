@@ -18,6 +18,10 @@ Kirigami.ApplicationWindow {
         parent: states
     }
 
+    readonly property PackManagerPage packManagerPage: PackManagerPage {
+        parent: states
+    }
+
     property var _dynamicPages: []
 
     readonly property bool isWidescreen: width >= Kirigami.Units.gridUnit * 30 // = 480
@@ -43,8 +47,16 @@ Kirigami.ApplicationWindow {
         id: states
         states: [
             State {
+                name: "packManager"
+                when: !Backend.mainViewModel.connected && Backend.mainViewModel.packManagerVisible
+                PropertyChanges {
+                    root.pageStack.items: [root.packManagerPage]
+                }
+            },
+
+            State {
                 name: "notConnected"
-                when: !Backend.mainViewModel.connected
+                when: !Backend.mainViewModel.connected && !Backend.mainViewModel.packManagerVisible
                 PropertyChanges {
                     root.pageStack.items: [welcomePage]
                 }

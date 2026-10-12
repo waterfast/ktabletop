@@ -61,6 +61,13 @@ Kirigami.Page {
 
             QQC2.Button {
                 Layout.fillWidth: true
+                icon.name: "get-hot-new-stuff"
+                text: i18n("Plugin Manager")
+                onClicked: Backend.mainViewModel.packManagerVisible = true
+            }
+
+            QQC2.Button {
+                Layout.fillWidth: true
                 icon.name: "settings-configure"
                 text: i18n("Settings")
                 onClicked: KTabletopSettingsView.open()

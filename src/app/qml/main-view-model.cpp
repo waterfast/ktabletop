@@ -110,6 +110,20 @@ void MainViewModel::setGameStarted(bool gameStarted)
     Q_EMIT gameStartedChanged(m_gameStarted);
 }
 
+bool MainViewModel::packManagerVisible() const
+{
+    return m_packManagerVisible;
+}
+
+void MainViewModel::setPackManagerVisible(bool visible)
+{
+    if (m_packManagerVisible == visible) {
+        return;
+    }
+    m_packManagerVisible = visible;
+    Q_EMIT packManagerVisibleChanged(m_packManagerVisible);
+}
+
 void MainViewModel::startSinglePlayer(const QString &username, const QString &password)
 {
     const ushort port = 17943;
@@ -120,6 +134,14 @@ void MainViewModel::startSinglePlayer(const QString &username, const QString &pa
 void MainViewModel::joinMultiPlayer(const QString &address, int port, const QString &username, const QString &password)
 {
     Q_EMIT joinServerRequested(address, static_cast<ushort>(port), username, password);
+}
+
+void MainViewModel::installPack(const QString &url)
+{
+    if (url.isEmpty()) {
+        return;
+    }
+    Q_EMIT installPackRequested(url);
 }
 
 void MainViewModel::cancelProgressTask(const QString &key)

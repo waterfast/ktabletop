@@ -41,6 +41,9 @@ public:
 
     void syncCommitHashToDatabase();
 
+Q_SIGNALS:
+    void errorOccurred(const QString &message);
+
 private:
     explicit PackMan(QObject *parent = nullptr);
     QStringList disabled_packs;

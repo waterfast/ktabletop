@@ -7,6 +7,7 @@
 #include "qml/qml-backend.h"
 
 #include "client.h"
+#include "core/packman.h"
 #include "core/server.h"
 #include "lua/lua-binding.h"
 
@@ -35,6 +36,12 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
         }
         // TODO: other thing that will use async feature, like package manager...
     });
+
+    connect(vm, &MainViewModel::installPackRequested, this, [](const QString &url) {
+        PackMan::instance()->downloadNewPack(url, true);
+    });
+
+    connect(PackMan::instance(), &PackMan::errorOccurred, vm, &MainViewModel::showErrorDialog);
 
     auto *manager = LObjectManager::instance();
     manager->setCreateObjectFn([](const QVariantMap &opts) {

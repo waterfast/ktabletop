@@ -8,6 +8,7 @@ ecm_add_qml_module(ktabletop_qml
     QML_FILES
         Main.qml
         WelcomePage.qml
+        PackManagerPage.qml
         lobby/Sidebar.qml
         lobby/BottomToolbar.qml
         lobby/RoomsPage.qml

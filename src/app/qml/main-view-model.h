@@ -20,6 +20,7 @@ class MainViewModel : public QObject
     Q_PROPERTY(QString gameViewModelName READ gameViewModelName NOTIFY gameViewModelNameChanged)
     Q_PROPERTY(QString gamePageUrl READ gamePageUrl NOTIFY gamePageUrlChanged)
     Q_PROPERTY(bool gameStarted READ gameStarted WRITE setGameStarted NOTIFY gameStartedChanged)
+    Q_PROPERTY(bool packManagerVisible READ packManagerVisible WRITE setPackManagerVisible NOTIFY packManagerVisibleChanged)
 
 public:
     explicit MainViewModel(QObject *parent = nullptr);
@@ -45,8 +46,13 @@ public:
     bool gameStarted() const;
     void setGameStarted(bool gameStarted);
 
+    bool packManagerVisible() const;
+    void setPackManagerVisible(bool visible);
+
     Q_INVOKABLE void startSinglePlayer(const QString &username, const QString &password);
     Q_INVOKABLE void joinMultiPlayer(const QString &address, int port, const QString &username, const QString &password);
+
+    Q_INVOKABLE void installPack(const QString &url);
 
     Q_INVOKABLE void cancelProgressTask(const QString &key);
 
@@ -60,9 +66,12 @@ Q_SIGNALS:
     void gameViewModelNameChanged(const QString &name);
     void gamePageUrlChanged(const QString &url);
     void gameStartedChanged(bool gameStarted);
+    void packManagerVisibleChanged(bool visible);
 
     void startServerRequested(ushort port);
     void joinServerRequested(const QString &address, ushort port, const QString &username, const QString &password);
+
+    void installPackRequested(const QString &url);
 
     void showToast(const QString &message);
     void showErrorDialog(const QString &message);
@@ -79,6 +88,7 @@ private:
     QString m_gameViewModelName;
     QString m_gamePageUrl;
     bool m_gameStarted = false;
+    bool m_packManagerVisible = false;
     QString m_host;
     int m_port = 17943;
 };
