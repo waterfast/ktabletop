@@ -9,3 +9,5 @@ target_link_libraries(ktabletop-server PRIVATE
     Qt6::Core
     ktabletop_core
 )
+
+install(TARGETS ktabletop-server ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
