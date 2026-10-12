@@ -128,7 +128,8 @@ void Client::cancelTask(const QString &key)
     Q_EMIT clearProgressDialogData(key);
 
     if (!node.empty()) {
-        node.mapped()();
+        auto f = std::move(node.mapped());
+        f();
     }
 }
 

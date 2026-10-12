@@ -113,7 +113,7 @@ Kirigami.Page {
                 enabled: joinAddress.text.length > 0
                 onTriggered: {
                     Backend.mainViewModel.joinMultiPlayer(joinAddress.text, joinPort.value, joinUsername.text, joinPassword.text);
-                    multiplayerDialog.accepted();
+                    multiplayerDialog.close();
                 }
             },
             Kirigami.Action {

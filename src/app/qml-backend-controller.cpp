@@ -29,6 +29,13 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
     connect(vm, &MainViewModel::startServerRequested, this, &QmlBackendController::onStartServerRequested);
     connect(vm, &MainViewModel::joinServerRequested, this, &QmlBackendController::onJoinServerRequested);
 
+    connect(vm, &MainViewModel::progressTaskCancelRequested, this, [](const QString &key) {
+        if (Client::initialized()) {
+            Client::instance()->cancelTask(key);
+        }
+        // TODO: other thing that will use async feature, like package manager...
+    });
+
     auto *manager = LObjectManager::instance();
     manager->setCreateObjectFn([](const QVariantMap &opts) {
         return Client::instance()->luaBinding()->createLObject(opts);

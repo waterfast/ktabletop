@@ -121,10 +121,14 @@ static int connectToHost(lua_State *L)
     timer->connect(timer, &QTimer::timeout, ctx, [ctx] {
         ctx->complete(std::make_error_code(std::errc::timed_out));
     });
+    QObject::connect(ctx, &AsyncContext::cancelled, sock, [sock] {
+        sock->abort();
+    });
     timer->start(5000);
 
     sock->connectToHost(QString::fromUtf8(host), static_cast<ushort>(port));
-    return 0;
+
+    return LuaBinding::pushAsyncCancelToken(L, ctx);
 }
 
 static int getClientNonce(lua_State *L)
@@ -223,8 +227,8 @@ static int startTask(lua_State *L)
 
         lua_pushvalue(L, cb.index);
         int fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
-        // FIXME: mind lifecycle of L (L may be a coroutine.)
-        auto f = [L, fnRef, _ = LuaRefRAII{L, fnRef}] {
+        auto *binding = LuaBinding::forState(L);
+        auto f = [L = binding->state(), fnRef, _ = LuaRefRAII{L, fnRef}] {
             lua_rawgeti(L, LUA_REGISTRYINDEX, fnRef);
             LuaVM::call(L);
         };

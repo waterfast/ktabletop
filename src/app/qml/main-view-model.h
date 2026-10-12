@@ -48,6 +48,8 @@ public:
     Q_INVOKABLE void startSinglePlayer(const QString &username, const QString &password);
     Q_INVOKABLE void joinMultiPlayer(const QString &address, int port, const QString &username, const QString &password);
 
+    Q_INVOKABLE void cancelProgressTask(const QString &key);
+
     void showLuaError(const QString &msg);
 
 Q_SIGNALS:
@@ -66,6 +68,8 @@ Q_SIGNALS:
     void showErrorDialog(const QString &message);
     void setProgressDialogData(const QString &key, const QString &message, int progress, bool cancelable);
     void clearProgressDialogData(const QString &key);
+
+    void progressTaskCancelRequested(const QString &key);
 
 private:
     bool m_connected = false;

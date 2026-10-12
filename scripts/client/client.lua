@@ -180,11 +180,16 @@ end
 local function connectToHost(self, host, port)
   local ok, ret
   local success = false
-  kt.c.startTask("connectToHost", kt.c.i18n("Connecting to host..."), -1, true, async.abort())
-  local defer <close> = setmetatable({}, { __close = function()
+  local handle = async.current()
+  kt.c.startTask("connectToHost", kt.c.i18n("Connecting to host..."), -1, true, function()
+    async.cancel(handle)
+  end)
+  local _ <close> = setmetatable({}, { __close = function()
     kt.c.updateTask("connectToHost", 100)
     if success then return end
-    kt.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
+    if ret then
+      kt.log.warn(("Failed to connect to %s:%d - %s"):format(host, port, tostring(ret)))
+    end
     self:disconnectFromHost()
   end})
   ok, ret = async.await(async.wrap(kt.c.connectToHost)(host, port))

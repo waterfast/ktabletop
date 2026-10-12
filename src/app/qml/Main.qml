@@ -102,6 +102,7 @@ Kirigami.ApplicationWindow {
 
     TaskAndErrorDialog {
         id: taskDialog
+        onCancelTask: key => Backend.mainViewModel.cancelProgressTask(key)
     }
 
     Connections {

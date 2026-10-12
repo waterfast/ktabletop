@@ -102,7 +102,7 @@ function scheduler:finish(fn)
   local a = fn.caller
   if not a then
     if fn.state == "error" and fn.errmsg ~= CANCELLED then
-      error(fn.errmsg)
+      warn(debug.traceback(fn.coro, fn.errmsg))
     end
     return
   end
@@ -469,14 +469,6 @@ end
 
 function M.current()
   return scheduler:current()
-end
-
-function M.abort()
-  local f = scheduler:current()
-  assert(f, "cannot call abort() in sync code")
-  return function()
-    scheduler:cancel(f)
-  end
 end
 
 return M

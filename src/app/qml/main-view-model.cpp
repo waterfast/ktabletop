@@ -122,6 +122,11 @@ void MainViewModel::joinMultiPlayer(const QString &address, int port, const QStr
     Q_EMIT joinServerRequested(address, static_cast<ushort>(port), username, password);
 }
 
+void MainViewModel::cancelProgressTask(const QString &key)
+{
+    Q_EMIT progressTaskCancelRequested(key);
+}
+
 void MainViewModel::showLuaError(const QString &msg)
 {
     QString message = i18n("Lua script error!") + u'\n' + msg;

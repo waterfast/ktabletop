@@ -8,6 +8,8 @@ Kirigami.Dialog {
     id: root
     preferredWidth: Kirigami.Units.gridUnit * 32
 
+    signal cancelTask(string key)
+
     title: {
         if (listModel.count === 0) {
             return i18n("Empty");
@@ -137,6 +139,7 @@ Kirigami.Dialog {
                 icon.name: "dialog-cancel"
                 text: i18n("Cancel")
                 visible: row.model?.cancelable ?? false
+                onClicked: root.cancelTask(row.model.key)
             }
         }
     }
