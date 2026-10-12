@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-FileCopyrightText: 2026 Notify Ctrl <notify-ctrl@qq.com>
+[Desktop Entry]
+Name=KTabletop
+Comment=Play boardgames online
+Exec=ktabletop
+Icon=org.kde.ktabletop
+Type=Application
+Terminal=false
+Categories=Game;KDE;

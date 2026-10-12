@@ -44,3 +44,6 @@ kconfig_target_kcfg_file(ktabletop FILE ktabletopconfig.kcfg
     GENERATE_MOC
     QML_REGISTRATION
 )
+
+install(TARGETS ktabletop ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+install(FILES ktabletopconfig.kcfg DESTINATION ${KDE_INSTALL_KCFGDIR})
