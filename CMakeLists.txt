@@ -51,7 +51,7 @@ find_package(OpenSSL REQUIRED)
 find_package(LibGit2 ${GIT2_MIN_VERSION} REQUIRED)
 find_package(spdlog REQUIRED)
 
-find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS Core Network Sql ${QT_EXTRA_COMPONENTS})
+find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS Core Network Sql Concurrent ${QT_EXTRA_COMPONENTS})
 
 if (BUILD_KTABLETOP_APP)
     find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS Kirigami CoreAddons Config I18n ColorScheme)

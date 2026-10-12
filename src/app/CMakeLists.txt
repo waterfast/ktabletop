@@ -18,6 +18,8 @@ ecm_add_app_icon(KTABLETOP_ICON ICONS ${CMAKE_SOURCE_DIR}/128-logo.png)
 target_sources(ktabletop PRIVATE ${KTABLETOP_ICON})
 
 target_link_libraries(ktabletop PRIVATE
+    Qt6::Concurrent
+
     ktabletop_qmlplugin
 )
 target_link_libraries(ktabletop PUBLIC

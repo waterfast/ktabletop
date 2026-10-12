@@ -139,7 +139,11 @@ Kirigami.Dialog {
                 icon.name: "dialog-cancel"
                 text: i18n("Cancel")
                 visible: row.model?.cancelable ?? false
-                onClicked: root.cancelTask(row.model.key)
+                onClicked: {
+                    enabled = false;
+                    text: i18n("Canceling...")
+                    root.cancelTask(row.model.key)
+                }
             }
         }
     }

@@ -37,7 +37,7 @@ void PackMan::destroy()
     packManInstance = nullptr;
 }
 
-static QString extractPackName(const QString &u)
+QString PackMan::extractPackName(const QString &u)
 {
     auto url = u;
     while (url.endsWith(u"/"_s)) {
@@ -62,11 +62,12 @@ struct GitRepo {
 
     QString op;
     QString target;
+    // Note that this needs to be eagerly set, because of GUI progress bar
     QString repoName = "(null)"_L1;
 
     void reportError(int err, const QString &detail = QString()) const
     {
-        QString text = u"GitRepo::%1(%2) of plugin %3 failed!\n    "_s.arg(op.isEmpty() ? u"unknownOp"_s : op, target, repoName);
+        QString text = u"GitRepo::%1(%2) of plugin '%3' failed!\n    "_s.arg(op, target, repoName);
 
         if (detail.isEmpty()) {
             const git_error *e = git_error_last();
@@ -75,7 +76,7 @@ struct GitRepo {
             text += detail;
         }
 
-        Q_EMIT PackMan::instance()->errorOccurred(text);
+        Q_EMIT PackMan::instance()->errorOccurred(repoName, text);
     }
 
     GitRepo() noexcept = default;
@@ -114,48 +115,36 @@ int GitRepo::open(const QString &name)
     git_repository *raw = nullptr;
     auto path = u"%1/%2"_s.arg(pluginsPath, name);
     target = path;
+    repoName = name;
     int err = git_repository_open(&raw, path.toUtf8().constData());
     if (err < 0) {
         reportError(err);
         return err;
     }
     repo = raw;
-    repoName = name;
     return 0;
 }
 
 static int transfer_progress_cb(const git_indexer_progress *stats, void *payload)
 {
-    Q_UNUSED(payload);
+    auto *packman = PackMan::instance();
+    auto *repo = static_cast<GitRepo *>(payload);
+
+    QString prefix = u"GitRepo::%1(%2) of plugin '%3' is running...\n    "_s.arg(repo->op, repo->target, repo->repoName);
+    QString msg;
     if (stats->received_objects == stats->total_objects) {
-        printf("Resolving deltas %u/%u\r", stats->indexed_deltas, stats->total_deltas);
+        msg = u"Resolving deltas %1/%2"_s.arg(stats->indexed_deltas).arg(stats->total_deltas);
     } else if (stats->total_objects > 0) {
-        printf("Received %u/%u objects (%u) in %zu bytes\r", stats->received_objects, stats->total_objects, stats->indexed_objects, stats->received_bytes);
+        msg = u"Received %1/%2 objects (%3 KiB)"_s.arg(stats->received_objects)
+                  .arg(stats->total_objects)
+                  .arg(QString::number((double)stats->received_bytes / 1024, 'f', 2));
+    }
+    if (msg.isEmpty()) {
+        return 0;
     }
 
-    // QmlBackend related, commented out for now
-    // Backend->notifyUI(u"PackageTransferProgress"_s, QJsonObject {
-    //   { u"received_objects"_s, qint64(stats->received_objects) },
-    //   { u"total_objects"_s, qint64(stats->total_objects) },
-    //   { u"indexed_objects"_s, qint64(stats->indexed_objects) },
-    //   { u"received_bytes"_s, qint64(stats->received_bytes) },
-    //   { u"indexed_deltas"_s, qint64(stats->indexed_deltas) },
-    //   { u"total_deltas"_s, qint64(stats->total_deltas) },
-    // });
-    //
-    // if (stats->received_objects == stats->total_objects) {
-    //   auto msg = QString("Resolving deltas %1/%2")
-    //                  .arg(stats->indexed_deltas)
-    //                  .arg(stats->total_deltas);
-    //   Backend->notifyUI("UpdateBusyText", msg);
-    // } else if (stats->total_objects > 0) {
-    //   auto msg = QString("Received %1/%2 objects (%3) in %4 KiB")
-    //                  .arg(stats->received_objects)
-    //                  .arg(stats->total_objects)
-    //                  .arg(stats->indexed_objects)
-    //                  .arg(stats->received_bytes / 1024);
-    //   Backend->notifyUI("UpdateBusyText", msg);
-    // }
+    printf("%s\r", qPrintable(msg));
+    Q_EMIT packman->updateTransferMessage(repo->repoName, prefix + msg);
 
     return 0;
 }
@@ -165,22 +154,23 @@ int GitRepo::clone(const QString &u)
     op = u"clone"_s;
     target = u;
 
-    QString fileName = extractPackName(u);
+    QString fileName = PackMan::extractPackName(u);
     QString clonePath = u"%1/%2"_s.arg(pluginsPath, fileName);
+
+    // Set up front so progress/error messages can name the pack even if clone fails.
+    repoName = fileName;
 
     git_repository *raw = nullptr;
     git_clone_options opt = GIT_CLONE_OPTIONS_INIT;
     opt.fetch_opts.proxy_opts.version = 1;
     opt.fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
+    opt.fetch_opts.callbacks.payload = this;
     int err = git_clone(&raw, u.toUtf8().constData(), clonePath.toUtf8().constData(), &opt);
     if (err < 0) {
         QDir(clonePath).removeRecursively();
         reportError(err);
     } else {
         repo = raw;
-        repoName = fileName;
-        // if (Backend == nullptr)
-        printf("\n");
     }
     return err;
 }
@@ -196,6 +186,7 @@ int GitRepo::pull()
     git_fetch_options opt = GIT_FETCH_OPTIONS_INIT;
     opt.proxy_opts.version = 1;
     opt.callbacks.transfer_progress = transfer_progress_cb;
+    opt.callbacks.payload = this;
 
     git_checkout_options opt2 = GIT_CHECKOUT_OPTIONS_INIT;
     opt2.checkout_strategy = GIT_CHECKOUT_FORCE;
@@ -213,9 +204,6 @@ int GitRepo::pull()
 
     err = git_checkout_head(repo, &opt2);
     GIT_CHK_CLEAN;
-
-    // if (Backend == nullptr)
-    printf("\n");
 
 clean:
     git_remote_free(remote);
@@ -425,7 +413,7 @@ PackMan::PackMan(QObject *parent)
 
     m_pluginsPath = u"%1/plugins"_s.arg(runtimeDataDir());
 
-    connect(this, &PackMan::errorOccurred, this, [](const QString &message) {
+    connect(this, &PackMan::errorOccurred, this, [](const QString &, const QString &message) {
         qCritical().noquote() << message;
     });
 
@@ -487,108 +475,83 @@ QString PackMan::getPackSummary()
     return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
 }
 
-void PackMan::loadSummary(const QString &jsonData, bool useThread)
+void PackMan::loadSummary(const QString &jsonData)
 {
-    auto f = [=, this] {
-        // First, disable all packages
-        const auto enabledResult = m_pluginsDb->execQuerySync(u"SELECT name, url, hash FROM packages WHERE enabled = 1;"_s);
-        for (const auto &row : enabledResult.second) {
-            disablePack(row.value(0).toString());
+    // First, disable all packages
+    const auto enabledResult = m_pluginsDb->execQuerySync(u"SELECT name, url, hash FROM packages WHERE enabled = 1;"_s);
+    for (const auto &row : enabledResult.second) {
+        disablePack(row.value(0).toString());
+    }
+
+    // Then read conf from string
+    auto doc = QJsonDocument::fromJson(jsonData.toUtf8());
+    auto arr = doc.array();
+    for (auto e : arr) {
+        auto obj = e.toObject();
+        auto name = obj[u"name"_s].toString();
+        auto url = obj[u"url"_s].toString();
+        int err = 0;
+
+        sanitizePackageDb(name);
+
+        auto existsResult = m_pluginsDb->execQuerySync(u"SELECT name FROM packages WHERE name = ?;"_s, name);
+        if (existsResult.second.isEmpty()) {
+            err = downloadNewPack(url);
+            if (err != 0) {
+                QString msg;
+                if (err != 100) {
+                    auto error = git_error_last();
+                    msg = u"Error: %1"_s.arg(error->message);
+                } else {
+                    msg = u"Workspace is dirty."_s;
+                }
+                continue;
+            }
         }
 
-        // Then read conf from string
-        auto doc = QJsonDocument::fromJson(jsonData.toUtf8());
-        auto arr = doc.array();
-        for (auto e : arr) {
-            auto obj = e.toObject();
-            auto name = obj[u"name"_s].toString();
-            auto url = obj[u"url"_s].toString();
-            int err = 0;
+        enablePack(name);
 
-            // There should be an extension pack page showing which pack is downloading
-            // Backend->notifyUI(u"SetDownloadingPackage"_s, name);
-
-            // First sync DB with disk state, then decide clone or pull
-            sanitizePackageDb(name);
-
-            auto existsResult = m_pluginsDb->execQuerySync(u"SELECT name FROM packages WHERE name = ?;"_s, name);
-            if (existsResult.second.isEmpty()) {
-                err = downloadNewPack(url);
-                if (err != 0) {
-                    QString msg;
-                    if (err != 100) {
-                        auto error = git_error_last();
-                        msg = u"Error: %1"_s.arg(error->message);
-                    } else {
-                        msg = u"Workspace is dirty."_s;
-                    }
-                    // Backend->notifyUI(u"PackageDownloadError"_s, msg);
-                    continue;
+        GitRepo head_repo(m_pluginsPath);
+        if (head_repo.open(name) == 0 && head_repo.head() != obj[u"hash"_s].toString()) {
+            err = updatePack(name, obj[u"hash"_s].toString());
+            if (err != 0) {
+                QString msg;
+                if (err != 100) {
+                    auto error = git_error_last();
+                    msg = u"Error: %1"_s.arg(error->message);
+                } else {
+                    msg = u"Workspace is dirty."_s;
                 }
+                continue;
             }
-
-            enablePack(name);
-
-            GitRepo head_repo(m_pluginsPath);
-            if (head_repo.open(name) == 0 && head_repo.head() != obj[u"hash"_s].toString()) {
-                err = updatePack(name, obj[u"hash"_s].toString());
-                if (err != 0) {
-                    QString msg;
-                    if (err != 100) {
-                        auto error = git_error_last();
-                        msg = u"Error: %1"_s.arg(error->message);
-                    } else {
-                        msg = u"Workspace is dirty."_s;
-                    }
-                    // Backend->notifyUI(u"PackageDownloadError"_s, msg);
-                    continue;
-                }
-            }
-
-            m_pluginsDb->execQuerySync(u"UPDATE packages SET hash = ? WHERE name = ?;"_s, obj[u"hash"_s].toString(), name);
         }
-    };
-    if (useThread) {
-        auto thread = QThread::create(f);
-        thread->start();
-        connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-    } else {
-        f();
+
+        m_pluginsDb->execQuerySync(u"UPDATE packages SET hash = ? WHERE name = ?;"_s, obj[u"hash"_s].toString(), name);
     }
 }
 
-int PackMan::downloadNewPack(const QString &url, bool useThread)
+int PackMan::downloadNewPack(const QString &url)
 {
-    auto threadFunc = [=, this] {
-        GitRepo raii_repo(m_pluginsPath);
-        int err = raii_repo.clone(url);
-        if (err < 0) {
-            sanitizePackageDb(extractPackName(url));
-            return err;
-        }
-
-        auto fileName = extractPackName(url);
-
-        auto existsResult = m_pluginsDb->execQuerySync(u"SELECT name FROM packages WHERE name = ?;"_s, fileName);
-        if (existsResult.second.isEmpty()) {
-            m_pluginsDb->execQuerySync(
-                u"INSERT INTO packages (name, url, hash, enabled) "
-                "VALUES (?, ?, ?, 1);"_s,
-                fileName,
-                url,
-                raii_repo.head());
-        }
-
+    GitRepo repo(m_pluginsPath);
+    int err = repo.clone(url);
+    if (err < 0) {
+        sanitizePackageDb(PackMan::extractPackName(url));
         return err;
-    };
-    if (useThread) {
-        auto thread = QThread::create(threadFunc);
-        thread->start();
-        connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-        return 0;
-    } else {
-        return threadFunc();
     }
+
+    auto fileName = PackMan::extractPackName(url);
+
+    auto existsResult = m_pluginsDb->execQuerySync(u"SELECT name FROM packages WHERE name = ?;"_s, fileName);
+    if (existsResult.second.isEmpty()) {
+        m_pluginsDb->execQuerySync(
+            u"INSERT INTO packages (name, url, hash, enabled) "
+            "VALUES (?, ?, ?, 1);"_s,
+            fileName,
+            url,
+            repo.head());
+    }
+
+    return err;
 }
 
 void PackMan::enablePack(const QString &pack)

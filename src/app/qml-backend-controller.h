@@ -5,6 +5,8 @@
 
 #include <QObject>
 
+#include <functional>
+
 class QmlBackend;
 
 class QmlBackendController : public QObject
@@ -23,4 +25,9 @@ private:
     QmlBackend *const m_backend;
 
     void handleCommonLuaEvent(const QString &command, const QVariant &data);
+
+    // since there is no client instance when using plugin manager,
+    // we need to offer new method to launch "async" download job.
+    // (This is purely for displaying progress)
+    void startPackJob(const QString &name, const QString &message, std::function<void()> work);
 };

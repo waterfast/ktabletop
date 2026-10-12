@@ -24,8 +24,10 @@ public:
 
     QString getPackSummary();
     QStringList getDisabledPacks();
-    void loadSummary(const QString &, bool useThread = false);
-    int downloadNewPack(const QString &url, bool useThread = false);
+    void loadSummary(const QString &);
+    int downloadNewPack(const QString &url);
+
+    static QString extractPackName(const QString &url);
     void enablePack(const QString &pack);
     void disablePack(const QString &pack);
     int updatePack(const QString &pack, const QString &hash);
@@ -42,7 +44,8 @@ public:
     void syncCommitHashToDatabase();
 
 Q_SIGNALS:
-    void errorOccurred(const QString &message);
+    void updateTransferMessage(QString repoName, QString message);
+    void errorOccurred(QString repoName, QString message);
 
 private:
     explicit PackMan(QObject *parent = nullptr);

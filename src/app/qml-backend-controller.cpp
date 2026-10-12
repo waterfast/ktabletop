@@ -19,6 +19,7 @@
 #include <QUrl>
 
 #include <KLocalizedString>
+#include <QtConcurrent>
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -34,14 +35,26 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
         if (Client::initialized()) {
             Client::instance()->cancelTask(key);
         }
-        // TODO: other thing that will use async feature, like package manager...
     });
 
-    connect(vm, &MainViewModel::installPackRequested, this, [](const QString &url) {
-        PackMan::instance()->downloadNewPack(url, true);
+    auto *packman = PackMan::instance();
+    connect(packman, &PackMan::updateTransferMessage, this, [vm](const QString &repoName, const QString &message) {
+        Q_EMIT vm->setProgressDialogData(u"git-progress-"_s + repoName, message, -1, false);
+    });
+    connect(packman, &PackMan::errorOccurred, this, [vm](const QString &repoName, const QString &message) {
+        Q_EMIT vm->clearProgressDialogData(u"git-progress-"_s + repoName);
+        Q_EMIT vm->showErrorDialog(message);
     });
 
-    connect(PackMan::instance(), &PackMan::errorOccurred, vm, &MainViewModel::showErrorDialog);
+    connect(vm, &MainViewModel::installPackRequested, this, [this](const QString &url) {
+        if (url.isEmpty()) {
+            return;
+        }
+        const QString name = PackMan::extractPackName(url);
+        startPackJob(name, i18n("Downloading %1…", name), [url] {
+            PackMan::instance()->downloadNewPack(url);
+        });
+    });
 
     auto *manager = LObjectManager::instance();
     manager->setCreateObjectFn([](const QVariantMap &opts) {
@@ -54,6 +67,20 @@ QmlBackendController::QmlBackendController(QmlBackend *backend, QObject *parent)
 
 QmlBackendController::~QmlBackendController()
 {
+}
+
+void QmlBackendController::startPackJob(const QString &name, const QString &message, std::function<void()> work)
+{
+    auto *vm = m_backend->mainViewModel();
+    const QString key = u"git-progress-"_s + name;
+
+    Q_EMIT vm->setProgressDialogData(key, message, -1, false);
+
+    QtConcurrent::run([work] {
+        work();
+    }).then(this, [this, key] {
+        Q_EMIT m_backend->mainViewModel()->clearProgressDialogData(key);
+    });
 }
 
 void QmlBackendController::onStartServerRequested(ushort port)
