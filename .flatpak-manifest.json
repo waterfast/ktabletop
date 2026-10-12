@@ -1,0 +1,100 @@
+{
+    "id": "org.kde.ktabletop",
+    "branch": "master",
+    "runtime": "org.kde.Platform",
+    "runtime-version": "6.11",
+    "sdk": "org.kde.Sdk",
+    "command": "ktabletop",
+    "tags": [
+        "nightly"
+    ],
+    "desktop-file-name-suffix": " (Nightly)",
+    "finish-args": [
+        "--share=network",
+        "--socket=fallback-x11",
+        "--socket=pulseaudio",
+        "--socket=wayland",
+        "--device=dri",
+        "--filesystem=xdg-config",
+        "--filesystem=xdg-config/ktabletop:create",
+        "--filesystem=xdg-data/ktabletop:create"
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/*.a",
+        "/lib/cmake",
+        "/lib/pkgconfig"
+    ],
+
+    "modules": [
+        {
+            "name": "kirigamiaddons",
+            "config-opts": [
+                "-DBUILD_TESTING=OFF"
+            ],
+            "buildsystem": "cmake-ninja",
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://invent.kde.org/libraries/kirigami-addons.git"
+                }
+            ]
+        },
+
+        {
+            "name": "lua",
+            "buildsystem": "simple",
+            "build-commands": [
+                "make MYCFLAGS='-fPIC'",
+                "make install INSTALL_TOP=/app"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://lua.org/ftp/lua-5.5.1.tar.gz",
+                    "sha256": "1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+                }
+            ]
+        },
+
+        {
+            "name": "libgit2",
+            "config-opts": [
+                "-DBUILD_TESTS=OFF"
+            ],
+            "buildsystem": "cmake-ninja",
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://github.com/libgit2/libgit2/archive/v1.9.6.tar.gz",
+                    "sha256": "a88a42a4ea9bdab7aa8686eead3bf7d9c6dd74529caca16ab22eaa92433d31d9"
+                }
+            ]
+        },
+
+        {
+            "name": "spdlog",
+            "buildsystem": "cmake-ninja",
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://github.com/gabime/spdlog/archive/refs/tags/v1.17.0.tar.gz",
+                    "sha256": "d8862955c6d74e5846b3f580b1605d2428b11d97a410d86e2fb13e857cd3a744"
+                }
+            ]
+        },
+
+        {
+            "name": "ktabletop",
+            "buildsystem": "cmake-ninja",
+            "config-opts": [
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "."
+                }
+            ]
+        }
+    ]
+}
