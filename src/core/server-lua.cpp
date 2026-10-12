@@ -267,6 +267,8 @@ static luaL_Reg socketFuncTable[] = {
     {"requestSocket", requestSocket},
     {"replySocket", replySocket},
     {"disconnect", disconnectSocket},
+
+    {NULL, NULL},
 };
 
 static luaL_Reg serverFuncTable[] = {
