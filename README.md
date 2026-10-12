@@ -53,6 +53,7 @@ and you need to create directories to make the app runs normally.
 ```sh
 $ ln -s build/bin/ktabletop
 $ mkdir plugins server client
+$ touch .ktabletop-dir
 $ ./ktabletop
 ```
 

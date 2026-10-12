@@ -56,6 +56,8 @@ static const auto usersDbSchema = QString::fromUtf8(usersDbSql);
 Server::Server(QObject *parent)
     : QObject(parent)
 {
+    m_dataPath = u"%1/server"_s.arg(KTabletopUtils::runtimeDataDir());
+
     L = new LuaBinding(this, LuaBinding::Server);
     connect(L, &LuaBinding::luaWarning, this, &Server::luaWarning);
     luaopen_ktabletop_common(L->state());

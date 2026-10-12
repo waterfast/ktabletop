@@ -25,5 +25,6 @@ flake.lock
 /client/
 /server/
 /plugins/
+/.ktabletop-dir
 *.log
 repl-history.txt

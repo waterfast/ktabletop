@@ -8,6 +8,7 @@
 
 #include "core/logger.h"
 #include "core/server.h"
+#include "core/util.h"
 #include "lua/lua-binding.h"
 
 using namespace Qt::Literals::StringLiterals;
@@ -17,6 +18,8 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName(u"ktabletop-server"_s);
     QCoreApplication::setApplicationVersion(u"0.0.1"_s);
+
+    KTabletopUtils::runtimeDataDir(true);
 
     initLogger();
     installQtMessageHandler();

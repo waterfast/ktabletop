@@ -23,6 +23,7 @@
 
 #include "catalog.h"
 #include "core/logger.h"
+#include "core/util.h"
 #include "ktabletopconfig.h"
 #include "qml-backend-controller.h"
 #include "qml/qml-backend.h"
@@ -37,15 +38,18 @@ int main(int argc, char *argv[])
 {
     QThread::currentThread()->setObjectName(QStringLiteral("Main"));
 
-    initLogger();
-    installQtMessageHandler();
-
 #ifdef Q_OS_ANDROID
     QGuiApplication app(argc, argv);
 #else
     QApplication app(argc, argv);
 #endif
     KirigamiAppDefaults::apply(&app);
+
+    // Resolve the runtime directory
+    KTabletopUtils::runtimeDataDir();
+
+    initLogger();
+    installQtMessageHandler();
 
     KLocalizedString::setApplicationDomain("ktabletop");
 

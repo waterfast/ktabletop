@@ -20,4 +20,6 @@ QSqlQuery execQuery(const QSqlDatabase &db, const QString &sql, const Args &...a
 
 QString readWholeFile(const QString &path);
 
+QString runtimeDataDir(bool headless = false);
+
 } // namespace KTabletopUtils

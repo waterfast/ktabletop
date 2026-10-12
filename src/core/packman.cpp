@@ -385,6 +385,8 @@ PackMan::PackMan(QObject *parent)
 {
     git_libgit2_init();
 
+    m_pluginsPath = u"%1/plugins"_s.arg(runtimeDataDir());
+
     initDatabase();
 
 #ifdef Q_OS_ANDROID

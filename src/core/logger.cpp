@@ -5,6 +5,7 @@
 
 #include "server.h"
 #include "stdin-adapter.h"
+#include "util.h"
 
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/callback_sink.h>
@@ -12,12 +13,15 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include <QDir>
 #include <QThread>
 
 #include <chrono>
 #include <string>
 #include <string_view>
 #include <vector>
+
+using namespace Qt::Literals::StringLiterals;
 
 class thread_name_flag : public spdlog::custom_flag_formatter
 {
@@ -40,7 +44,7 @@ public:
 
 void initLogger()
 {
-    constexpr auto logger_file = "ktabletop.log";
+    const auto logger_file = QDir(KTabletopUtils::runtimeDataDir()).filePath(u"ktabletop.log"_s).toStdString();
 
     std::vector<spdlog::sink_ptr> sinks;
 
