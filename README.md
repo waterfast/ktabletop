@@ -2,16 +2,19 @@
 
 A boardgame platform based on Qt/QML and KDE libs, using Lua for scripting.
 
-## Goal
-
-Make this an extensible and easy-to-use boardgame platform:
-
-- Easy to develop new boardgame using provided Lua API and QML components
-- Easy to host game server by yourself
-- Easy for users to play together online without bothering plugin config by themselves
-- And more...
+Check [project Wiki](https://invent.kde.org/notifyctrl/ktabletop/-/wikis/home) for detailed description and documentation.
 
 Join our matrix room: #ktabletop:tchncs.de
+
+## Get the package
+
+Currently available on AUR, Archlinux users can install KTabletop by:
+
+```sh
+$ paru -S ktabletop-git
+```
+
+Flatpak manifest is ready too but hasn't been released to Flathub yet. And check contrib/ for currently supported platforms.
 
 ## Build and Run
 
@@ -48,7 +51,7 @@ $ cmake --build build/ -j
 ```
 
 Currently `$PWD` for the app should be project source dir, I will recommend creating soft link,
-and you need to create directories to make the app runs normally.
+and you need to create directories and placeholder file to make the app runs normally.
 
 ```sh
 $ ln -s build/bin/ktabletop
