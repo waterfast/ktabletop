@@ -32,7 +32,7 @@ $ sudo pacman -S qt6-declarative kirigami kirigami-addons kcoreaddons kconfig ki
 
 Some notable minimum required versions here, since this project uses some of bleeding edge features:
 
-- A compiler with C++26 support. (Used feature: `#embed` macro, needs gcc 15 or clang 19)
+- A compiler with C++23 support.
 - Lua 5.5.x (Exactly 5.5, older or newer versions are not supported)
 - CMake >= 4.3 (For `find_package(Lua EXACT 5.5)`)
 - Qt >= 6.10

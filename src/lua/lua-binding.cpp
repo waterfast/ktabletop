@@ -6,6 +6,7 @@
 #include "lua-helper.h"
 
 #include <QDir>
+#include <QFile>
 #include <QString>
 
 #include <QStringLiteral>
@@ -15,10 +16,6 @@ using namespace Qt::Literals::StringLiterals;
 
 // Thread-safe way to get binding instance
 static const char regKey = 0;
-
-static constexpr char sandboxLua[] = {
-#embed "sandboxing.lua"
-};
 
 LuaBinding::LuaBinding(QObject *parent, Role role)
     : QObject(parent)
@@ -46,7 +43,11 @@ LuaBinding::LuaBinding(QObject *parent, Role role)
         qCritical().noquote() << msg;
     });
 
-    luaL_dostring(L, sandboxLua);
+    QFile sandboxScript(u":/lua/sandboxing.lua"_s);
+    if (sandboxScript.open(QIODevice::ReadOnly)) {
+        auto sandboxLua = sandboxScript.readAll();
+        luaL_dostring(L, sandboxLua.constData());
+    }
 }
 
 LuaBinding::~LuaBinding()

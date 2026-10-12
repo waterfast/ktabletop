@@ -10,6 +10,11 @@ qt_add_resources(ktabletop_lua "scripts"
     BASE ${CMAKE_SOURCE_DIR}/scripts
     FILES ${KTABLETOP_CORE_SCRIPTS})
 
+qt_add_resources(ktabletop_lua "sandbox"
+    PREFIX "/lua"
+    BASE ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES sandboxing.lua)
+
 target_link_libraries(ktabletop_lua PUBLIC Qt6::Core ${LUA_LIBRARIES})
 target_include_directories(ktabletop_lua PUBLIC
     ${PROJECT_SOURCE_DIR}/src

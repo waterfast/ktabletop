@@ -12,6 +12,11 @@ add_library(ktabletop_core STATIC
     packman.cpp
 )
 
+qt_add_resources(ktabletop_core "core_resources"
+    PREFIX "/sql"
+    BASE ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES users-init.sql)
+
 target_link_libraries(ktabletop_core PUBLIC
     spdlog::spdlog
     LibGit2::LibGit2

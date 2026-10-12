@@ -46,13 +46,6 @@ void Server::destroy()
     serverInstance = nullptr;
 }
 
-static constexpr char usersDbSql[] = {
-#embed "users-init.sql"
-};
-
-// NOTE: DO NOT contain any ';' in comments of .sql file
-static const auto usersDbSchema = QString::fromUtf8(usersDbSql);
-
 Server::Server(QObject *parent)
     : QObject(parent)
 {
@@ -80,6 +73,8 @@ void Server::initUsersDb()
 {
     delete m_usersDb;
     m_usersDb = new DbThread(this, u"usersDb"_s, u"%1/users.db"_s.arg(m_dataPath));
+    // NOTE: DO NOT contain any ';' in comments of .sql file
+    auto usersDbSchema = readWholeFile(u":/sql/users-init.sql"_s);
     m_usersDb->execMultiSql(usersDbSchema);
 }
 

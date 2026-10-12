@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 4.3)
 
 project(KTabletop VERSION 0.0.1)
 
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_KTABLETOP_APP "Build the KTabletop application" ON)
