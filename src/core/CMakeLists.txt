@@ -24,6 +24,7 @@ target_link_libraries(ktabletop_core PUBLIC
     spdlog::spdlog
     LibGit2::LibGit2
     OpenSSL::Crypto
+    OpenSSL::SSL
 
     Qt6::Sql
 
