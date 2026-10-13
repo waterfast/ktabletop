@@ -84,6 +84,11 @@ void initLogger()
     spdlog::flush_every(std::chrono::seconds(3));
 }
 
+void shutdownLogger()
+{
+    spdlog::shutdown();
+}
+
 static void qtMessageHandler(QtMsgType type, const QMessageLogContext &, const QString &msg)
 {
     switch (type) {

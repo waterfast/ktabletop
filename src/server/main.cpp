@@ -46,5 +46,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    return app.exec();
+    int exitCode = app.exec();
+    shutdownLogger();
+    return exitCode;
 }

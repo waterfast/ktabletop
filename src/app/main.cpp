@@ -119,5 +119,7 @@ int main(int argc, char *argv[])
 
     QmlBackendController controller(backend);
 
-    return app.exec();
+    int exitCode = app.exec();
+    shutdownLogger();
+    return exitCode;
 }

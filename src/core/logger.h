@@ -4,5 +4,6 @@
 #pragma once
 
 void initLogger();
+void shutdownLogger();
 
 void installQtMessageHandler();
