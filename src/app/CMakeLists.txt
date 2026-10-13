@@ -51,6 +51,8 @@ install(TARGETS ktabletop ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 install(FILES ktabletopconfig.kcfg DESTINATION ${KDE_INSTALL_KCFGDIR})
 
 if (WIN32)
+  # For using REPL instance and view logs.
+  set_target_properties(ktabletop PROPERTIES WIN32_EXECUTABLE FALSE)
   add_executable(start-ktabletop WIN32
     ${PROJECT_SOURCE_DIR}/contrib/windows/start-ktabletop.c
     ${KTABLETOP_ICON}

@@ -4,6 +4,9 @@
 add_executable(ktabletop-server
     main.cpp
 )
+if(WIN32)
+    set_target_properties(ktabletop-server PROPERTIES WIN32_EXECUTABLE FALSE)
+endif()
 
 target_link_libraries(ktabletop-server PRIVATE
     Qt6::Core
