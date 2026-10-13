@@ -73,6 +73,21 @@ $ cmake -S . -B build/ -G Ninja -DBUILD_KTABLETOP_APP=false
 $ cmake --build build/ -j
 ```
 
+## Build on Windows
+
+Currently not possible because Lua 5.5 requires CMake 4.3+. However by patching craft tool you could build it.
+
+First setup craft: https://community.kde.org/Get_Involved/development/Windows
+
+Then edit `$CRAFTROOT/craft/blueprints/dev-utils/cmake-base/cmake-base.py`, add version 4.4.0 to that list, and set defaultTarget to 4.4.0. Then run `craft -i cmake`, you are ready now.
+
+```sh
+$ craft --add-blueprint-repository https://invent.kde.org/notifyctrl/craft-blueprints-ktabletop.git
+$ craft ktabletop
+$ craft --run ktabletop
+$ craft --package ktabletop
+```
+
 ## Code Convention
 
 Follow KDE policy, exceptions and additions:
