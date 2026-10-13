@@ -3,7 +3,7 @@
 
 #include "catalog.h"
 #include "client.h"
-#include "lua/lua-binding.h"
+#include "core/lua/lua-binding.h"
 
 #include "3rdparty/spiritless_po.h"
 

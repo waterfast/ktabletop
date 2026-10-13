@@ -1,3 +1,6 @@
+add_subdirectory(lua)
+add_subdirectory(network)
+
 add_library(ktabletop_core STATIC
     server.cpp
     logger.cpp
@@ -6,8 +9,8 @@ add_library(ktabletop_core STATIC
     util.cpp
     stdin-adapter.cpp
 
-    common-lua.cpp
-    server-lua.cpp
+    luabinding/common-lua.cpp
+    luabinding/server-lua.cpp
 
     packman.cpp
 )

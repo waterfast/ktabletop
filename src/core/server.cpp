@@ -2,16 +2,16 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "server.h"
-#include "common-lua.h"
+#include "core/lua/lua-binding.h"
+#include "core/luabinding/common-lua.h"
+#include "core/luabinding/server-lua.h"
+#include "core/network/client-socket.h"
+#include "core/network/crypto-util.h"
+#include "core/network/server-socket.h"
+#include "core/network/user-connection.h"
 #include "core/packman.h"
 #include "db-thread.h"
 #include "game-thread.h"
-#include "lua/lua-binding.h"
-#include "network/client-socket.h"
-#include "network/crypto-util.h"
-#include "network/server-socket.h"
-#include "network/user-connection.h"
-#include "server-lua.h"
 #include "stdin-adapter.h"
 #include "util.h"
 

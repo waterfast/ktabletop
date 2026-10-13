@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "common-lua.h"
-#include "lua/async-context.h"
-#include "lua/lua-binding.h"
-#include "lua/lua-helper.h" // for LuaVM::readValue
+#include "core/lua/async-context.h"
+#include "core/lua/lua-binding.h"
+#include "core/lua/lua-helper.h" // for LuaVM::readValue
 
 #include <QCryptographicHash>
 #include <QTimer>

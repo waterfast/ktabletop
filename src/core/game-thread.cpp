@@ -4,10 +4,10 @@
 #include "game-thread.h"
 #include "server.h"
 
-#include "common-lua.h"
-#include "lua/lua-binding.h"
-#include "lua/lua-helper.h"
-#include "server-lua.h"
+#include "core/lua/lua-binding.h"
+#include "core/lua/lua-helper.h"
+#include "core/luabinding/common-lua.h"
+#include "core/luabinding/server-lua.h"
 
 #include <QEventLoop>
 

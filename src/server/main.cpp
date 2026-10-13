@@ -7,9 +7,9 @@
 #include <QHostAddress>
 
 #include "core/logger.h"
+#include "core/lua/lua-binding.h"
 #include "core/server.h"
 #include "core/util.h"
-#include "lua/lua-binding.h"
 
 using namespace Qt::Literals::StringLiterals;
 

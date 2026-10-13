@@ -3,14 +3,14 @@
 
 #include "server-lua.h"
 #include "common-lua.h"
+#include "core/lua/async-context.h"
+#include "core/lua/lua-binding.h"
+#include "core/lua/lua-helper.h" // for LuaVM::readValue
+#include "core/network/client-socket.h"
+#include "core/network/crypto-util.h"
+#include "core/network/user-connection.h"
 #include "db-thread.h"
 #include "game-thread.h"
-#include "lua/async-context.h"
-#include "lua/lua-binding.h"
-#include "lua/lua-helper.h" // for LuaVM::readValue
-#include "network/client-socket.h"
-#include "network/crypto-util.h"
-#include "network/user-connection.h"
 #include "server.h"
 
 #include <QCryptographicHash>

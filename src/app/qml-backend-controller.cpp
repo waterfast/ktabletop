@@ -7,12 +7,12 @@
 #include "qml/qml-backend.h"
 
 #include "client.h"
+#include "core/lua/lua-binding.h"
 #include "core/packman.h"
 #include "core/server.h"
-#include "lua/lua-binding.h"
 
-#include "network/client-socket.h"
-#include "network/user-connection.h"
+#include "core/network/client-socket.h"
+#include "core/network/user-connection.h"
 #include <QFileInfo>
 #include <QHostAddress>
 #include <QTcpSocket>
