@@ -48,10 +48,6 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_WINDOWS
     QApplication::setStyle(u"breeze"_s);
     QIcon::setThemeName(u"breeze"_s);
-    QFont font(u"Segoe UI Emoji"_s);
-    font.setPointSize(10);
-    font.setHintingPreference(QFont::PreferNoHinting);
-    app.setFont(font);
 #endif
 
     // Resolve the runtime directory
