@@ -17,7 +17,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     char szBinPath[MAX_PATH];
     char szCmdLine[MAX_PATH + 32];
     snprintf(szBinPath, sizeof(szBinPath), "%s\\bin", szPath);
-    snprintf(szCmdLine, sizeof(szCmdLine), "\"%s\\ktabletop-app.exe\"", szBinPath);
+    snprintf(szCmdLine, sizeof(szCmdLine), "\"%s\\ktabletop.exe\"", szBinPath);
 
     char szOldPath[4096];
     DWORD dwLen = GetEnvironmentVariableA("PATH", szOldPath, sizeof(szOldPath));
@@ -36,10 +36,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     if (!bSuccess) {
         char szErrorMsg[256];
-        snprintf(szErrorMsg,
-                 sizeof(szErrorMsg),
-                 "Error at start ktabletop-app.exe (error: %lu).\nCheck that it exists in bin\\ktabletop-app.exe.",
-                 GetLastError());
+        snprintf(szErrorMsg, sizeof(szErrorMsg), "Error at start ktabletop.exe (error: %lu).\nCheck that it exists in bin\\ktabletop-app.exe.", GetLastError());
         MessageBoxA(NULL, szErrorMsg, "KTabletop", MB_OK | MB_ICONERROR);
         return 1;
     }
