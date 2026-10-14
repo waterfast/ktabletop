@@ -20,10 +20,10 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationVersion(u"0.0.1"_s);
 
     KTabletopUtils::runtimeDataDir(true);
-
+    //目录
     initLogger();
     installQtMessageHandler();
-
+    //命令行解析
     QCommandLineParser parser;
     parser.setApplicationDescription(u"KTabletop dedicated server"_s);
     parser.addHelpOption();
@@ -40,7 +40,8 @@ int main(int argc, char *argv[])
     }
 
     auto *server = Server::instance();
-    server->luaBinding()->run();
+    server->luaBinding()->run();//指针访问，luaBinding() 取得刚才创建的 Lua 环境，run() 加载对应角色的入口脚本。
+    //是否监听？
     if (!server->listen(QHostAddress::Any, port)) {
         qCritical("Cannot start server on port %u!", port);
         return EXIT_FAILURE;

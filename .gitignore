@@ -28,3 +28,6 @@ flake.lock
 /.ktabletop-dir
 *.log
 repl-history.txt
+
+# local notes, not published
+/docs/
